@@ -74,9 +74,6 @@ test_slice_classify_LDADD=libcarve_ui.la libcarve_misc.la ../lib/libintersect.la
 texture_example_SOURCES=texture_example.cpp
 texture_example_LDADD=libcarve_fileformats.la libcarve_ui.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
 
-offset_SOURCES=offset.cpp
-offset_LDADD=libcarve_fileformats.la libcarve_ui.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
-
 problem_SOURCES=problem.cpp
 problem_LDADD=libcarve_ui.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
 
