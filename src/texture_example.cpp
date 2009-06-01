@@ -52,7 +52,7 @@
 #endif
 
 #if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)(...);
+  typedef GLvoid (*GLUTessCallback)();
 #else
   typedef void (__stdcall *GLUTessCallback)();
 #endif
