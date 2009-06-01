@@ -29,9 +29,9 @@
 
 
 void carve::csg::Intersections::collect(const IObj &obj,
-                                        std::vector<const carve::poly::Vertex *> *collect_v,
-                                        std::vector<const carve::poly::Edge *> *collect_e,
-                                        std::vector<const carve::poly::Face *> *collect_f) const {
+                                        std::vector<const carve::poly::Vertex<3> *> *collect_v,
+                                        std::vector<const carve::poly::Edge<3> *> *collect_e,
+                                        std::vector<const carve::poly::Face<3> *> *collect_f) const {
   carve::csg::Intersections::const_iterator i = find(obj);
   if (i != end()) {
     Intersections::mapped_type::const_iterator a, b;
@@ -55,7 +55,7 @@ void carve::csg::Intersections::collect(const IObj &obj,
 
 
 
-bool carve::csg::Intersections::intersectsFace(const carve::poly::Vertex *v, const carve::poly::Face *f) const {
+bool carve::csg::Intersections::intersectsFace(const carve::poly::Vertex<3> *v, const carve::poly::Face<3> *f) const {
   const_iterator i = find(v);
   if (i != end()) {
     mapped_type::const_iterator a, b;
@@ -63,19 +63,11 @@ bool carve::csg::Intersections::intersectsFace(const carve::poly::Vertex *v, con
     for (a = (*i).second.begin(), b = (*i).second.end(); a != b; ++a) {
       switch ((*a).first.obtype) {
       case IObj::OBTYPE_VERTEX: {
-        const carve::poly::Vertex *v = (*a).first.vertex;
-        const carve::poly::Polyhedron *p = v->owner;
-        const std::vector<const carve::poly::Face *> &vf = p->connectivity.vertex_to_face[p->vertexToIndex_fast(v)];
-        if (std::find(vf.begin(), vf.end(), f) != vf.end())
-          return true;
+        if (std::find(f->vertices.begin(), f->vertices.end(), (*a).first.vertex) != f->vertices.end()) return true;
         break;
       }
       case carve::csg::IObj::OBTYPE_EDGE: {
-        const carve::poly::Edge *e = (*a).first.edge;
-        const carve::poly::Polyhedron *p = v->owner;
-        const std::vector<const carve::poly::Face *> &ef = p->connectivity.edge_to_face[p->edgeToIndex_fast(e)];
-        if (std::find(ef.begin(), ef.end(), f) != ef.end())
-          return true;
+        if (std::find(f->edges.begin(), f->edges.end(), (*a).first.edge) != f->edges.end()) return true;
         break;
       }
       case carve::csg::IObj::OBTYPE_FACE: {

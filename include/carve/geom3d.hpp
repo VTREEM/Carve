@@ -35,7 +35,8 @@ namespace carve {
     typedef carve::geom::linesegment<3> LineSegment;
 
     template<typename iter_t, typename adapt_t>
-    bool fitPlane(iter_t begin, iter_t end, adapt_t adapt, Vector &centroid, Plane &plane) {
+    bool fitPlane(iter_t begin, iter_t end, adapt_t adapt, Plane &plane) {
+      Vector centroid;
       carve::geom::centroid(begin, end, adapt, centroid);
       iter_t i;
 

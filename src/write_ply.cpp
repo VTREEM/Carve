@@ -49,7 +49,7 @@ namespace {
     virtual const carve::geom3d::Vector &curr() const {  return cnt[i].v; }
   };
   typedef vertex<std::vector<carve::point::Vertex> > pointset_vertex;
-  typedef vertex<std::vector<carve::poly::Vertex> > poly_vertex;
+  typedef vertex<std::vector<carve::poly::Vertex<3> > > poly_vertex;
   typedef vertex<std::vector<carve::line::Vertex> > line_vertex;
 
 
@@ -66,13 +66,13 @@ namespace {
     face(const carve::poly::Polyhedron *_poly) : poly(_poly), i(-1) { }
     virtual void next() { ++i; }
     virtual int length() { return poly->faces.size(); }
-    const carve::poly::Face *curr() const { return &poly->faces[i]; }
+    const carve::poly::Face<3> *curr() const { return &poly->faces[i]; }
   };
 
 
   struct face_idx : public gloop::stream::writer<size_t> {
     face &r;
-    const carve::poly::Face *f;
+    const carve::poly::Face<3> *f;
     size_t i;
     gloop::stream::Type data_type;
     int max_length;
@@ -87,7 +87,7 @@ namespace {
     virtual gloop::stream::Type dataType() { return data_type; }
     virtual int maxLength() { return max_length; }
 
-    virtual size_t value() { return f->owner->vertexToIndex_fast(f->vertices[i++]); }
+    virtual size_t value() { return static_cast<const carve::poly::Polyhedron *>(f->owner)->vertexToIndex_fast(f->vertices[i++]); }
   };
 
 
@@ -134,7 +134,7 @@ namespace {
     for (size_t i = 0; i < poly->faces.size(); ++i) face_max = std::max(face_max, poly->faces[i].vertices.size());
 
     file.newBlock("polyhedron");
-    poly_vertex *vi = new poly_vertex(poly->poly_vertices);
+    poly_vertex *vi = new poly_vertex(poly->vertices);
     file.addWriter("polyhedron.vertex", vi);
     file.addWriter("polyhedron.vertex.x", new vertex_component<0>(*vi));
     file.addWriter("polyhedron.vertex.y", new vertex_component<1>(*vi));
@@ -144,7 +144,7 @@ namespace {
     file.addWriter("polyhedron.face", fi);
     file.addWriter("polyhedron.face.vertex_indices",
                    new face_idx(*fi,
-                                gloop::stream::smallest_type(poly->poly_vertices.size()),
+                                gloop::stream::smallest_type(poly->vertices.size()),
                                 face_max));
 
   }

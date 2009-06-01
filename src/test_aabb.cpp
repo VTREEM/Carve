@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     ri = !strcmp(ray_intersects, "True");
     li = !strcmp(lineseg_intersects, "True");
 
-    bool ri_t = aabb.intersectsRay(r);
+    bool ri_t = aabb.intersects(r);
     bool li_t = aabb.intersectsLineSegment(l.v1, l.v2);
 
     if (li != li_t || ri != ri_t) std::cout << line << std::endl;

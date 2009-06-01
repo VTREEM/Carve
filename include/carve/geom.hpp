@@ -27,6 +27,8 @@ namespace carve {
   namespace geom {
 
     // ========================================================================
+    struct _uninitialized { };
+
     template<unsigned ndim>
     struct base { double v[ndim]; };
 
@@ -44,7 +46,7 @@ namespace carve {
       bool exactlyZero() const;
       bool isZero(double epsilon = EPSILON) const;
       void setZero();
-      void fill(double v);
+      void fill(double val);
       vector<ndim> &scaleBy(double d);
       vector<ndim> &invscaleBy(double d);
       vector<ndim> scaled(double d) const;
@@ -57,6 +59,7 @@ namespace carve {
       vector<ndim> &operator=(const assign_t &t);
       std::string asStr() const;
       vector() { setZero(); }
+      vector(noinit_t) { }
     };
 
     static inline vector<2> VECTOR(double x, double y) { vector<2> r; r.x = x; r.y = y; return r; }
@@ -72,7 +75,7 @@ namespace carve {
 
     template<unsigned ndim>
     vector<ndim> operator-(const vector<ndim> &a) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = -a[i];
       return c;
     }
@@ -91,21 +94,21 @@ namespace carve {
 
     template<unsigned ndim>
     vector<ndim> operator*(const vector<ndim> &a, double s) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] * s;
       return c;
     }
 
     template<unsigned ndim>
     vector<ndim> operator*(double s, const vector<ndim> &a) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] * s;
       return c;
     }
 
     template<unsigned ndim>
     vector<ndim> operator/(const vector<ndim> &a, double s) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] / s;
       return c;
     }
@@ -130,28 +133,28 @@ namespace carve {
 
     template<unsigned ndim>
     vector<ndim> operator+(const vector<ndim> &a, const vector<ndim> &b) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] + b[i];
       return c;
     }
 
     template<unsigned ndim, typename val_t>
     vector<ndim> operator+(const val_t &a, const vector<ndim> &b) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] + b[i];
       return c;
     }
 
     template<unsigned ndim, typename val_t>
     vector<ndim> operator+(const vector<ndim> &a, const val_t &b) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] + b[i];
       return c;
     }
 
     template<unsigned ndim>
     vector<ndim> operator+(const vector<ndim> &a, double b) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] + b;
       return c;
     }
@@ -176,37 +179,37 @@ namespace carve {
 
     template<unsigned ndim>
     vector<ndim> operator-(const vector<ndim> &a, const vector<ndim> &b) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] - b[i];
       return c;
     }
 
     template<unsigned ndim, typename val_t>
     vector<ndim> operator-(const vector<ndim> &a, const val_t &b) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] - b[i];
       return c;
     }
 
     template<unsigned ndim, typename val_t>
     vector<ndim> operator-(const val_t &a, const vector<ndim> &b) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] - b[i];
       return c;
     }
 
     template<unsigned ndim>
     vector<ndim> operator-(const vector<ndim> &a, double b) {
-      vector<ndim> c;
+      vector<ndim> c(NOINIT);
       for (unsigned i = 0; i < ndim; ++i) c[i] = a[i] - b;
       return c;
     }
 
     template<unsigned ndim>
     vector<ndim> abs(const vector<ndim> &a) {
-      vector<ndim> b;
-      for (unsigned i = 0; i < ndim; ++i) b[i] = fabs(a[i]);
-      return b;
+      vector<ndim> c(NOINIT);
+      for (unsigned i = 0; i < ndim; ++i) c[i] = fabs(a[i]);
+      return c;
     }
 
     template<unsigned ndim, typename assign_t, typename oper_t>
@@ -330,10 +333,10 @@ namespace carve {
     }
 
     template<unsigned ndim>
-    void vector<ndim>::setZero() { std::fill(this->v, this->v+ndim, 0.0); }
+    void vector<ndim>::setZero() { for (size_t i = 0; i < ndim; ++i) this->v[i] = 0.0; }
 
     template<unsigned ndim>
-    void vector<ndim>::fill(double v) { std::fill(this->v, this->v+ndim, v); }
+    void vector<ndim>::fill(double val)  { for (size_t i = 0; i < ndim; ++i) this->v[i] = val; }
 
     template<unsigned ndim>
     vector<ndim> &vector<ndim>::scaleBy(double d) { for (unsigned i = 0; i < ndim; ++i) this->v[i] *= d; return *this; }
@@ -448,10 +451,12 @@ namespace carve {
     // ========================================================================
     template<unsigned ndim>
     struct ray {
-      vector<ndim> D, v;
+      typedef vector<ndim> vector_t;
+
+      vector_t D, v;
 
       ray() { }
-      ray(vector<ndim> _D, vector<ndim> _v) : D(_D), v(_v) { }
+      ray(vector_t _D, vector_t _v) : D(_D), v(_v) { }
       bool OK() const { return !D.isZero(); }
     };
 
@@ -481,12 +486,14 @@ namespace carve {
     // ========================================================================
     template<unsigned ndim>
     struct linesegment {
-      vector<ndim> v1;
-      vector<ndim> v2;
-      vector<ndim> midpoint;
-      vector<ndim> half_length;
+      typedef vector<ndim> vector_t;
 
-      linesegment(const vector<ndim> &_v1, const vector<ndim> &_v2) : v1(_v1), v2(_v2) {
+      vector_t v1;
+      vector_t v2;
+      vector_t midpoint;
+      vector_t half_length;
+
+      linesegment(const vector_t &_v1, const vector_t &_v2) : v1(_v1), v2(_v2) {
         update();
       }
 
@@ -523,13 +530,15 @@ namespace carve {
     // ========================================================================
     template<unsigned ndim>
     struct plane {
-      vector<ndim> N;
+      typedef vector<ndim> vector_t;
+
+      vector_t N;
       double d;
 
       // plane() { }
       plane() { N.setZero(); N[0] = 1.0; d= 0.0; }
-      plane(vector<ndim> _N, vector<ndim> _p) : N(_N), d(-dot(_p, _N)) { }
-      plane(vector<ndim> _N, double _d) : N(_N), d(_d) { }
+      plane(const vector_t &_N, vector_t _p) : N(_N), d(-dot(_p, _N)) { }
+      plane(const vector_t &_N, double _d) : N(_N), d(_d) { }
       void negate() { N.negate(); d = -d; }
     };
 
@@ -553,5 +562,59 @@ namespace carve {
       o << p.N << ";" << p.d;
       return o;
     }
+
+
+
+    // ========================================================================
+    template<unsigned ndim>
+    struct sphere {
+      typedef vector<ndim> vector_t;
+
+      vector_t C;
+      double r;
+
+      // sphere() { }
+      sphere() { C.setZero(); r = 1.0; }
+      sphere(const vector_t &_C, double _r) : C(_C), r(_r) { }
+    };
+
+    template<unsigned ndim, typename val_t>
+    double distance(const sphere<ndim> &sphere, const val_t &point) {
+      return std::max(0.0, distance(sphere.C, point) - sphere.r);
+    }
+
+    template<unsigned ndim>
+    static inline vector<ndim> closestPoint(const sphere<ndim> &sphere, const vector<ndim> &point) {
+      return (point - sphere.C).normalized() * sphere.r;
+    }
+
+    template<unsigned ndim>
+    std::ostream &operator<<(std::ostream &o, const sphere<ndim> &sphere) {
+      o << "{sphere " << sphere.C << ";" << sphere.r << "}";
+      return o;
+    }
+
+
+    // ========================================================================
+    template<unsigned ndim>
+    struct tri {
+      typedef vector<ndim> vector_t;
+
+      vector_t v[3];
+
+      tri(vector_t _v[3]) {
+        std::copy(v, v+3, _v);
+      }
+      tri(const vector_t &a, const vector_t &b, const vector_t &c) {
+        v[0] = a; v[1] = b; v[2] = c;
+      }
+    };
+
+    template<unsigned ndim>
+    std::ostream &operator<<(std::ostream &o, const tri<ndim> &tri) {
+      o << "{tri " << tri.v[0] << ";" << tri.v[1] << ";" << tri.v[2] << "}";
+      return o;
+    }
+
   }
 }

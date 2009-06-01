@@ -22,6 +22,8 @@
 #include <carve/csg.hpp>
 #include "intersect_debug.hpp"
 
+typedef carve::poly::Polyhedron poly_t;
+
 namespace carve {
   namespace csg {
     namespace {
@@ -33,34 +35,34 @@ namespace carve {
 
       protected:
         struct face_data_t {
-          carve::poly::Face *face;
-          const carve::poly::Face *orig_face;
+          poly_t::face_t *face;
+          const poly_t::face_t *orig_face;
           bool flipped;
-          face_data_t(carve::poly::Face *_face,
-                      const carve::poly::Face *_orig_face,
+          face_data_t(poly_t::face_t *_face,
+                      const poly_t::face_t *_orig_face,
                       bool _flipped) : face(_face), orig_face(_orig_face), flipped(_flipped) {
           };
         };
 
         std::list<face_data_t> faces;
 
-        const carve::poly::Polyhedron *src_a;
-        const carve::poly::Polyhedron *src_b;
+        const poly_t *src_a;
+        const poly_t *src_b;
     
-        BaseCollector(const carve::poly::Polyhedron *_src_a,
-                      const carve::poly::Polyhedron *_src_b) : CSG::Collector(), src_a(_src_a), src_b(_src_b) {
+        BaseCollector(const poly_t *_src_a,
+                      const poly_t *_src_b) : CSG::Collector(), src_a(_src_a), src_b(_src_b) {
         }
 
         virtual ~BaseCollector() {
         }
 
-        void FWD(const carve::poly::Face *orig_face,
-                 const std::vector<const carve::poly::Vertex *> &vertices,
+        void FWD(const poly_t::face_t *orig_face,
+                 const std::vector<const poly_t::vertex_t *> &vertices,
                  carve::geom3d::Vector normal,
                  bool poly_a,
                  FaceClass face_class,
                  CSG::Hooks &hooks) {
-          std::vector<carve::poly::Face *> new_faces;
+          std::vector<poly_t::face_t *> new_faces;
           new_faces.reserve(1);
           new_faces.push_back(orig_face->create(vertices, false));
           hooks.processOutputFace(new_faces, orig_face, false);
@@ -75,14 +77,14 @@ namespace carve {
 #endif
         }
 
-        void REV(const carve::poly::Face *orig_face,
-                 const std::vector<const carve::poly::Vertex *> &vertices,
+        void REV(const poly_t::face_t *orig_face,
+                 const std::vector<const poly_t::vertex_t *> &vertices,
                  carve::geom3d::Vector normal,
                  bool poly_a,
                  FaceClass face_class,
                  CSG::Hooks &hooks) {
           normal = -normal;
-          std::vector<carve::poly::Face *> new_faces;
+          std::vector<poly_t::face_t *> new_faces;
           new_faces.reserve(1);
           new_faces.push_back(orig_face->create(vertices, true));
           hooks.processOutputFace(new_faces, orig_face, true);
@@ -97,8 +99,8 @@ namespace carve {
 #endif
         }
 
-        virtual void collect(const carve::poly::Face *orig_face,
-                             const std::vector<const carve::poly::Vertex *> &vertices,
+        virtual void collect(const poly_t::face_t *orig_face,
+                             const std::vector<const poly_t::vertex_t *> &vertices,
                              carve::geom3d::Vector normal,
                              bool poly_a,
                              FaceClass face_class,
@@ -149,22 +151,22 @@ namespace carve {
           }
         }
 
-        virtual carve::poly::Polyhedron *done(CSG::Hooks &hooks) {
-          std::vector<carve::poly::Face> f;
+        virtual poly_t *done(CSG::Hooks &hooks) {
+          std::vector<poly_t::face_t> f;
           f.reserve(faces.size());
           for (std::list<face_data_t>::iterator i = faces.begin(); i != faces.end(); ++i) {
-            f.push_back(carve::poly::Face());
+            f.push_back(poly_t::face_t());
             std::swap(f.back(), *(*i).face);
             delete (*i).face;
             (*i).face = &f.back();
           }
 
-          std::vector<carve::poly::Vertex> vertices;
+          std::vector<poly_t::vertex_t> vertices;
           carve::csg::VVMap vmap;
 
-          carve::poly::Polyhedron::collectFaceVertices(f, vertices, vmap);
+          poly_t::collectFaceVertices(f, vertices, vmap);
 
-          carve::poly::Polyhedron *p = new carve::poly::Polyhedron(f, vertices);
+          poly_t *p = new poly_t(f, vertices);
 
           if (hooks.hasHook(carve::csg::CSG::Hooks::RESULT_FACE_HOOK)) {
             for (std::list<face_data_t>::iterator i = faces.begin(); i != faces.end(); ++i) {
@@ -180,13 +182,13 @@ namespace carve {
 
       class AllCollector : public BaseCollector {
       public:
-        AllCollector(const carve::poly::Polyhedron *_src_a,
-                     const carve::poly::Polyhedron *_src_b) : BaseCollector(_src_a, _src_b) {
+        AllCollector(const poly_t *_src_a,
+                     const poly_t *_src_b) : BaseCollector(_src_a, _src_b) {
         }
         virtual ~AllCollector() {
         }
-        virtual void collect(const carve::poly::Face *orig_face,
-                             const std::vector<const carve::poly::Vertex *> &vertices,
+        virtual void collect(const poly_t::face_t *orig_face,
+                             const std::vector<const poly_t::vertex_t *> &vertices,
                              carve::geom3d::Vector normal,
                              bool poly_a,
                              FaceClass face_class,
@@ -201,13 +203,13 @@ namespace carve {
 
       class UnionCollector : public BaseCollector {
       public:
-        UnionCollector(const carve::poly::Polyhedron *_src_a,
-                       const carve::poly::Polyhedron *_src_b) : BaseCollector(_src_a, _src_b) {
+        UnionCollector(const poly_t *_src_a,
+                       const poly_t *_src_b) : BaseCollector(_src_a, _src_b) {
         }
         virtual ~UnionCollector() {
         }
-        virtual void collect(const carve::poly::Face *orig_face,
-                             const std::vector<const carve::poly::Vertex *> &vertices,
+        virtual void collect(const poly_t::face_t *orig_face,
+                             const std::vector<const poly_t::vertex_t *> &vertices,
                              carve::geom3d::Vector normal,
                              bool poly_a,
                              FaceClass face_class,
@@ -222,13 +224,13 @@ namespace carve {
 
       class IntersectionCollector : public BaseCollector {
       public:
-        IntersectionCollector(const carve::poly::Polyhedron *_src_a,
-                              const carve::poly::Polyhedron *_src_b) : BaseCollector(_src_a, _src_b) {
+        IntersectionCollector(const poly_t *_src_a,
+                              const poly_t *_src_b) : BaseCollector(_src_a, _src_b) {
         }
         virtual ~IntersectionCollector() {
         }
-        virtual void collect(const carve::poly::Face *orig_face,
-                             const std::vector<const carve::poly::Vertex *> &vertices,
+        virtual void collect(const poly_t::face_t *orig_face,
+                             const std::vector<const poly_t::vertex_t *> &vertices,
                              carve::geom3d::Vector normal,
                              bool poly_a,
                              FaceClass face_class,
@@ -243,13 +245,13 @@ namespace carve {
 
       class SymmetricDifferenceCollector : public BaseCollector {
       public:
-        SymmetricDifferenceCollector(const carve::poly::Polyhedron *_src_a,
-                                     const carve::poly::Polyhedron *_src_b) : BaseCollector(_src_a, _src_b) {
+        SymmetricDifferenceCollector(const poly_t *_src_a,
+                                     const poly_t *_src_b) : BaseCollector(_src_a, _src_b) {
         }
         virtual ~SymmetricDifferenceCollector() {
         }
-        virtual void collect(const carve::poly::Face *orig_face,
-                             const std::vector<const carve::poly::Vertex *> &vertices,
+        virtual void collect(const poly_t::face_t *orig_face,
+                             const std::vector<const poly_t::vertex_t *> &vertices,
                              carve::geom3d::Vector normal,
                              bool poly_a,
                              FaceClass face_class,
@@ -266,13 +268,13 @@ namespace carve {
 
       class AMinusBCollector : public BaseCollector {
       public:
-        AMinusBCollector(const carve::poly::Polyhedron *_src_a,
-                         const carve::poly::Polyhedron *_src_b) : BaseCollector(_src_a, _src_b) {
+        AMinusBCollector(const poly_t *_src_a,
+                         const poly_t *_src_b) : BaseCollector(_src_a, _src_b) {
         }
         virtual ~AMinusBCollector() {
         }
-        virtual void collect(const carve::poly::Face *orig_face,
-                             const std::vector<const carve::poly::Vertex *> &vertices,
+        virtual void collect(const poly_t::face_t *orig_face,
+                             const std::vector<const poly_t::vertex_t *> &vertices,
                              carve::geom3d::Vector normal,
                              bool poly_a,
                              FaceClass face_class,
@@ -289,13 +291,13 @@ namespace carve {
 
       class BMinusACollector : public BaseCollector {
       public:
-        BMinusACollector(const carve::poly::Polyhedron *_src_a,
-                         const carve::poly::Polyhedron *_src_b) : BaseCollector(_src_a, _src_b) {
+        BMinusACollector(const poly_t *_src_a,
+                         const poly_t *_src_b) : BaseCollector(_src_a, _src_b) {
         }
         virtual ~BMinusACollector() {
         }
-        virtual void collect(const carve::poly::Face *orig_face,
-                             const std::vector<const carve::poly::Vertex *> &vertices,
+        virtual void collect(const poly_t::face_t *orig_face,
+                             const std::vector<const poly_t::vertex_t *> &vertices,
                              carve::geom3d::Vector normal,
                              bool poly_a,
                              FaceClass face_class,
@@ -311,8 +313,8 @@ namespace carve {
     }
 
     CSG::Collector *makeCollector(CSG::OP op,
-                                  const carve::poly::Polyhedron *poly_a,
-                                  const carve::poly::Polyhedron *poly_b) {
+                                  const poly_t *poly_a,
+                                  const poly_t *poly_b) {
       switch (op) {
       case CSG::UNION:                return new UnionCollector(poly_a, poly_b);
       case CSG::INTERSECTION:         return new IntersectionCollector(poly_a, poly_b);

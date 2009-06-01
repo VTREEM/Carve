@@ -34,6 +34,8 @@
 
 #include "intersect_common.hpp"
 
+typedef carve::poly::Polyhedron poly_t;
+
 namespace {
 
 
@@ -42,12 +44,12 @@ namespace {
     GraphEdge *next;
     GraphEdge *prev;
     GraphEdge *loop_next;
-    const carve::poly::Vertex *src;
-    const carve::poly::Vertex *tgt;
+    const poly_t::vertex_t *src;
+    const poly_t::vertex_t *tgt;
     double ang;
     int visited;
 
-    GraphEdge(const carve::poly::Vertex *_src, const carve::poly::Vertex *_tgt) :
+    GraphEdge(const poly_t::vertex_t *_src, const poly_t::vertex_t *_tgt) :
       next(NULL), prev(NULL), loop_next(NULL),
       src(_src), tgt(_tgt),
       ang(0.0), visited(-1) {
@@ -67,7 +69,7 @@ namespace {
 
 
   struct Graph {
-    typedef std::unordered_map<const carve::poly::Vertex *, GraphEdges, carve::poly::hash_vertex_ptr> graph_t;
+    typedef std::unordered_map<const poly_t::vertex_t *, GraphEdges, carve::poly::hash_vertex_ptr> graph_t;
 
     graph_t graph;
 
@@ -96,13 +98,13 @@ namespace {
       }
     }
 
-    const carve::geom2d::P2 &projection(const carve::poly::Vertex *v) const {
+    const carve::geom2d::P2 &projection(const poly_t::vertex_t *v) const {
       graph_t::const_iterator i = graph.find(v);
       ASSERT(i != graph.end());
       return (*i).second.proj;
     }
 
-    void computeProjection(const carve::poly::Face *face) {
+    void computeProjection(const poly_t::face_t *face) {
       for (graph_t::iterator i = graph.begin(), e =  graph.end(); i != e; ++i) {
         (*i).second.proj = carve::poly::face::project(face, (*i).first->v);
       }
@@ -136,7 +138,7 @@ namespace {
       }
     }
 
-    void addEdge(const carve::poly::Vertex *v1, const carve::poly::Vertex *v2) {
+    void addEdge(const poly_t::vertex_t *v1, const poly_t::vertex_t *v2) {
       GraphEdges &edges = graph[v1];
       GraphEdge *edge = new GraphEdge(v1, v2);
       if (edges.edges) edges.edges->prev = edge;
@@ -176,7 +178,7 @@ namespace {
       return (*graph.begin()).second.edges;
     }
 
-    GraphEdge *outboundEdges(const carve::poly::Vertex *v) {
+    GraphEdge *outboundEdges(const poly_t::vertex_t *v) {
       return graph[v].edges;
     }
   };
@@ -192,10 +194,10 @@ namespace {
    * @param[out] hole_loops Output list of hole loops
    * @param vi 
    */
-  static void splitFace(const carve::poly::Face *face,
+  static void splitFace(const poly_t::face_t *face,
                         const carve::csg::V2Set &edges,
-                        std::list<std::vector<const carve::poly::Vertex *> > &face_loops,
-                        std::list<std::vector<const carve::poly::Vertex *> > &hole_loops,
+                        std::list<std::vector<const poly_t::vertex_t *> > &face_loops,
+                        std::list<std::vector<const poly_t::vertex_t *> > &hole_loops,
                         const carve::csg::VertexIntersections &vi) {
     Graph graph;
 
@@ -207,7 +209,7 @@ namespace {
            i = edges.begin(), e = edges.end();
          i != e;
          ++i) {
-      const carve::poly::Vertex *v1 = ((*i).first), *v2 = ((*i).second);
+      const poly_t::vertex_t *v1 = ((*i).first), *v2 = ((*i).second);
       if (carve::geom::equal(v1->v, v2->v)) std::cerr << "WARNING! " << v1->v << "==" << v2->v << std::endl;
       graph.addEdge(v1, v2);
     }
@@ -266,7 +268,7 @@ namespace {
         edge = out;
       }
 
-      std::vector<const carve::poly::Vertex *> loop(len);
+      std::vector<const poly_t::vertex_t *> loop(len);
       std::vector<carve::geom2d::P2> projected(len);
 
       edge = start;
@@ -291,7 +293,7 @@ namespace {
         for (size_t i = 0; i < loop.size(); ++i) std::cerr << " " << loop[i];
         std::cerr << std::endl;
 #endif
-        face_loops.push_back(std::vector<const carve::poly::Vertex *>());
+        face_loops.push_back(std::vector<const poly_t::vertex_t *>());
         face_loops.back().swap(loop);
       } else {
 #if defined(DEBUG)
@@ -299,7 +301,7 @@ namespace {
         for (size_t i = 0; i < loop.size(); ++i) std::cerr << " " << loop[i];
         std::cerr << std::endl;
 #endif
-        hole_loops.push_back(std::vector<const carve::poly::Vertex *>());
+        hole_loops.push_back(std::vector<const poly_t::vertex_t *>());
         hole_loops.back().swap(loop);
       }
     }
@@ -307,7 +309,7 @@ namespace {
     std::cerr << "===============================================" << std::endl;
 
     std::cerr << "result: " << face_loops.size() << " face loops (";
-    for (std::list<std::vector<const carve::poly::Vertex *> >::const_iterator i = face_loops.begin(); i != face_loops.end(); ++i) {
+    for (std::list<std::vector<const poly_t::vertex_t *> >::const_iterator i = face_loops.begin(); i != face_loops.end(); ++i) {
       std::cerr << ((i != face_loops.begin()) ? " " : "") << (*i).size();
       for (unsigned j = 0; j < (*i).size(); ++j) {
         if (std::find((*i).begin() + j + 1, (*i).end(), (*i)[j]) != (*i).end()) {
@@ -317,7 +319,7 @@ namespace {
       }
     }
     std::cerr << ") " << hole_loops.size() << " hole loops (";
-    for (std::list<std::vector<const carve::poly::Vertex *> >::const_iterator i = hole_loops.begin(); i != hole_loops.end(); ++i) {
+    for (std::list<std::vector<const poly_t::vertex_t *> >::const_iterator i = hole_loops.begin(); i != hole_loops.end(); ++i) {
       std::cerr << ((i != hole_loops.begin()) ? " " : "") << (*i).size();
       for (unsigned j = 0; j < (*i).size(); ++j) {
         if (std::find((*i).begin() + j + 1, (*i).end(), (*i)[j]) != (*i).end()) {
@@ -350,9 +352,9 @@ namespace {
    * @param[out] shares_vertex Boolean indicating that the face and the hole share a vertex.
    * @param[out] shares_edge Boolean indicating that the face and the hole share an edge.
    */
-  static void compareFaceLoopAndHoleLoop(const std::vector<const carve::poly::Vertex *> &f,
+  static void compareFaceLoopAndHoleLoop(const std::vector<const poly_t::vertex_t *> &f,
                                          const std::vector<unsigned> &f_sort,
-                                         const std::vector<const carve::poly::Vertex *> &h,
+                                         const std::vector<const poly_t::vertex_t *> &h,
                                          const std::vector<unsigned> &h_sort,
                                          unsigned &f_idx,
                                          unsigned &h_idx,
@@ -404,9 +406,9 @@ namespace {
    * @param[out] hole_shared_vertices A map from a face,hole pair to
    *                                  a shared vertex pair.
    */
-  static void computeContainment(const carve::poly::Face *face,
-                                 std::vector<std::vector<const carve::poly::Vertex *> > &face_loops,
-                                 std::vector<std::vector<const carve::poly::Vertex *> > &hole_loops,
+  static void computeContainment(const poly_t::face_t *face,
+                                 std::vector<std::vector<const poly_t::vertex_t *> > &face_loops,
+                                 std::vector<std::vector<const poly_t::vertex_t *> > &hole_loops,
                                  std::vector<std::vector<int> > &containing_faces,
                                  std::map<int, std::map<int, std::pair<unsigned, unsigned> > > &hole_shared_vertices) {
     unsigned m, n;
@@ -428,7 +430,7 @@ namespace {
     // produce a projection of each face loop onto a 2D plane, and a
     // index vector which sorts vertices by address.
     for (size_t m = 0; m < face_loops.size(); ++m) {
-      const std::vector<const carve::poly::Vertex *> &f_loop = (face_loops[m]);
+      const std::vector<const poly_t::vertex_t *> &f_loop = (face_loops[m]);
       face_loops_projected[m].reserve(f_loop.size());
       face_loops_sorted[m].reserve(f_loop.size());
       for (n = 0; n < f_loop.size(); ++n) {
@@ -437,13 +439,13 @@ namespace {
       }
       face_loop_areas.push_back(carve::geom2d::signedArea(face_loops_projected[m]));
       std::sort(face_loops_sorted[m].begin(), face_loops_sorted[m].end(), 
-                carve::index_sort<std::vector<const carve::poly::Vertex *> >(face_loops[m]));
+                carve::index_sort<std::vector<const poly_t::vertex_t *> >(face_loops[m]));
     }
 
     // produce a projection of each hole loop onto a 2D plane, and a
     // index vector which sorts vertices by address.
     for (size_t m = 0; m < hole_loops.size(); ++m) {
-      const std::vector<const carve::poly::Vertex *> &h_loop = (hole_loops[m]);
+      const std::vector<const poly_t::vertex_t *> &h_loop = (hole_loops[m]);
       hole_loops_projected[m].reserve(h_loop.size());
       hole_loops_projected[m].reserve(h_loop.size());
       for (n = 0; n < h_loop.size(); ++n) {
@@ -452,7 +454,7 @@ namespace {
       }
       hole_loop_areas.push_back(carve::geom2d::signedArea(hole_loops_projected[m]));
       std::sort(hole_loops_sorted[m].begin(), hole_loops_sorted[m].end(), 
-                carve::index_sort<std::vector<const carve::poly::Vertex *> >(hole_loops[m]));
+                carve::index_sort<std::vector<const poly_t::vertex_t *> >(hole_loops[m]));
     }
 
     containing_faces.resize(hole_loops.size());
@@ -553,12 +555,12 @@ namespace {
    * @param[in,out] f_loops A list of face loops.
    * @param[in] h_loops A list of hole loops to be incorporated into face loops.
    */
-  static void mergeFacesAndHoles(const carve::poly::Face *face,
-                                 std::list<std::vector<const carve::poly::Vertex *> > &f_loops,
-                                 std::list<std::vector<const carve::poly::Vertex *> > &h_loops,
+  static void mergeFacesAndHoles(const poly_t::face_t *face,
+                                 std::list<std::vector<const poly_t::vertex_t *> > &f_loops,
+                                 std::list<std::vector<const poly_t::vertex_t *> > &h_loops,
                                  carve::csg::CSG::Hooks &hooks) {
-    std::vector<std::vector<const carve::poly::Vertex *> > face_loops;
-    std::vector<std::vector<const carve::poly::Vertex *> > hole_loops;
+    std::vector<std::vector<const poly_t::vertex_t *> > face_loops;
+    std::vector<std::vector<const poly_t::vertex_t *> > hole_loops;
 
     std::vector<std::vector<int> > containing_faces;
     std::map<int, std::map<int, std::pair<unsigned, unsigned> > > hole_shared_vertices;
@@ -568,7 +570,7 @@ namespace {
       size_t m;
       face_loops.resize(f_loops.size());
       m = 0;
-      for (std::list<std::vector<const carve::poly::Vertex *> >::iterator
+      for (std::list<std::vector<const poly_t::vertex_t *> >::iterator
              i = f_loops.begin(), ie = f_loops.end();
            i != ie;
            ++i, ++m) {
@@ -577,7 +579,7 @@ namespace {
 
       hole_loops.resize(h_loops.size());
       m = 0;
-      for (std::list<std::vector<const carve::poly::Vertex *> >::iterator
+      for (std::list<std::vector<const poly_t::vertex_t *> >::iterator
              i = h_loops.begin(), ie = h_loops.end();
            i != ie;
            ++i, ++m) {
@@ -608,8 +610,8 @@ namespace {
           // f_loop[f_idx] == h_loop[h_idx], we don't need to
           // duplicate the f_loop vertex.
 
-          std::vector<const carve::poly::Vertex *> &f_loop = face_loops[f];
-          std::vector<const carve::poly::Vertex *> &h_loop = hole_loops[i];
+          std::vector<const poly_t::vertex_t *> &f_loop = face_loops[f];
+          std::vector<const poly_t::vertex_t *> &h_loop = hole_loops[i];
 
           f_loop.insert(f_loop.begin() + f_idx + 1, h_loop.size(), NULL);
 
@@ -659,14 +661,14 @@ namespace {
 
     // patch holes into faces.
     for (unsigned i = 0; i < face_loops.size(); ++i) {
-      std::vector<std::vector<const carve::poly::Vertex *> > face_hole_loops;
+      std::vector<std::vector<const poly_t::vertex_t *> > face_hole_loops;
       face_hole_loops.resize(face_holes[i].size());
       for (unsigned j = 0; j < face_holes[i].size(); ++j) {
         face_hole_loops[j].swap(hole_loops[face_holes[i][j]]);
       }
       if (face_hole_loops.size()) {
 
-        f_loops.push_back(carve::triangulate::incorporateHolesIntoPolygon(carve::poly::p2_adapt_project(face->project), face_loops[i], face_hole_loops));
+        f_loops.push_back(carve::triangulate::incorporateHolesIntoPolygon(carve::poly::p2_adapt_project<3>(face->project), face_loops[i], face_hole_loops));
       } else {
         f_loops.push_back(face_loops[i]);
       }
@@ -689,11 +691,11 @@ namespace {
    *            on that edge.
    * @param[out] base_loop A vector of the vertices of the base loop.
    */
-  static void assembleBaseLoop(const carve::poly::Face *face,
+  static void assembleBaseLoop(const poly_t::face_t *face,
                                const carve::csg::VVMap &vmap,
                                const carve::csg::FV2SMap &face_split_edges,
                                const carve::csg::EVVMap &divided_edges,
-                               std::vector<const carve::poly::Vertex *> &base_loop) {
+                               std::vector<const poly_t::vertex_t *> &base_loop) {
     base_loop.clear();
 
     // XXX: assumes that face->edges is in the same order as
@@ -701,11 +703,11 @@ namespace {
     for (size_t j = 0, je = face->vertices.size(); j < je; ++j) {
       base_loop.push_back(carve::csg::map_vertex(vmap, face->vertices[j]));
 
-      const carve::poly::Edge *e = face->edges[j];
+      const poly_t::edge_t *e = face->edges[j];
       carve::csg::EVVMap::const_iterator ev = divided_edges.find(e);
 
       if (ev != divided_edges.end()) {
-        const std::vector<const carve::poly::Vertex *> &ev_vec = ((*ev).second);
+        const std::vector<const poly_t::vertex_t *> &ev_vec = ((*ev).second);
 
         if (e->v1 == face->vertices[j]) {
           // edge is forward;
@@ -735,7 +737,7 @@ namespace {
  * 
  * @return The number of edges generated.
  */
-size_t carve::csg::CSG::generateFaceLoops(const carve::poly::Polyhedron *poly,
+size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
                                           const VVMap &vmap,
                                           const FV2SMap &face_split_edges,
                                           const EVVMap &divided_edges,
@@ -743,14 +745,14 @@ size_t carve::csg::CSG::generateFaceLoops(const carve::poly::Polyhedron *poly,
   static carve::TimingName FUNC_NAME("CSG::generateFaceLoops()");
   carve::TimingBlock block(FUNC_NAME);
   size_t generated_edges = 0;
-  std::vector<const carve::poly::Vertex *> base_loop;
-  std::list<std::vector<const carve::poly::Vertex *> > face_loops, hole_loops;
+  std::vector<const poly_t::vertex_t *> base_loop;
+  std::list<std::vector<const poly_t::vertex_t *> > face_loops, hole_loops;
   
-  for (std::vector<carve::poly::Face>::const_iterator
+  for (std::vector<poly_t::face_t >::const_iterator
          i = poly->faces.begin(), e = poly->faces.end();
        i != e;
        ++i) {
-    const carve::poly::Face *face = &(*i);
+    const poly_t::face_t *face = &(*i);
 
     assembleBaseLoop(face, vmap, face_split_edges, divided_edges, base_loop);
 
@@ -781,7 +783,7 @@ size_t carve::csg::CSG::generateFaceLoops(const carve::poly::Polyhedron *poly,
              j = fse.begin(), je =  fse.end();
            j != je;
            ++j) {
-        const carve::poly::Vertex *v1 = ((*j).first), *v2 = ((*j).second);
+        const poly_t::vertex_t *v1 = ((*j).first), *v2 = ((*j).second);
 #if defined(DEBUG)
         std::cerr << "testing edge: " << v1 << " - " << v2 << std::endl;
 #endif
@@ -821,9 +823,9 @@ size_t carve::csg::CSG::generateFaceLoops(const carve::poly::Polyhedron *poly,
 
 #if defined(DEBUG_WRITE_PLY_DATA)
           {
-            std::map<const carve::poly::Vertex *, size_t> v_included;
+            std::map<const poly_t::vertex_t *, size_t> v_included;
 
-            for (std::list<std::vector<const carve::poly::Vertex *> >::iterator
+            for (std::list<std::vector<const poly_t::vertex_t *> >::iterator
                    i = face_loops.begin(); i != face_loops.end(); ++i) {
               for (size_t j = 0; j < (*i).size(); ++j) {
                 if (v_included.find((*i)[j]) == v_included.end()) {
@@ -833,7 +835,7 @@ size_t carve::csg::CSG::generateFaceLoops(const carve::poly::Polyhedron *poly,
               }
             }
 
-            for (std::list<std::vector<const carve::poly::Vertex *> >::iterator
+            for (std::list<std::vector<const poly_t::vertex_t *> >::iterator
                    i = hole_loops.begin(); i != hole_loops.end(); ++i) {
               for (size_t j = 0; j < (*i).size(); ++j) {
                 if (v_included.find((*i)[j]) == v_included.end()) {
@@ -845,14 +847,14 @@ size_t carve::csg::CSG::generateFaceLoops(const carve::poly::Polyhedron *poly,
 
             carve::line::PolylineSet fh;
             fh.vertices.resize(v_included.size());
-            for (std::map<const carve::poly::Vertex *, size_t>::const_iterator
+            for (std::map<const poly_t::vertex_t *, size_t>::const_iterator
                    i = v_included.begin(); i != v_included.end(); ++i) {
               fh.vertices[(*i).second].v = (*i).first->v;
             }
 
             {
               std::vector<size_t> connected;
-              for (std::list<std::vector<const carve::poly::Vertex *> >::iterator
+              for (std::list<std::vector<const poly_t::vertex_t *> >::iterator
                      i = face_loops.begin(); i != face_loops.end(); ++i) {
                 connected.clear();
                 for (size_t j = 0; j < (*i).size(); ++j) {
@@ -860,7 +862,7 @@ size_t carve::csg::CSG::generateFaceLoops(const carve::poly::Polyhedron *poly,
                 }
                 fh.addPolyline(true, connected.begin(), connected.end());
               }
-              for (std::list<std::vector<const carve::poly::Vertex *> >::iterator
+              for (std::list<std::vector<const poly_t::vertex_t *> >::iterator
                      i = hole_loops.begin(); i != hole_loops.end(); ++i) {
                 connected.clear();
                 for (size_t j = 0; j < (*i).size(); ++j) {
@@ -900,7 +902,7 @@ size_t carve::csg::CSG::generateFaceLoops(const carve::poly::Polyhedron *poly,
     }
 
     // now record all the resulting face loops.
-    for (std::list<std::vector<const carve::poly::Vertex *> >::const_iterator
+    for (std::list<std::vector<const poly_t::vertex_t *> >::const_iterator
            f = face_loops.begin(), fe = face_loops.end();
          f != fe;
          ++f) {

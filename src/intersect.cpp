@@ -337,7 +337,7 @@ carve::csg::CSG_TreeNode *parseAtom(TOK &tok) {
     if (poly == NULL) return NULL;
 
     std::cerr << "loaded polyhedron " << poly << " has "
-              << poly->poly_vertices.size() << " vertices "
+              << poly->vertices.size() << " vertices "
               << poly->faces.size() << " faces "
               << poly->manifold_is_closed.size() << " manifolds (" << std::count(poly->manifold_is_closed.begin(), poly->manifold_is_closed.end(), true) << " closed)" << std::endl;
 

@@ -44,7 +44,7 @@ namespace carve {
       virtual carve::poly::Polyhedron *eval(CSG &csg) {
         bool temp;
         carve::poly::Polyhedron *r = eval(temp, csg);
-        if (!temp) r = r->makeCopy();
+        if (!temp) r = new carve::poly::Polyhedron(*r);
         return r;
       }
     };
@@ -64,7 +64,7 @@ namespace carve {
       virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
         carve::poly::Polyhedron *result = child->eval(is_temp, csg);
         if (!is_temp) {
-          result = result->makeCopy();
+          result = new carve::poly::Polyhedron(*result);
           is_temp = true;
         }
         result->transform(transform);
@@ -105,7 +105,7 @@ namespace carve {
         carve::poly::Polyhedron *c = child->eval(c_temp, csg);
         carve::poly::Polyhedron *result;
         if (!c_temp) {
-          result = c->makeCopy();
+          result = new carve::poly::Polyhedron(*c);
         } else {
           result = c;
         }
@@ -148,7 +148,7 @@ namespace carve {
       virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
         bool c_temp;
         carve::poly::Polyhedron *c = child->eval(c_temp, csg);
-        carve::poly::Polyhedron *result = c->makeCopy(selected_manifolds);
+        carve::poly::Polyhedron *result = new carve::poly::Polyhedron(*c, selected_manifolds);
         if (c_temp) delete c;
         is_temp = true;
         return result;
@@ -217,12 +217,12 @@ namespace carve {
         l = left->eval(l_temp, csg);
         r = right->eval(r_temp, csg);
 
-        if (!l_temp) { l = l->makeCopy(); }
-        if (!r_temp) { r = r->makeCopy(); }
+        if (!l_temp) { l = new carve::poly::Polyhedron(*l); }
+        if (!r_temp) { r = new carve::poly::Polyhedron(*r); }
 
         carve::geom3d::Vector min, max;
-        carve::geom::bounds<3>(l->poly_vertices.begin(),
-                               l->poly_vertices.end(),
+        carve::geom::bounds<3>(l->vertices.begin(),
+                               l->vertices.end(),
                                carve::poly::vec_adapt_vertex_ref(),
                                min,
                                max);

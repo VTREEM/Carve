@@ -42,16 +42,6 @@
 
 #include <time.h>
 
-#if defined(__GNUC__)
-#define __stdcall
-#endif
-
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)(...);
-#else
-  typedef void (__stdcall *GLUTessCallback)();
-#endif
-
 struct TestScene : public Scene {
   GLuint draw_list_base;
   std::vector<bool> draw_flags;

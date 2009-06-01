@@ -31,8 +31,8 @@ void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, float r, float g, fl
 void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool offset = false, bool normal = true, int group = -1);
 void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, float a, bool offset = false, int group = -1);
 
-void drawFace(carve::poly::Face *face, RGBA fc, bool offset);
-void drawColourFace(carve::poly::Face *face, const std::vector<RGBA> &vc, bool offset);
+void drawFace(carve::poly::Face<3> *face, RGBA fc, bool offset);
+void drawColourFace(carve::poly::Face<3> *face, const std::vector<RGBA> &vc, bool offset);
 
 void installDebugHooks();
 void drawCube(const carve::geom3d::Vector &, const carve::geom3d::Vector &);

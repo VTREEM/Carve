@@ -20,16 +20,16 @@
 namespace carve {
   namespace csg {
     template<typename filter_t>
-    void Octree::doFindEdges(const carve::poly::Face &f,
+    void Octree::doFindEdges(const carve::poly::Face<3> &f,
                              Node *node,
-                             std::vector<const carve::poly::Edge *> &out,
+                             std::vector<const carve::poly::Edge<3> *> &out,
                              unsigned depth,
                              filter_t filter) const {
       if (node == NULL) {
         return;
       }
 
-      if (node->aabb.intersects(f.aabb) && node->aabb.intersectsPlane(f.plane_eqn)) {
+      if (node->aabb.intersects(f.aabb) && node->aabb.intersects(f.plane_eqn)) {
         if (node->hasChildren()) {
           for (int i = 0; i < 8; ++i) {
             doFindEdges(f, node->children[i], out, depth + 1, filter);
@@ -43,7 +43,7 @@ namespace carve {
               return;
             }
           }
-          for (std::vector<const carve::poly::Edge*>::const_iterator it = node->edges.begin(), e = node->edges.end(); it != e; ++it) {
+          for (std::vector<const carve::poly::Edge<3>*>::const_iterator it = node->edges.begin(), e = node->edges.end(); it != e; ++it) {
             if ((*it)->tag_once()) {
               if (filter(*it)) {
                 out.push_back(*it);
@@ -55,17 +55,13 @@ namespace carve {
     }
 
     template<typename filter_t>
-    void Octree::findEdgesNear(const carve::poly::Face &f, std::vector<const carve::poly::Edge *> &out, filter_t filter) const {
+    void Octree::findEdgesNear(const carve::poly::Face<3> &f, std::vector<const carve::poly::Edge<3> *> &out, filter_t filter) const {
       tagable::tag_begin();
       doFindEdges(f, root, out, 0, filter);
     }
 
-    inline void Octree::findEdgesNear(const carve::poly::Face &f, std::vector<const carve::poly::Edge *> &out) const {
-      return findEdgesNear(f, out, no_filter());
-    }
-
-    template <typename FUNC>
-    void Octree::doIterate(int level, Node *node, const FUNC &f) const{
+    template <typename func_t>
+    void Octree::doIterate(int level, Node *node, const func_t &f) const{
       f(level, node);
       if (node->hasChildren()) {
         for (int i = 0; i < 8; ++i) {
@@ -74,8 +70,8 @@ namespace carve {
       }
     }
 
-    template <typename FUNC>
-    void Octree::iterateNodes(const FUNC &f) const {
+    template <typename func_t>
+    void Octree::iterateNodes(const func_t &f) const {
       doIterate(0, root, f);
     }
 

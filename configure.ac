@@ -142,6 +142,25 @@ if test x"$have_GL" = xno; then AC_MSG_NOTICE([missing GL]); with_GUI=no; fi
 if test x"$have_GLU" = xno; then AC_MSG_NOTICE([missing GLU]); with_GUI=no; fi
 if test x"$have_glut" = xno; then AC_MSG_NOTICE([missing glut]); with_GUI=no; fi
 
+if test x"$have_GLU" = xyes; then
+  AC_MSG_CHECKING([glu callback prototype])
+  AC_TRY_COMPILE([
+#if defined(__APPLE__)
+#include <OpenGL/glu.h>
+#else
+#include <GL/glu.h>
+#endif
+],[
+  typedef GLvoid (*GLUTessCallback)(...);
+  gluTessCallback((GLUtesselator *)NULL, GLU_TESS_END_DATA, (GLUTessCallback)NULL);
+], [
+  AC_MSG_RESULT([varargs])
+  AC_DEFINE([GLU_TESS_CALLBACK_VARARGS], [], [Define if gluTessCallback callback prototype needs (...).])
+], [
+  AC_MSG_RESULT([no varargs])
+])
+fi
+
 AM_CONDITIONAL(with_GUI, test "x$with_GUI" = "xyes")
 AM_CONDITIONAL(with_BOOST, test "x$with_BOOST" != "xno")
 

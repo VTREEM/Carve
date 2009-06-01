@@ -24,8 +24,8 @@
 #define __stdcall
 #endif
 
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)(...);
+#if defined(GLU_TESS_CALLBACK_VARARGS)
+  typedef GLvoid (__stdcall *GLUTessCallback)(...);
 #else
   typedef void (__stdcall *GLUTessCallback)();
 #endif

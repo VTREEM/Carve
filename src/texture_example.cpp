@@ -51,11 +51,13 @@
 #define __stdcall
 #endif
 
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)();
+#if defined(GLU_TESS_CALLBACK_VARARGS)
+  typedef GLvoid (__stdcall *GLUTessCallback)(...);
 #else
   typedef void (__stdcall *GLUTessCallback)();
 #endif
+
+typedef carve::poly::Polyhedron poly_t;
 
 carve::geom3d::Vector g_translation;
 double g_scale;
@@ -96,7 +98,7 @@ void __stdcall tess_vertex(vt_t *v, bool *is_textured) {
   glVertex3d(v->x, v->y, v->z);
 }
 
-void drawTexturedPolyhedron(carve::poly::Polyhedron *poly,
+void drawTexturedPolyhedron(poly_t *poly,
                             carve::interpolate::FaceVertexAttr<tex_t> &fv_tex,
                             carve::interpolate::FaceAttr<GLuint> &f_tex_num) {
   glEnable(GL_TEXTURE_2D);
@@ -110,7 +112,7 @@ void drawTexturedPolyhedron(carve::poly::Polyhedron *poly,
   gluTessCallback(tess,  GLU_TESS_END, (GLUTessCallback)glEnd);
 
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    poly_t::face_t &f = poly->faces[i];
     std::vector<vt_t> vc(f.vertices.size());
 
     bool textured = true;
@@ -157,12 +159,12 @@ void drawTexturedPolyhedron(carve::poly::Polyhedron *poly,
   glDisable(GL_TEXTURE_2D);
 }
 
-void drawWireframePolyhedron(carve::poly::Polyhedron *poly) {
+void drawWireframePolyhedron(poly_t *poly) {
   glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
   glDisable(GL_LIGHTING);
 
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    poly_t::face_t &f = poly->faces[i];
 
     glBegin(GL_LINE_LOOP);
     for (size_t j = 0; j < f.vertices.size(); ++j) {
@@ -177,31 +179,31 @@ void drawWireframePolyhedron(carve::poly::Polyhedron *poly) {
   glEnable(GL_LIGHTING);
 }
 
-carve::poly::Polyhedron *texturedCube(
+poly_t *texturedCube(
     carve::interpolate::FaceVertexAttr<tex_t> &fv_tex,
     carve::interpolate::FaceAttr<GLuint> &f_tex_num,
     GLuint tex,
     const carve::math::Matrix &transform = carve::math::Matrix::IDENT()) {
 
-  std::vector<carve::poly::Vertex> v;
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(+1.0, +1.0, +1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(-1.0, +1.0, +1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(-1.0, -1.0, +1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(+1.0, -1.0, +1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(+1.0, +1.0, -1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(-1.0, +1.0, -1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(-1.0, -1.0, -1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(+1.0, -1.0, -1.0)));
+  std::vector<poly_t::vertex_t> v;
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(+1.0, +1.0, +1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(-1.0, +1.0, +1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(-1.0, -1.0, +1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(+1.0, -1.0, +1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(+1.0, +1.0, -1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(-1.0, +1.0, -1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(-1.0, -1.0, -1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(+1.0, -1.0, -1.0)));
 
-  std::vector<carve::poly::Face> faces;
+  std::vector<poly_t::face_t> faces;
 
   faces.reserve(6);
-  faces.push_back(carve::poly::Face(&v[0], &v[1], &v[2], &v[3]));
-  faces.push_back(carve::poly::Face(&v[7], &v[6], &v[5], &v[4]));
-  faces.push_back(carve::poly::Face(&v[0], &v[4], &v[5], &v[1]));
-  faces.push_back(carve::poly::Face(&v[1], &v[5], &v[6], &v[2]));
-  faces.push_back(carve::poly::Face(&v[2], &v[6], &v[7], &v[3]));
-  faces.push_back(carve::poly::Face(&v[3], &v[7], &v[4], &v[0]));
+  faces.push_back(poly_t::face_t(&v[0], &v[1], &v[2], &v[3]));
+  faces.push_back(poly_t::face_t(&v[7], &v[6], &v[5], &v[4]));
+  faces.push_back(poly_t::face_t(&v[0], &v[4], &v[5], &v[1]));
+  faces.push_back(poly_t::face_t(&v[1], &v[5], &v[6], &v[2]));
+  faces.push_back(poly_t::face_t(&v[2], &v[6], &v[7], &v[3]));
+  faces.push_back(poly_t::face_t(&v[3], &v[7], &v[4], &v[0]));
 
   for (size_t i = 0; i < 6; ++i) {
     fv_tex.setAttribute(&faces[i], 0, tex_t(0.0f, 1.0f));
@@ -211,7 +213,7 @@ carve::poly::Polyhedron *texturedCube(
     f_tex_num.setAttribute(&faces[i], tex);
   }
 
-  carve::poly::Polyhedron *poly = new carve::poly::Polyhedron(faces);
+  poly_t *poly = new poly_t(faces);
 
   return poly;
 }
@@ -287,19 +289,19 @@ int main(int argc, char **argv) {
 
   carve::interpolate::FaceVertexAttr<tex_t> fv_tex;
   carve::interpolate::FaceAttr<GLuint> f_tex_num;
-  carve::poly::Polyhedron *base = NULL;
+  poly_t *base = NULL;
 
   bool b = true;
   for (int x = -10; x <= +10; x += 5) {
     for (int y = -10; y <= +10; y += 5) {
       for (int z = -10; z <= +10; z += 5) {
         double rot = x * .17 + y * .06 + z * .09;
-        carve::poly::Polyhedron *r = texturedCube(fv_tex, f_tex_num, b ? tex_2 : tex_3,
-                                                  carve::math::Matrix::TRANS(x/2.5, y/2.5, z/2.5) *
-                                                  carve::math::Matrix::ROT(rot, 1,2,3));
+        poly_t *r = texturedCube(fv_tex, f_tex_num, b ? tex_2 : tex_3,
+                                 carve::math::Matrix::TRANS(x/2.5, y/2.5, z/2.5) *
+                                 carve::math::Matrix::ROT(rot, 1,2,3));
         b = !b;
         if (base) {
-          carve::poly::Polyhedron *temp = base;
+          poly_t *temp = base;
           carve::csg::CSG csg;
           fv_tex.installHooks(csg);
           f_tex_num.installHooks(csg);
@@ -314,20 +316,20 @@ int main(int argc, char **argv) {
     }
   }
 
-  carve::poly::Polyhedron *r1 = texturedCube(fv_tex, f_tex_num, tex_1,
-                                             carve::math::Matrix::TRANS(0,0,4) *
-                                             carve::math::Matrix::SCALE(4,4,4));
+  poly_t *r1 = texturedCube(fv_tex, f_tex_num, tex_1,
+                            carve::math::Matrix::TRANS(0,0,4) *
+                            carve::math::Matrix::SCALE(4,4,4));
 
-  carve::poly::Polyhedron *r2 = texturedCube(fv_tex, f_tex_num, tex_1,
-                                             carve::math::Matrix::TRANS(0,0,5) *
-                                             carve::math::Matrix::SCALE(2, 2, 2));
+  poly_t *r2 = texturedCube(fv_tex, f_tex_num, tex_1,
+                            carve::math::Matrix::TRANS(0,0,5) *
+                            carve::math::Matrix::SCALE(2, 2, 2));
 
   carve::csg::CSG csg;
   fv_tex.installHooks(csg);
   f_tex_num.installHooks(csg);
 
-  carve::poly::Polyhedron *r3 = csg.compute(base, r1, carve::csg::CSG::INTERSECTION);
-  carve::poly::Polyhedron *r4 = csg.compute(r3, r2, carve::csg::CSG::UNION);
+  poly_t *r3 = csg.compute(base, r1, carve::csg::CSG::INTERSECTION);
+  poly_t *r4 = csg.compute(r3, r2, carve::csg::CSG::UNION);
   
   glNewList(scene->draw_list_base, GL_COMPILE);
   drawTexturedPolyhedron(r4, fv_tex, f_tex_num);

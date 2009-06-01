@@ -18,14 +18,13 @@
 #pragma once
 
 namespace std {
-  template<>
-  inline void swap(carve::poly::Face &a, carve::poly::Face &b) {
+  template<unsigned ndim>
+  inline void swap(carve::poly::Face<ndim> &a, carve::poly::Face<ndim> &b) {
     std::swap(a.vertices, b.vertices);
     std::swap(a.edges, b.edges);
     std::swap(a.owner, b.owner);
     std::swap(a.aabb, b.aabb);
     std::swap(a.plane_eqn, b.plane_eqn);
-    std::swap(a.centroid, b.centroid);
     std::swap(a.manifold_id, b.manifold_id);
     std::swap(a.project, b.project);
     std::swap(a.unproject, b.unproject);

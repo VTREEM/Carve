@@ -42,16 +42,6 @@
 
 #include <time.h>
 
-#if defined(__GNUC__)
-#define __stdcall
-#endif
-
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)(...);
-#else
-  typedef void (__stdcall *GLUTessCallback)();
-#endif
-
 struct TestScene : public Scene {
   GLuint draw_list_base;
   std::vector<bool> draw_flags;
@@ -91,18 +81,18 @@ struct TestScene : public Scene {
 int main(int argc, char **argv) {
   carve::poly::Polyhedron *a = makeCube(carve::math::Matrix::ROT(1.0, 1.0, 1.0, 1.0));
   
-  std::vector<carve::poly::Vertex> shape;
+  std::vector<carve::poly::Vertex<3> > shape;
 
   for (int i = 0; i < POINTS; ++i) {
     double r = 2.0 + .4 * sin(i * 3 * M_TWOPI / POINTS) + .8 * sin(i * 5 * M_TWOPI / POINTS);
-    shape.push_back(carve::poly::Vertex(carve::geom::VECTOR(r * cos(i * M_TWOPI / POINTS), r * sin(i * M_TWOPI / POINTS), 0.0)));
+    shape.push_back(carve::poly::Vertex<3>(carve::geom::VECTOR(r * cos(i * M_TWOPI / POINTS), r * sin(i * M_TWOPI / POINTS), 0.0)));
   }
-  std::vector<const carve::poly::Vertex *> face_verts;
+  std::vector<const carve::poly::Vertex<3> *> face_verts;
   for (int i = 0; i < POINTS; ++i) {
     face_verts.push_back(&shape[i]);
   }
-  std::vector<carve::poly::Face> faces;
-  faces.push_back(carve::poly::Face(face_verts));
+  std::vector<carve::poly::Face<3> > faces;
+  faces.push_back(carve::poly::Face<3>(face_verts));
 
   carve::poly::Polyhedron *b = new carve::poly::Polyhedron(faces);
 

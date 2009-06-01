@@ -19,21 +19,5 @@
 
 namespace carve {
   namespace poly {
-
-
-
-    inline Edge::Edge(const Vertex *_v1,
-                      const Vertex *_v2,
-                      const Polyhedron *_owner) :
-        tagable(), v1(_v1), v2(_v2), owner(_owner) {
-    }
-
-
-
-    inline Edge::~Edge() {
-    }
-
-
-
   }
 }

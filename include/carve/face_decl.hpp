@@ -35,31 +35,43 @@ namespace carve {
 
 
 
-    struct Polyhedron;
+    struct Object;
+
+    template<unsigned ndim>
     class Edge;
 
 
 
+    template<unsigned ndim>
     class Face : public tagable {
     public:
-      std::vector<const Vertex *> vertices; // pointer into polyhedron.vertices
-      std::vector<const Edge *> edges; // pointer into polyhedron.edges
+      typedef Vertex<ndim> vertex_t;
+      typedef typename Vertex<ndim>::vector_t vector_t;
+      typedef Edge<ndim> edge_t;
+      typedef Object obj_t;
+      typedef carve::geom::aabb<ndim> aabb_t;
+      typedef carve::geom::plane<ndim> plane_t;
 
-      Polyhedron *owner;
+      typedef carve::geom2d::P2 (*project_t)(const vector_t &);
+      typedef vector_t (*unproject_t)(const carve::geom2d::P2 &, const plane_t &);
 
-      carve::geom3d::AABB aabb;
-      carve::geom3d::Plane plane_eqn;
-      carve::geom3d::Vector centroid;
+      std::vector<const vertex_t *> vertices; // pointer into polyhedron.vertices
+      std::vector<const edge_t *> edges; // pointer into polyhedron.edges
+
+      obj_t *owner;
+
+      aabb_t aabb;
+      plane_t plane_eqn;
       int manifold_id;
 
-      carve::geom2d::P2 (*project)(const carve::geom3d::Vector &);
-      carve::geom3d::Vector (*unproject)(const carve::geom2d::P2 &, const carve::geom3d::Plane &);
+      project_t project;
+      unproject_t unproject;
 
-      Face(const std::vector<const Vertex *> &_vertices, bool delay_recalc = false);
-      Face(const Vertex *v1, const Vertex *v2, const Vertex *v3, bool delay_recalc = false);
-      Face(const Vertex *v1, const Vertex *v2, const Vertex *v3, const Vertex *v4, bool delay_recalc = false);
+      Face(const std::vector<const vertex_t *> &_vertices, bool delay_recalc = false);
+      Face(const vertex_t *v1, const vertex_t *v2, const vertex_t *v3, bool delay_recalc = false);
+      Face(const vertex_t *v1, const vertex_t *v2, const vertex_t *v3, const vertex_t *v4, bool delay_recalc = false);
 
-      Face(const Face *base, const std::vector<const Vertex *> &_vertices, bool flipped) {
+      Face(const Face *base, const std::vector<const vertex_t *> &_vertices, bool flipped) {
         init(base, _vertices, flipped);
       }
 
@@ -68,8 +80,8 @@ namespace carve {
 
       bool recalc();
 
-      Face *init(const Face *base, const std::vector<const Vertex *> &_vertices, bool flipped);
-      Face *create(const std::vector<const Vertex *> &_vertices, bool flipped) const {
+      Face *init(const Face *base, const std::vector<const vertex_t *> &_vertices, bool flipped);
+      Face *create(const std::vector<const vertex_t *> &_vertices, bool flipped) const {
         return (new Face)->init(this, _vertices, flipped);
       }
       Face *clone() const {
@@ -77,25 +89,26 @@ namespace carve {
       }
       void invert();
 
-      bool containsPoint(const carve::geom3d::Vector &p) const;
-      bool simpleLineSegmentIntersection(const carve::geom3d::LineSegment &line,
-                                         carve::geom3d::Vector &intersection) const;
-      IntersectionClass lineSegmentIntersection(const carve::geom3d::LineSegment &line,
-                                                carve::geom3d::Vector &intersection) const;
-
-    };
-
-
-
-    struct hash_face_ptr {
-      size_t operator()(const Face * const &f) const {
-        return (size_t)f;
+      bool containsPoint(const vector_t &p) const;
+      bool simpleLineSegmentIntersection(const carve::geom::linesegment<ndim> &line,
+                                         vector_t &intersection) const;
+      IntersectionClass lineSegmentIntersection(const carve::geom::linesegment<ndim> &line,
+                                                vector_t &intersection) const;
+      vector_t centroid() const {
+        vector_t c;
+        carve::geom::centroid(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr(), c);
+        return c;
       }
     };
 
 
 
-    typedef std::vector<Face *> FacePtrVector;
+    struct hash_face_ptr {
+      template<unsigned ndim>
+      size_t operator()(const Face<ndim> * const &f) const {
+        return (size_t)f;
+      }
+    };
 
 
 
@@ -103,25 +116,29 @@ namespace carve {
 
 
 
-      static inline carve::geom2d::P2 project(const Face *f, const carve::geom3d::Vector &v) {
+      template<unsigned ndim>
+      static inline carve::geom2d::P2 project(const Face<ndim> *f, const typename Face<ndim>::vector_t &v) {
         return f->project(v);
       }
 
 
 
-      static inline carve::geom2d::P2 project(const Face &f, const carve::geom3d::Vector &v) {
+      template<unsigned ndim>
+      static inline carve::geom2d::P2 project(const Face<ndim> &f, const typename Face<ndim>::vector_t &v) {
         return f.project(v);
       }
 
 
 
-      static inline carve::geom3d::Vector unproject(const Face *f, const carve::geom2d::P2 &p) {
+      template<unsigned ndim>
+      static inline typename Face<ndim>::vector_t unproject(const Face<ndim> *f, const carve::geom2d::P2 &p) {
         return f->unproject(p, f->plane_eqn);
       }
 
 
 
-      static inline carve::geom3d::Vector unproject(const Face &f, const carve::geom2d::P2 &p) {
+      template<unsigned ndim>
+      static inline typename Face<ndim>::vector_t unproject(const Face<ndim> &f, const carve::geom2d::P2 &p) {
         return f.unproject(p, f.plane_eqn);
       }
 
@@ -131,14 +148,15 @@ namespace carve {
 
 
 
+    template<unsigned ndim>
     struct p2_adapt_project {
-      typedef carve::geom2d::P2 (*proj_t)(const carve::geom3d::Vector &);
+      typedef carve::geom2d::P2 (*proj_t)(const carve::geom::vector<ndim> &);
       proj_t proj;
       p2_adapt_project(proj_t _proj) : proj(_proj) { }
-      carve::geom2d::P2 operator()(const carve::geom3d::Vector &v) const { return proj(v); }
-      carve::geom2d::P2 operator()(const carve::geom3d::Vector *v) const { return proj(*v); }
-      carve::geom2d::P2 operator()(const Vertex &v) const { return proj(v.v); }
-      carve::geom2d::P2 operator()(const Vertex *v) const { return proj(v->v); }
+      carve::geom2d::P2 operator()(const carve::geom::vector<ndim> &v) const { return proj(v); }
+      carve::geom2d::P2 operator()(const carve::geom::vector<ndim> *v) const { return proj(*v); }
+      carve::geom2d::P2 operator()(const Vertex<ndim> &v) const { return proj(v.v); }
+      carve::geom2d::P2 operator()(const Vertex<ndim> *v) const { return proj(v->v); }
     };
 
 

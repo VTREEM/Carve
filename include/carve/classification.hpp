@@ -111,7 +111,7 @@ namespace carve {
 
     typedef std::unordered_map<V2, EC2, carve::poly::hash_vertex_ptr> EdgeClassification;
 
-    typedef std::unordered_map<const carve::poly::Vertex *, PC2, carve::poly::hash_vertex_ptr> VertexClassification;
+    typedef std::unordered_map<const carve::poly::Vertex<3> *, PC2, carve::poly::hash_vertex_ptr> VertexClassification;
 
   }
 }

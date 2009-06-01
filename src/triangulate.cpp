@@ -115,7 +115,7 @@ carve::poly::Polyhedron *readModel(const std::string &file) {
   if (poly == NULL) return NULL;
 
   std::cerr << "loaded polyhedron " << poly << " has "
-    << poly->poly_vertices.size() << " vertices "
+    << poly->vertices.size() << " vertices "
     << poly->faces.size() << " faces "
     << poly->manifold_is_closed.size() << " manifolds (" << std::count(poly->manifold_is_closed.begin(), poly->manifold_is_closed.end(), true) << " closed)" << std::endl;
 
@@ -131,20 +131,20 @@ int main(int argc, char **argv) {
 
   carve::poly::Polyhedron *poly = readModel(options.file);
 
-  std::vector<carve::poly::Vertex> out_vertices = poly->poly_vertices;
-  std::vector<carve::poly::Face> out_faces;
+  std::vector<carve::poly::Vertex<3> > out_vertices = poly->vertices;
+  std::vector<carve::poly::Face<3> > out_faces;
 
   size_t N = 0;
   for (size_t i = 0; i < poly->faces.size(); ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    carve::poly::Face<3> &f = poly->faces[i];
     N += f.vertices.size() - 2;
   }
   out_faces.reserve(N);
 
   for (size_t i = 0; i < poly->faces.size(); ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    carve::poly::Face<3> &f = poly->faces[i];
     if (f.vertices.size() == 3) {
-      out_faces.push_back(carve::poly::Face(
+      out_faces.push_back(carve::poly::Face<3>(
             &out_vertices[poly->vertexToIndex_fast(f.vertices[0])],
             &out_vertices[poly->vertexToIndex_fast(f.vertices[1])],
             &out_vertices[poly->vertexToIndex_fast(f.vertices[2])]
@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
         if (result[j].a < result[j].b) pairs[std::make_pair(result[j].a, result[j].b)]++; else pairs[std::make_pair(result[j].b, result[j].a)]--;
         if (result[j].b < result[j].c) pairs[std::make_pair(result[j].b, result[j].c)]++; else pairs[std::make_pair(result[j].c, result[j].b)]--;
         if (result[j].c < result[j].a) pairs[std::make_pair(result[j].c, result[j].a)]++; else pairs[std::make_pair(result[j].a, result[j].c)]--;
-        out_faces.push_back(carve::poly::Face(
+        out_faces.push_back(carve::poly::Face<3>(
               &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].a])],
               &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].b])],
               &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].c])]

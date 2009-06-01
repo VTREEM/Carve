@@ -150,13 +150,6 @@ namespace carve {
         fit(a, b);
       }
 
-      bool intersects(const aabb<ndim> &other) const {
-        for (unsigned i = 0; i < ndim; ++i) {
-          if (fabs(other.pos.v[i] - pos.v[i]) > (extent.v[i] + other.extent.v[i])) return false;
-        }
-        return true;
-      }
- 
       bool completelyContains(const aabb<ndim> &other) const {
         for (unsigned i = 0; i < ndim; ++i) {
           if (fabs(other.pos.v[i] - pos.v[i] + other.extent.v[i]) > extent.v[i]) return false;
@@ -171,22 +164,36 @@ namespace carve {
         return true;
       }
 
-      bool intersectsSphere(const vector_t &v, double d) const {
+      bool intersectsLineSegment(const vector_t &v1, const vector_t &v2) const;
+
+      bool intersects(const aabb<ndim> &other) const {
+        for (unsigned i = 0; i < ndim; ++i) {
+          if (fabs(other.pos.v[i] - pos.v[i]) > (extent.v[i] + other.extent.v[i])) return false;
+        }
+        return true;
+      }
+ 
+      bool intersects(const sphere<ndim> &s) const {
         double r = 0.0;
         for (unsigned i = 0; i < ndim; ++i) {
-          double t = fabs(v[i] - pos[i]) - extent[i]; if (t > 0.0) r += t*t;
+          double t = fabs(s.C[i] - pos[i]) - extent[i]; if (t > 0.0) r += t*t;
         }
-        return r <= d*d;
+        return r <= s.r*s.r;
       }
 
-      bool intersectsPlane(const plane<ndim> &plane) const {
+      bool intersects(const plane<ndim> &plane) const {
         double d1 = fabs(distance(plane, pos));
         double d2 = dot(abs(plane.N), extent);
         return d1 <= d2;
       }
 
-      bool intersectsRay(const ray<ndim> &ray) const;
-      bool intersectsLineSegment(const vector_t &v1, const vector_t &v2) const;
+      bool intersects(const ray<ndim> &ray) const;
+
+      bool intersects(tri<ndim> tri) const;
+
+      bool intersects(const linesegment<ndim> &ls) const {
+        return intersectsLineSegment(ls.v1, ls.v2);
+      }
 
       vector_t min() const { return pos - extent; }
       vector_t max() const { return pos + extent; }
@@ -233,7 +240,7 @@ namespace carve {
     }
 
     template<>
-    inline bool aabb<3>::intersectsRay(const ray<3> &ray) const {
+    inline bool aabb<3>::intersects(const ray<3> &ray) const {
       vector<3> t = pos - ray.v;
       vector<3> v;
       double r;
@@ -283,6 +290,59 @@ namespace carve {
 
       return true;
     }
+
+    template<int Ax, int Ay, int Az, int c>
+    static inline bool intersectsTriangle_axisTest_3(const aabb<3> &aabb, const tri<3> &tri) {
+      const int d = (c+1) % 3, e = (c+2) % 3;
+      const vector<3> a = cross(VECTOR(Ax, Ay, Az), tri.v[d] - tri.v[c]);
+      double p1 = dot(a, tri.v[c]), p2 = dot(a, tri.v[e]);
+      if (p1 > p2) std::swap(p1, p2);
+      const double r = dot(abs(a), aabb.extent);
+      return !(p1 > r || p2 < -r);
+    }
+
+    template<int c>
+    static inline bool intersectsTriangle_axisTest_2(const aabb<3> &aabb, const tri<3> &tri) {
+      double vmin = std::min(std::min(tri.v[0][c], tri.v[1][c]), tri.v[2][c]),
+             vmax = std::max(std::max(tri.v[0][c], tri.v[1][c]), tri.v[2][c]);
+      return !(vmin > aabb.extent[c] || vmax < -aabb.extent[c]);
+    }
+
+    static inline bool intersectsTriangle_axisTest_1(const aabb<3> &aabb, const tri<3> &tri) {
+      vector<3> n = cross(tri.v[1] - tri.v[0], tri.v[2] - tri.v[0]);
+      double d1 = fabs(dot(n, tri.v[0]));
+      double d2 = dot(abs(n), aabb.extent);
+      return d1 <= d2;
+    }
+
+    template<>
+    inline bool aabb<3>::intersects(tri<3> tri) const {
+      tri.v[0] -= pos;
+      tri.v[1] -= pos;
+      tri.v[2] -= pos;
+
+      if (!intersectsTriangle_axisTest_2<0>(*this, tri)) return false;
+      if (!intersectsTriangle_axisTest_2<1>(*this, tri)) return false;
+      if (!intersectsTriangle_axisTest_2<2>(*this, tri)) return false;
+
+      if (!intersectsTriangle_axisTest_3<1,0,0,0>(*this, tri)) return false;
+      if (!intersectsTriangle_axisTest_3<1,0,0,1>(*this, tri)) return false;
+      if (!intersectsTriangle_axisTest_3<1,0,0,2>(*this, tri)) return false;
+                                                          
+      if (!intersectsTriangle_axisTest_3<0,1,0,0>(*this, tri)) return false;
+      if (!intersectsTriangle_axisTest_3<0,1,0,1>(*this, tri)) return false;
+      if (!intersectsTriangle_axisTest_3<0,1,0,2>(*this, tri)) return false;
+                                                          
+      if (!intersectsTriangle_axisTest_3<0,0,1,0>(*this, tri)) return false;
+      if (!intersectsTriangle_axisTest_3<0,0,1,1>(*this, tri)) return false;
+      if (!intersectsTriangle_axisTest_3<0,0,1,2>(*this, tri)) return false;
+
+      if (!intersectsTriangle_axisTest_1(*this, tri)) return false;
+
+      return true;
+    }
+
+
   }
 }
 

@@ -41,18 +41,6 @@
 
 #include <time.h>
 
-#if defined(__GNUC__)
-#define __stdcall
-#endif
-
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)(...);
-#else
-  typedef void (__stdcall *GLUTessCallback)();
-#endif
-
-
-
 struct Options : public opt::Parser {
   bool wireframe;
   bool normal;

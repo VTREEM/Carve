@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
   {
     carve::line::PolylineSet intersection_graph;
     intersection_graph.vertices.resize(edge_graph.size());
-    std::map<const carve::poly::Vertex *, size_t> vmap;
+    std::map<const carve::poly::Vertex<3> *, size_t> vmap;
 
     size_t j = 0;
     for (carve::csg::VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
@@ -164,11 +164,11 @@ int main(int argc, char **argv) {
 
     while (edge_graph.size()) {
       carve::csg::VVSMap::iterator prior_i = edge_graph.begin();
-      const carve::poly::Vertex *prior = (*prior_i).first;
+      const carve::poly::Vertex<3> *prior = (*prior_i).first;
       std::vector<size_t> connected;
       connected.push_back(vmap[prior]);
       while (prior_i != edge_graph.end() && (*prior_i).second.size()) {
-        const carve::poly::Vertex *next = *(*prior_i).second.begin();
+        const carve::poly::Vertex<3> *next = *(*prior_i).second.begin();
         carve::csg::VVSMap::iterator next_i = edge_graph.find(next);
         assert(next_i != edge_graph.end());
         connected.push_back(vmap[next]);

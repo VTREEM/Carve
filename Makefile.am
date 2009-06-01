@@ -1,13 +1,12 @@
 ACLOCAL_AMFLAGS=-I m4
 SUBDIRS=lib include external src
-EXTRA_DIST=win32/Intersect/Intersect.vcproj win32/Intersect.sln	\
-	win32/IntersectCommon/IntersectCommon.vcproj		\
-	win32/view/view.vcproj data/aabb.test data/conedown.dxf	\
-	data/coneup.dxf data/cube.dxf data/cylinderx.dxf	\
-	data/cylindery.dxf data/cylinderz.dxf data/odd_cube.dtm	\
-	data/odd_cube.str data/sphere.dxf data/testrelease.bat	\
-	data/testdebug.bat 3rd_party/glut36/gl/glut.h		\
-	3rd_party/glut36/glut.dll 3rd_party/glut36/glut.lib	\
-	3rd_party/glut36/glut32.dll 3rd_party/glut36/glut32.lib	\
-	3rd_party/glut36/README.win
+EXTRA_DIST= win32/Carve.sln win32/carvelib/carvelib.vcproj		\
+	win32/glew/glew.vcproj win32/gloop/gloop.vcproj			\
+	win32/glui/glui.vcproj win32/intersect/intersect.vcproj		\
+	win32/texture_example/texture_example.vcproj			\
+	win32/view/view.vcproj data/coneup.ply data/cylinderx.ply	\
+	data/cylindery.ply data/cylinderz.ply data/ico.ply		\
+	data/ico5.ply data/shells.ply data/sphere.ply			\
+	data/sphere_one_point_moved.ply m4/ax_boost.m4			\
+	m4/ax_boost_base.m4
 

@@ -44,18 +44,10 @@
 
 #include <time.h>
 
-#if defined(__GNUC__)
-#define __stdcall
-#endif
-
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)(...);
-#else
-  typedef void (__stdcall *GLUTessCallback)();
-#endif
-
 #include "rgb.hpp"
 #include "geometry.hpp"
+
+typedef carve::poly::Polyhedron poly_t;
 
 static inline void glVertex(const carve::geom3d::Vector &v) {
   glVertex3f(g_scale * (v.x + g_translation.x),
@@ -69,7 +61,7 @@ static inline void glColor(const RGBA &c) {
 
 carve::interpolate::FaceVertexAttr<RGBA> fv_colours;
 
-void drawColourPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, float a, bool offset) {
+void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a, bool offset) {
   if (offset) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(0.5, 0.5);
@@ -83,7 +75,7 @@ void drawColourPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glBegin(GL_TRIANGLES);
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    poly_t::face_t &f = poly->faces[i];
     if (f.vertices.size() == 3) {
       glNormal3dv(f.plane_eqn.N.v);
       glColor(fv_colours.getAttribute(&f, 0, cdefault));
@@ -100,7 +92,7 @@ void drawColourPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float
   }
 
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    poly_t::face_t &f = poly->faces[i];
     if (f.vertices.size() != 3) {
       vc.resize(f.vertices.size());
       for (size_t j = 0; j < f.vertices.size(); ++j) {
@@ -111,58 +103,58 @@ void drawColourPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float
   }
 }
 
-carve::poly::Polyhedron *colourCube(const carve::math::Matrix &transform = carve::math::Matrix::IDENT()) {
-  std::vector<carve::poly::Vertex> v;
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(+1.0, +1.0, +1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(-1.0, +1.0, +1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(-1.0, -1.0, +1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(+1.0, -1.0, +1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(+1.0, +1.0, -1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(-1.0, +1.0, -1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(-1.0, -1.0, -1.0)));
-  v.push_back(carve::poly::Vertex(transform * carve::geom::VECTOR(+1.0, -1.0, -1.0)));
+poly_t *colourCube(const carve::math::Matrix &transform = carve::math::Matrix::IDENT()) {
+  std::vector<poly_t::vertex_t> v;
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(+1.0, +1.0, +1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(-1.0, +1.0, +1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(-1.0, -1.0, +1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(+1.0, -1.0, +1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(+1.0, +1.0, -1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(-1.0, +1.0, -1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(-1.0, -1.0, -1.0)));
+  v.push_back(poly_t::vertex_t(transform * carve::geom::VECTOR(+1.0, -1.0, -1.0)));
 
-  std::vector<carve::poly::Face> faces;
+  std::vector<poly_t::face_t> faces;
   faces.reserve(6);
 
-  faces.push_back(carve::poly::Face(&v[0], &v[1], &v[2], &v[3]));
+  faces.push_back(poly_t::face_t(&v[0], &v[1], &v[2], &v[3]));
   fv_colours.setAttribute(&faces[0], 0, RGBA(0,0,1));
   fv_colours.setAttribute(&faces[0], 1, RGBA(0,0,0));
   fv_colours.setAttribute(&faces[0], 2, RGBA(0,1,1));
   fv_colours.setAttribute(&faces[0], 3, RGBA(1,0,1));
 
-  faces.push_back(carve::poly::Face(&v[7], &v[6], &v[5], &v[4]));
+  faces.push_back(poly_t::face_t(&v[7], &v[6], &v[5], &v[4]));
   fv_colours.setAttribute(&faces[1], 0, RGBA(0,1,0));
   fv_colours.setAttribute(&faces[1], 1, RGBA(0,1,1));
   fv_colours.setAttribute(&faces[1], 2, RGBA(0,0,0));
   fv_colours.setAttribute(&faces[1], 3, RGBA(1,1,0));
 
-  faces.push_back(carve::poly::Face(&v[0], &v[4], &v[5], &v[1]));
+  faces.push_back(poly_t::face_t(&v[0], &v[4], &v[5], &v[1]));
   fv_colours.setAttribute(&faces[2], 0, RGBA(0,1,1));
   fv_colours.setAttribute(&faces[2], 1, RGBA(0,1,0));
   fv_colours.setAttribute(&faces[2], 2, RGBA(0,0,1));
   fv_colours.setAttribute(&faces[2], 3, RGBA(1,1,1));
 
-  faces.push_back(carve::poly::Face(&v[1], &v[5], &v[6], &v[2]));
+  faces.push_back(poly_t::face_t(&v[1], &v[5], &v[6], &v[2]));
   fv_colours.setAttribute(&faces[3], 0, RGBA(1,0,0));
   fv_colours.setAttribute(&faces[3], 1, RGBA(1,0,1));
   fv_colours.setAttribute(&faces[3], 2, RGBA(1,1,0));
   fv_colours.setAttribute(&faces[3], 3, RGBA(0,0,0));
 
-  faces.push_back(carve::poly::Face(&v[2], &v[6], &v[7], &v[3]));
+  faces.push_back(poly_t::face_t(&v[2], &v[6], &v[7], &v[3]));
   fv_colours.setAttribute(&faces[4], 0, RGBA(1,0,1));
   fv_colours.setAttribute(&faces[4], 1, RGBA(1,0,0));
   fv_colours.setAttribute(&faces[4], 2, RGBA(1,1,1));
   fv_colours.setAttribute(&faces[4], 3, RGBA(0,0,1));
 
-  faces.push_back(carve::poly::Face(&v[3], &v[7], &v[4], &v[0]));
+  faces.push_back(poly_t::face_t(&v[3], &v[7], &v[4], &v[0]));
   fv_colours.setAttribute(&faces[5], 0, RGBA(1,1,0));
   fv_colours.setAttribute(&faces[5], 1, RGBA(1,1,1));
   fv_colours.setAttribute(&faces[5], 2, RGBA(1,0,0));
   fv_colours.setAttribute(&faces[5], 3, RGBA(0,1,0));
 
 
-  return new carve::poly::Polyhedron(faces);
+  return new poly_t(faces);
 }
 
 struct TestScene : public Scene {
@@ -207,11 +199,11 @@ int main(int argc, char **argv) {
   g_scale = 10.0;
 
   glNewList(scene->draw_list_base, GL_COMPILE);
-  carve::poly::Polyhedron *a = colourCube(carve::math::Matrix::ROT(.4, .2, .3, .4));
-  carve::poly::Polyhedron *b = makeTorus(20, 20, .9, .5);
+  poly_t *a = colourCube(carve::math::Matrix::ROT(.4, .2, .3, .4));
+  poly_t *b = makeTorus(20, 20, .9, .5);
   carve::csg::CSG csg;
   fv_colours.installHooks(csg);
-  carve::poly::Polyhedron *c = csg.compute(a, b, carve::csg::CSG::A_MINUS_B);
+  poly_t *c = csg.compute(a, b, carve::csg::CSG::A_MINUS_B);
   glEndList();
 
   glNewList(scene->draw_list_base + 1, GL_COMPILE);

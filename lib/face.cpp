@@ -77,16 +77,51 @@ namespace carve {
       return carve::geom::VECTOR(p.x, p.y, CALC_Z(plane_eqn, p.x, p.y));
     }
 
-    Face::Face(const std::vector<const carve::poly::Vertex *> &_vertices,
-               bool delay_recalc) : tagable() {
+    static carve::geom2d::P2 (*project_tab[2][3])(const carve::geom3d::Vector &) = {
+      { &_project_1, &_project_2, &_project_3 },
+      { &_project_4, &_project_5, &_project_6 }
+    };
+
+    static carve::geom3d::Vector (*unproject_tab[2][3])(const carve::geom2d::P2 &, const carve::geom3d::Plane &) = {
+      { &_unproject_1, &_unproject_2, &_unproject_3 },
+      { &_unproject_4, &_unproject_5, &_unproject_6 }
+    };
+
+    // only implemented for 3d.
+    template<unsigned ndim>
+    typename Face<ndim>::project_t getProjector(bool positive_facing, int axis) {
+      return NULL;
+    }
+
+    template<>
+    Face<3>::project_t getProjector<3>(bool positive_facing, int axis) {
+      return project_tab[positive_facing ? 1 : 0][axis];
+    }
+
+    template<unsigned ndim>
+    typename Face<ndim>::unproject_t getUnprojector(bool positive_facing, int axis) {
+      return NULL;
+    }
+
+    template<>
+    Face<3>::unproject_t getUnprojector<3>(bool positive_facing, int axis) {
+      return unproject_tab[positive_facing ? 1 : 0][axis];
+    }
+
+
+
+    template<unsigned ndim>
+    Face<ndim>::Face(const std::vector<const vertex_t *> &_vertices,
+                     bool delay_recalc) : tagable() {
       vertices = _vertices;
       if (!delay_recalc && !recalc()) { }
     }
 
-    Face::Face(const carve::poly::Vertex *a,
-               const carve::poly::Vertex *b,
-               const carve::poly::Vertex *c,
-               bool delay_recalc) : tagable() {
+    template<unsigned ndim>
+    Face<ndim>::Face(const vertex_t *a,
+                     const vertex_t *b,
+                     const vertex_t *c,
+                     bool delay_recalc) : tagable() {
       vertices.reserve(3);
       vertices.push_back(a);
       vertices.push_back(b);
@@ -94,11 +129,12 @@ namespace carve {
       if (!delay_recalc && !recalc()) { }
     }
 
-    Face::Face(const carve::poly::Vertex *a,
-               const carve::poly::Vertex *b,
-               const carve::poly::Vertex *c,
-               const carve::poly::Vertex *d,
-               bool delay_recalc) : tagable() {
+    template<unsigned ndim>
+    Face<ndim>::Face(const vertex_t *a,
+                     const vertex_t *b,
+                     const vertex_t *c,
+                     const vertex_t *d,
+                     bool delay_recalc) : tagable() {
       vertices.reserve(4);
       vertices.push_back(a);
       vertices.push_back(b);
@@ -107,16 +143,8 @@ namespace carve {
       if (!delay_recalc && !recalc()) { }
     }
 
-    static carve::geom2d::P2 (*project_tab[2][3])(const carve::geom3d::Vector &) = {
-      { &_project_1, &_project_2, &_project_3 },
-      { &_project_4, &_project_5, &_project_6 }
-    };
-    static carve::geom3d::Vector (*unproject_tab[2][3])(const carve::geom2d::P2 &, const carve::geom3d::Plane &) = {
-      { &_unproject_1, &_unproject_2, &_unproject_3 },
-      { &_unproject_4, &_unproject_5, &_unproject_6 }
-    };
-
-    void Face::invert() {
+    template<unsigned ndim>
+    void Face<ndim>::invert() {
       size_t n_verts = vertices.size();
       for (size_t i = 0; i < n_verts / 2; ++i) std::swap(vertices[i], vertices[n_verts - 1 - i]);
 
@@ -126,72 +154,75 @@ namespace carve {
 
         int da = carve::geom::dominantAxis(plane_eqn.N);
 
-        project = project_tab[plane_eqn.N.v[da] > 0][da];
-        unproject = unproject_tab[plane_eqn.N.v[da] > 0][da];
+        project = getProjector<ndim>(plane_eqn.N.v[da] > 0, da);
+        unproject = getUnprojector<ndim>(plane_eqn.N.v[da] > 0, da);
       }
 
       if (edges.size() == n_verts) {
         for (size_t i = 0; i < (n_verts - 1) / 2; ++i) std::swap(edges[i], edges[n_verts - 2 - i]);
         for (size_t i = 0; i < n_verts; i++) {
-          const carve::poly::Vertex *v1 = vertices[i];
-          const carve::poly::Vertex *v2 = vertices[(i+1) % n_verts];
+          const vertex_t *v1 = vertices[i];
+          const vertex_t *v2 = vertices[(i+1) % n_verts];
           ASSERT((edges[i]->v1 == v1 && edges[i]->v2 == v2) || (edges[i]->v1 == v2 && edges[i]->v2 == v1));
         }
       }
     }
 
-    bool Face::recalc() {
+    template<unsigned ndim>
+    bool Face<ndim>::recalc() {
       aabb.fit(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr());
 
-      if (!carve::geom3d::fitPlane(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr(), centroid, plane_eqn)) {
+      if (!carve::geom3d::fitPlane(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr(), plane_eqn)) {
         return false;
       }
 
       int da = carve::geom::dominantAxis(plane_eqn.N);
-      project = project_tab[0][da];
+      project = getProjector<ndim>(false, da);
 
-      double A = carve::geom2d::signedArea(vertices, p2_adapt_project(project));
+      double A = carve::geom2d::signedArea(vertices, p2_adapt_project<ndim>(project));
       if ((A < 0.0) ^ (plane_eqn.N.v[da] < 0.0)) {
         plane_eqn.negate();
       }
 
-      project = project_tab[plane_eqn.N.v[da] > 0][da];
-      unproject = unproject_tab[plane_eqn.N.v[da] > 0][da];
+      project = getProjector<ndim>(plane_eqn.N.v[da] > 0, da);
+      unproject = getUnprojector<ndim>(plane_eqn.N.v[da] > 0, da);
 
       return true;
     }
 
-    Face *Face::init(const Face *base, const std::vector<const carve::poly::Vertex *> &_vertices, bool flipped) {
+    template<unsigned ndim>
+    Face<ndim> *Face<ndim>::init(const Face *base, const std::vector<const vertex_t *> &_vertices, bool flipped) {
       vertices.reserve(_vertices.size());
 
       if (flipped) {
-        std::copy(_vertices.rbegin(), _vertices.rend(), std::back_insert_iterator<std::vector<const carve::poly::Vertex *> >(vertices));
+        std::copy(_vertices.rbegin(), _vertices.rend(), std::back_insert_iterator<std::vector<const vertex_t *> >(vertices));
         plane_eqn = -base->plane_eqn;
       } else {
-        std::copy(_vertices.begin(), _vertices.end(), std::back_insert_iterator<std::vector<const carve::poly::Vertex *> >(vertices));
+        std::copy(_vertices.begin(), _vertices.end(), std::back_insert_iterator<std::vector<const vertex_t *> >(vertices));
         plane_eqn = base->plane_eqn;
       }
 
       aabb.fit(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr());
-      carve::geom::centroid(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr(), centroid);
       untag();
 
       int da = carve::geom::dominantAxis(plane_eqn.N);
 
-      project = project_tab[plane_eqn.N.v[da] > 0][da];
-      unproject = unproject_tab[plane_eqn.N.v[da] > 0][da];
+      project = getProjector<ndim>(plane_eqn.N.v[da] > 0, da);
+      unproject = getUnprojector<ndim>(plane_eqn.N.v[da] > 0, da);
 
       return this;
     }
 
-    bool Face::containsPoint(const carve::geom3d::Vector &p) const {
+    template<unsigned ndim>
+    bool Face<ndim>::containsPoint(const vector_t &p) const {
       if (!carve::math::ZERO(carve::geom::distance(plane_eqn, p))) return false;
       // return pointInPolySimple(vertices, p2_adapt_project(project), (this->*project)(p));
-      return carve::geom2d::pointInPoly(vertices, p2_adapt_project(project), face::project(this, p)).iclass != POINT_OUT;
+      return carve::geom2d::pointInPoly(vertices, p2_adapt_project<ndim>(project), face::project(this, p)).iclass != POINT_OUT;
     }
 
-    bool Face::simpleLineSegmentIntersection(const carve::geom3d::LineSegment &line,
-                                             carve::geom3d::Vector &intersection) const {
+    template<unsigned ndim>
+    bool Face<ndim>::simpleLineSegmentIntersection(const carve::geom::linesegment<ndim> &line,
+                                                   vector_t &intersection) const {
       if (!line.OK()) return false;
 
       carve::geom3d::Vector p;
@@ -203,7 +234,7 @@ namespace carve {
       }
 
       carve::geom2d::P2 proj_p(face::project(this, p));
-      if (carve::geom2d::pointInPolySimple(vertices, p2_adapt_project(project), proj_p)) {
+      if (carve::geom2d::pointInPolySimple(vertices, p2_adapt_project<ndim>(project), proj_p)) {
         intersection = p;
         return true;
       }
@@ -213,8 +244,9 @@ namespace carve {
     // XXX: should try to return a pre-existing vertex in the case of a
     // line-vertex intersection.  as it stands, this code isn't used,
     // so... meh.
-    IntersectionClass Face::lineSegmentIntersection(const carve::geom3d::LineSegment &line,
-                                                    carve::geom3d::Vector &intersection) const {
+    template<unsigned ndim>
+    IntersectionClass Face<ndim>::lineSegmentIntersection(const carve::geom::linesegment<ndim> &line,
+                                                          vector_t &intersection) const {
       if (!line.OK()) return INTERSECT_NONE;
 
   
@@ -227,7 +259,8 @@ namespace carve {
       }
 
       carve::geom2d::P2 proj_p(face::project(this, p));
-      carve::geom2d::PolyInclusionInfo pi = carve::geom2d::pointInPoly(vertices, p2_adapt_project(project), proj_p);
+
+      carve::geom2d::PolyInclusionInfo pi = carve::geom2d::pointInPoly(vertices, p2_adapt_project<ndim>(project), proj_p);
       switch (pi.iclass) {
       case POINT_VERTEX:
         intersection = p;
@@ -250,6 +283,9 @@ namespace carve {
       return INTERSECT_NONE;
     }
 
+
   }
 }
 
+// explicit instantiations.
+template class carve::poly::Face<3>;

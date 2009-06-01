@@ -2,7 +2,10 @@ bin_PROGRAMS = intersect triangulate convert cut
 noinst_PROGRAMS = test_geom test_eigen test_aabb test_rescale tetrahedron
 noinst_LTLIBRARIES = libcarve_fileformats.la libcarve_misc.la
 
-noinst_HEADERS=geom_draw.hpp geometry.hpp rgb.hpp scene.hpp
+noinst_HEADERS= geom_draw.hpp geometry.hpp glu_triangulator.hpp		\
+	opts.hpp read_ply.hpp rgb.hpp scene.hpp stringfuncs.hpp		\
+	write_ply.hpp mersenne_twister.h coords.h brick_texture.h	\
+	carve_texture.h leaf_texture.h
 
 AM_CPPFLAGS=@CPPFLAGS@ -I$(top_srcdir)/include @GL_CFLAGS@ @GLUT_CFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/external/GLOOP/include
@@ -20,7 +23,8 @@ if with_GUI
   AM_CPPFLAGS += -I$(top_srcdir)/external/GLUI/include
   noinst_LTLIBRARIES += libcarve_ui.la
   noinst_PROGRAMS += custom_collector test_intersect test_interpolate	\
-  test_csg_interpolate test_slice test_slice_classify test_triangulate texture_example problem
+	  test_csg_interpolate test_slice test_slice_classify		\
+	  test_triangulate texture_example problem
   libcarve_ui_la_SOURCES = geom_draw.cpp scene.cpp
   libcarve_ui_la_LIBADD = $(top_srcdir)/external/GLUI/libglui.la
 endif

@@ -36,8 +36,8 @@
 #define __stdcall
 #endif
 
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)();
+#if defined(GLU_TESS_CALLBACK_VARARGS)
+  typedef GLvoid (_stdcall *GLUTessCallback)(...);
 #else
   typedef void (__stdcall *GLUTessCallback)();
 #endif
@@ -63,11 +63,11 @@ static inline void glVertex(const carve::geom3d::Vector &v) {
              g_scale * (v.z + g_translation.z));
 }
 
-static inline void glVertex(const carve::poly::Vertex *v) {
+static inline void glVertex(const carve::poly::Vertex<3> *v) {
   glVertex(v->v);
 }
 
-static inline void glVertex(const carve::poly::Vertex &v) {
+static inline void glVertex(const carve::poly::Vertex<3> &v) {
   glVertex(v.v);
 }
 
@@ -240,7 +240,7 @@ void DebugHooks::drawOctree(const carve::csg::Octree &o) {
 }
 
 static void __stdcall _faceBegin(GLenum type, void *data) {
-  carve::poly::Face *face = static_cast<carve::poly::Face *>(data);
+  carve::poly::Face<3> *face = static_cast<carve::poly::Face<3> *>(data);
   glBegin(type);
   glNormal3f(face->plane_eqn.N.x, face->plane_eqn.N.y, face->plane_eqn.N.z);
 }
@@ -255,7 +255,7 @@ static void __stdcall _faceEnd(void *data) {
   glEnd();
 }
 
-void drawColourFace(carve::poly::Face *face, const std::vector<RGBA> &vc, bool offset) {
+void drawColourFace(carve::poly::Face<3> *face, const std::vector<RGBA> &vc, bool offset) {
   if (offset) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(0.5, 0.5);
@@ -289,7 +289,7 @@ void drawColourFace(carve::poly::Face *face, const std::vector<RGBA> &vc, bool o
   }
 }
 
-void drawFace(carve::poly::Face *face, RGBA fc, bool offset) {
+void drawFace(carve::poly::Face<3> *face, RGBA fc, bool offset) {
   if (offset) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(0.5, 0.5);
@@ -324,7 +324,7 @@ void drawFace(carve::poly::Face *face, RGBA fc, bool offset) {
 }
 
  
-void drawFaceWireframe(carve::poly::Face *face, bool normal, float r, float g, float b) {
+void drawFaceWireframe(carve::poly::Face<3> *face, bool normal, float r, float g, float b) {
   glDisable(GL_LIGHTING);
   glDepthMask(GL_FALSE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -354,7 +354,7 @@ void drawFaceWireframe(carve::poly::Face *face, bool normal, float r, float g, f
   glColor4f(1.0, 0.0, 0.0, 1.0);
   glBegin(GL_LINES);
   for (size_t i = 0, l = face->edges.size(); i != l; ++i) {
-    if (face->owner->connectedFace(face, face->edges[i]) == NULL) {
+    if (static_cast<const carve::poly::Polyhedron *>(face->owner)->connectedFace(face, face->edges[i]) == NULL) {
       glVertex(face->edges[i]->v1);
       glVertex(face->edges[i]->v2);
     }
@@ -367,9 +367,9 @@ void drawFaceWireframe(carve::poly::Face *face, bool normal, float r, float g, f
   if (normal) {
     glBegin(GL_LINES);
     glColor4f(1.0, 1.0, 0.0, 1.0);
-    glVertex(face->centroid);
+    glVertex(face->centroid());
     glColor4f(1.0, 1.0, 0.0, 0.0);
-    glVertex(face->centroid + 1 / g_scale * face->plane_eqn.N);
+    glVertex(face->centroid() + 1 / g_scale * face->plane_eqn.N);
     glEnd();
   }
 
@@ -377,7 +377,7 @@ void drawFaceWireframe(carve::poly::Face *face, bool normal, float r, float g, f
   glEnable(GL_LIGHTING);
 }
 
-void drawFaceWireframe(carve::poly::Face *face, bool normal) {
+void drawFaceWireframe(carve::poly::Face<3> *face, bool normal) {
   drawFaceWireframe(face, normal, 0,0,0);
 }
 
@@ -518,7 +518,7 @@ void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, fl
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glBegin(GL_TRIANGLES);
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    carve::poly::Face<3> &f = poly->faces[i];
     if (group == -1 || f.manifold_id == group) {
       if (f.vertices.size() == 3) {
         glNormal3dv(f.plane_eqn.N.v);
@@ -531,7 +531,7 @@ void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, fl
   glEnd();
 
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    carve::poly::Face<3> &f = poly->faces[i];
     if (group == -1 || f.manifold_id == group) {
       if (f.vertices.size() != 3) {
         drawFace(&poly->faces[i], RGBA(r, g, b, a), false);
@@ -546,7 +546,7 @@ void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, fl
 
 void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool offset, bool normal, int group) {
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    carve::poly::Face<3> &f = poly->faces[i];
     if (group == -1 || f.manifold_id == group) {
       drawFaceWireframe(&f, normal);
     }
@@ -555,7 +555,7 @@ void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool offset, bool no
 
 void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, float r, float g, float b, bool offset, bool normal, int group) {
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face &f = poly->faces[i];
+    carve::poly::Face<3> &f = poly->faces[i];
     if (group == -1 || f.manifold_id == group) {
       drawFaceWireframe(&f, normal, r, g, b);
     }

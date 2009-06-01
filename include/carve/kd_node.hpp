@@ -113,7 +113,7 @@ namespace carve {
       }
 
       bool split(axis_pos split_at = axis_pos(-1, std::numeric_limits<double>::max()),
-                 inserter_t &inserter = inserter_t())  {
+                 inserter_t &inserter) {
         if (c_neg) {
           // already split
           return false;

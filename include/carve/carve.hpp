@@ -53,6 +53,8 @@
  * \brief Top level Carve namespace.
  */
 namespace carve {
+  static struct noinit_t {} NOINIT;
+
   inline std::string fmtstring(const char *fmt, ...);
 
   /**

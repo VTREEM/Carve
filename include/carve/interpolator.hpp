@@ -147,8 +147,8 @@ namespace carve {
 
     class Interpolator {
     public:
-      virtual void interpolate(const carve::poly::Face *new_face,
-                               const carve::poly::Face *orig_face,
+      virtual void interpolate(const carve::poly::Face<3> *new_face,
+                               const carve::poly::Face<3> *orig_face,
                                bool flipped) =0;
 
       Interpolator() {
@@ -160,8 +160,8 @@ namespace carve {
       class Hook : public carve::csg::CSG::Hook {
         Interpolator *interpolator;
       public:
-        virtual void resultFace(const carve::poly::Face *new_face,
-                                const carve::poly::Face *orig_face,
+        virtual void resultFace(const carve::poly::Face<3> *new_face,
+                                const carve::poly::Face<3> *orig_face,
                                 bool flipped) {
           interpolator->interpolate(new_face, orig_face, flipped);
         }
@@ -183,22 +183,22 @@ namespace carve {
 
     protected:
       struct fv_hash {
-        size_t operator()(const std::pair<const carve::poly::Face *, unsigned> &v) const {
+        size_t operator()(const std::pair<const carve::poly::Face<3> *, unsigned> &v) const {
           return size_t(v.first) ^ size_t(v.second);
         }
       };
 
-      typedef std::unordered_map<const carve::poly::Vertex *, attr_t, carve::poly::hash_vertex_ptr> attrvmap_t;
-      typedef std::unordered_map<std::pair<const carve::poly::Face *, unsigned>, attr_t, fv_hash> attrmap_t;
+      typedef std::unordered_map<const carve::poly::Vertex<3> *, attr_t, carve::poly::hash_vertex_ptr> attrvmap_t;
+      typedef std::unordered_map<std::pair<const carve::poly::Face<3> *, unsigned>, attr_t, fv_hash> attrmap_t;
 
       attrmap_t attrs;
 
     public:
-      bool hasAttribute(const carve::poly::Face *f, unsigned v) {
+      bool hasAttribute(const carve::poly::Face<3> *f, unsigned v) {
         return attrs.find(std::make_pair(f, v)) != attrs.end();
       }
 
-      attr_t getAttribute(const carve::poly::Face *f, unsigned v, const attr_t &def = attr_t()) {
+      attr_t getAttribute(const carve::poly::Face<3> *f, unsigned v, const attr_t &def = attr_t()) {
         typename attrmap_t::const_iterator fv = attrs.find(std::make_pair(f, v));
         if (fv != attrs.end()) {
           return (*fv).second;
@@ -206,12 +206,12 @@ namespace carve {
         return def;
       }
 
-      void setAttribute(const carve::poly::Face *f, unsigned v, const attr_t &attr) {
+      void setAttribute(const carve::poly::Face<3> *f, unsigned v, const attr_t &attr) {
         attrs[std::make_pair(f, v)] = attr;
       }
 
-      virtual void interpolate(const carve::poly::Face *new_face,
-                               const carve::poly::Face *orig_face,
+      virtual void interpolate(const carve::poly::Face<3> *new_face,
+                               const carve::poly::Face<3> *orig_face,
                                bool flipped) {
         std::vector<attr_t> vertex_attrs;
         attrvmap_t base_attrs;
@@ -225,14 +225,14 @@ namespace carve {
         }
 
         for (size_t i = 0; i < new_face->vertices.size(); ++i) {
-          const carve::poly::Vertex *vertex = new_face->vertices[i];
+          const carve::poly::Vertex<3> *vertex = new_face->vertices[i];
           typename attrvmap_t::const_iterator b = base_attrs.find(vertex);
           if (b != base_attrs.end()) {
             attrs[std::make_pair(new_face, i)] = (*b).second;
           } else {
             carve::geom2d::P2 p = carve::poly::face::project(orig_face, new_face->vertices[i]->v);
             attr_t attr = interp(orig_face->vertices,
-                                 carve::poly::p2_adapt_project(orig_face->project),
+                                 carve::poly::p2_adapt_project<3>(orig_face->project),
                                  vertex_attrs,
                                  p.x,
                                  p.y);
@@ -255,21 +255,21 @@ namespace carve {
 
     protected:
       struct f_hash {
-        size_t operator()(const carve::poly::Face * const &f) const {
+        size_t operator()(const carve::poly::Face<3> * const &f) const {
           return size_t(f);
         }
       };
 
-      typedef std::unordered_map<const carve::poly::Face *, attr_t, f_hash> attrmap_t;
+      typedef std::unordered_map<const carve::poly::Face<3> *, attr_t, f_hash> attrmap_t;
 
       attrmap_t attrs;
 
     public:
-      bool hasAttribute(const carve::poly::Face *f) {
+      bool hasAttribute(const carve::poly::Face<3> *f) {
         return attrs.find(f) != attrs.end();
       }
 
-      attr_t getAttribute(const carve::poly::Face *f, const attr_t &def = attr_t()) {
+      attr_t getAttribute(const carve::poly::Face<3> *f, const attr_t &def = attr_t()) {
         typename attrmap_t::const_iterator i = attrs.find(f);
         if (i != attrs.end()) {
           return (*i).second;
@@ -277,12 +277,12 @@ namespace carve {
         return def;
       }
 
-      void setAttribute(const carve::poly::Face *f, const attr_t &attr) {
+      void setAttribute(const carve::poly::Face<3> *f, const attr_t &attr) {
         attrs[f] = attr;
       }
 
-      virtual void interpolate(const carve::poly::Face *new_face,
-                               const carve::poly::Face *orig_face,
+      virtual void interpolate(const carve::poly::Face<3> *new_face,
+                               const carve::poly::Face<3> *orig_face,
                                bool flipped) {
         typename attrmap_t::const_iterator i = attrs.find(orig_face);
         if (i != attrs.end()) {

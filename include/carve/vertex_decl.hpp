@@ -35,29 +35,39 @@ namespace carve {
 
 
 
-    struct Polyhedron;
-    class Edge;
+    struct Object;
 
 
 
+    template<unsigned ndim>
     class Vertex : public tagable {
     public:
-      carve::geom3d::Vector v;
-      Polyhedron *owner;
+      typedef carve::geom::vector<ndim> vector_t;
+      typedef Object obj_t;
 
-      Vertex();
-      ~Vertex();
-      Vertex(const carve::geom3d::Vector &);
+      vector_t v;
+      obj_t *owner;
+
+      Vertex() : tagable(), v() {
+      }
+
+      ~Vertex() {
+      }
+
+      Vertex(const vector_t &_v) : tagable(), v(_v) {
+      }
     };
 
 
 
     struct hash_vertex_ptr {
-      size_t operator()(const Vertex * const &v) const {
+      template<unsigned ndim>
+      size_t operator()(const Vertex<ndim> * const &v) const {
         return (size_t)v;
       }
 
-      size_t operator()(const std::pair<const Vertex *, const Vertex *> &v) const {
+      template<unsigned ndim>
+      size_t operator()(const std::pair<const Vertex<ndim> *, const Vertex<ndim> *> &v) const {
         size_t r = (size_t)v.first;
         size_t s = (size_t)v.second;
         return r ^ ((s >> 16) | (s << 16));
@@ -68,15 +78,21 @@ namespace carve {
 
 
     struct vec_adapt_vertex_ref {
-      const carve::geom3d::Vector &operator()(const Vertex &v) { return v.v; }
-      carve::geom3d::Vector &operator()(Vertex &v) { return v.v; }
+      template<unsigned ndim>
+      const typename Vertex<ndim>::vector_t &operator()(const Vertex<ndim> &v) const { return v.v; }
+
+      template<unsigned ndim>
+      typename Vertex<ndim>::vector_t &operator()(Vertex<ndim> &v) const { return v.v; }
     };
 
 
 
     struct vec_adapt_vertex_ptr {
-      const carve::geom3d::Vector &operator()(const Vertex * const &v) { return v->v; }
-      carve::geom3d::Vector &operator()(Vertex *&v) { return v->v; }
+      template<unsigned ndim>
+      const typename Vertex<ndim>::vector_t &operator()(const Vertex<ndim> *v) const { return v->v; }
+
+      template<unsigned ndim>
+      typename Vertex<ndim>::vector_t &operator()(Vertex<ndim> *v) const { return v->v; }
     };
 
 

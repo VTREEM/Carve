@@ -30,20 +30,16 @@ namespace carve {
       } obtype;
 
       union {
-        const carve::poly::Vertex *vertex;
-        const carve::poly::Edge *edge;
-        const carve::poly::Face *face;
+        const carve::poly::Vertex<3> *vertex;
+        const carve::poly::Edge<3> *edge;
+        const carve::poly::Face<3> *face;
         intptr_t val;
       };
 
       IObj() : obtype(OBTYPE_NONE), val(0) { }
-      IObj(const carve::poly::Vertex *v) : obtype(OBTYPE_VERTEX), vertex(v) { }
-      IObj(const carve::poly::Edge *e) : obtype(OBTYPE_EDGE), edge(e) { }
-      IObj(const carve::poly::Face *f) : obtype(OBTYPE_FACE), face(f) { }
-
-      bool operator<(const IObj &rhs) {
-        return val < rhs.val;
-      }
+      IObj(const carve::poly::Vertex<3> *v) : obtype(OBTYPE_VERTEX), vertex(v) { }
+      IObj(const carve::poly::Edge<3> *e) : obtype(OBTYPE_EDGE), edge(e) { }
+      IObj(const carve::poly::Face<3> *f) : obtype(OBTYPE_FACE), face(f) { }
     };
 
 
@@ -61,11 +57,11 @@ namespace carve {
 
     typedef std::unordered_set<std::pair<const IObj, const IObj>, IObj_hash> IObjPairSet;
 
-    typedef std::unordered_map<IObj, const carve::poly::Vertex *, IObj_hash> IObjVMap;
-    typedef std::map<IObj, const carve::poly::Vertex *> IObjVMapSmall;
+    typedef std::unordered_map<IObj, const carve::poly::Vertex<3> *, IObj_hash> IObjVMap;
+    typedef std::map<IObj, const carve::poly::Vertex<3> *> IObjVMapSmall;
 
     class VertexIntersections :
-      public std::unordered_map<const carve::poly::Vertex *, IObjPairSet, carve::poly::hash_vertex_ptr> {
+      public std::unordered_map<const carve::poly::Vertex<3> *, IObjPairSet, carve::poly::hash_vertex_ptr> {
     };
 
 

@@ -21,11 +21,11 @@ cube_small_rot_2            | -r -e -c    | CUBE A_MINUS_B ROT(1e-4,1,1,1,CUBE)
 cube_small_rot_3            | -r -e -c    | CUBE A_MINUS_B ROT(1e-6,1,1,1,CUBE)
 cube_small_rot_4            | -r -e -c    | CUBE A_MINUS_B ROT(1e-8,1,1,1,CUBE)
 cube_small_rot_5            | -r -e -c    | CUBE A_MINUS_B ROT(1e-10,1,1,1,CUBE)
-sphere_stress_test          | -r -e -c -f | test-spheres
+sphere_stress_test_1        | -r -e -c -f | test-spheres
 sphere_stress_test_2        | -r -e -c -f | test-spheres-2
 sphere_stress_test_3        | -r -e -c -f | test-spheres-3
-sphere_stress_test_3        | -r -e -c -f | test-spheres-4
-shell_stress_test_4         | -r -e -c    | TRANS(0, 1.1547005383792515, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(-1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(0, 0, 1.6329931618554521, SCALE(2.71, 2.71, 2.71, ../data/shells.ply))
-shell_stress_test_5         | -r -e -c    | TRANS(0, 1.1547005383792515, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(-1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply))
-shell_stress_test_6         | -r -e -c    | TRANS(-1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply))
+sphere_stress_test_4        | -r -e -c -f | test-spheres-4
+shell_stress_test_1         | -r -e -c    | TRANS(0, 1.1547005383792515, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(-1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(0, 0, 1.6329931618554521, SCALE(2.71, 2.71, 2.71, ../data/shells.ply))
+shell_stress_test_2         | -r -e -c    | TRANS(0, 1.1547005383792515, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(-1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply))
+shell_stress_test_3         | -r -e -c    | TRANS(-1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply))
 cylinder_spiral             | -r -e -c -f | test-cylinders

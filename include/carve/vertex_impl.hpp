@@ -20,22 +20,5 @@
 namespace carve {
   namespace poly {
 
-
-
-    inline Vertex::Vertex() : tagable(), v() {
-    }
-
-
-
-    inline Vertex::~Vertex() {
-    }
-
-
-
-    inline Vertex::Vertex(const carve::geom3d::Vector &_v) : tagable(), v(_v) {
-    }
-
-
-
   }
 }

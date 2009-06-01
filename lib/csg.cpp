@@ -51,7 +51,7 @@ const char *carve::csg::ENUM(carve::PointClass p) {
 
 
 void carve::csg::LoopEdges::addFaceLoop(FaceLoop *fl) {
-  const carve::poly::Vertex *v1, *v2;
+  const carve::poly::Vertex<3> *v1, *v2;
   v1 = fl->vertices[fl->vertices.size() - 1];
   for (unsigned j = 0; j < fl->vertices.size(); ++j) {
     v2 = fl->vertices[j];
@@ -67,7 +67,7 @@ void carve::csg::LoopEdges::sortFaceLoopLists() {
 }
 
 void carve::csg::LoopEdges::removeFaceLoop(FaceLoop *fl) {
-  const carve::poly::Vertex *v1, *v2;
+  const carve::poly::Vertex<3> *v1, *v2;
   v1 = fl->vertices[fl->vertices.size() - 1];
   for (unsigned j = 0; j < fl->vertices.size(); ++j) {
     v2 = fl->vertices[j];

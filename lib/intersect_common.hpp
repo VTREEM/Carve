@@ -18,7 +18,7 @@
 #pragma once
 
 
-static inline bool facesAreCoplanar(const carve::poly::Face *a, const carve::poly::Face *b) {
+static inline bool facesAreCoplanar(const carve::poly::Face<3> *a, const carve::poly::Face<3> *b) {
   carve::geom3d::Ray temp;
   // XXX: Find a better definition. This may be a source of problems
   // if floating point inaccuracies cause an incorrect answer.
@@ -34,7 +34,7 @@ static inline bool facesAreCoplanar(const carve::poly::Face *a, const carve::pol
 namespace carve {
   namespace csg {
 
-    static inline const carve::poly::Vertex *map_vertex(const VVMap &vmap, const carve::poly::Vertex *v) {
+    static inline const carve::poly::Vertex<3> *map_vertex(const VVMap &vmap, const carve::poly::Vertex<3> *v) {
       VVMap::const_iterator i = vmap.find(v);
       if (i == vmap.end()) return v;
       return (*i).second;
@@ -52,8 +52,8 @@ namespace carve {
                                         float rB, float gB, float bB, float aB,
                                         bool lit) {
       for (FaceLoop *flb = ll.head; flb; flb = flb->next) {
-        const carve::poly::Face *f = (flb->orig_face);
-        std::vector<const carve::poly::Vertex *> &loop = flb->vertices;
+        const carve::poly::Face<3> *f = (flb->orig_face);
+        std::vector<const carve::poly::Vertex<3> *> &loop = flb->vertices;
         HOOK(drawFaceLoop2(loop, f->plane_eqn.N, rF, gF, bF, aF, rB, gB, bB, aB, true, lit););
         HOOK(drawFaceLoopWireframe(loop, f->plane_eqn.N, 1, 1, 1, 0.1f););
       }
@@ -61,8 +61,8 @@ namespace carve {
 
     static inline void drawFaceLoopListWireframe(const FaceLoopList &ll) {
       for (FaceLoop *flb = ll.head; flb; flb = flb->next) {
-        const carve::poly::Face *f = (flb->orig_face);
-        std::vector<const carve::poly::Vertex *> &loop = flb->vertices;
+        const carve::poly::Face<3> *f = (flb->orig_face);
+        std::vector<const carve::poly::Vertex<3> *> &loop = flb->vertices;
         HOOK(drawFaceLoopWireframe(loop, f->plane_eqn.N, 1, 1, 1, 0.1f););
       }
     }

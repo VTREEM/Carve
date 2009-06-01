@@ -27,12 +27,12 @@ namespace carve {
       }
       virtual ~CarveTriangulator() {
       }
-      virtual void processOutputFace(std::vector<carve::poly::Face *> &faces,
-                                     const carve::poly::Face *orig,
+      virtual void processOutputFace(std::vector<carve::poly::Face<3> *> &faces,
+                                     const carve::poly::Face<3> *orig,
                                      bool flipped) {
         size_t f = 0;
         while (f < faces.size()) {
-          carve::poly::Face *face = faces[f];
+          carve::poly::Face<3> *face = faces[f];
           if (face->vertices.size() == 3) {
             ++f;
             continue;
@@ -47,7 +47,7 @@ namespace carve {
           
           faces.erase(faces.begin() + f);
           faces.insert(faces.begin() + f, result.size(), NULL);
-          std::vector<const carve::poly::Vertex *> fv;
+          std::vector<const carve::poly::Vertex<3> *> fv;
           fv.resize(3);
           for (size_t i = 0; i < result.size(); ++i) {
             fv[0] = face->vertices[result[i].a];

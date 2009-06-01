@@ -44,16 +44,6 @@
 
 #include <time.h>
 
-#if defined(__GNUC__)
-#define __stdcall
-#endif
-
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)(...);
-#else
-  typedef void (__stdcall *GLUTessCallback)();
-#endif
-
 struct TestScene : public Scene {
   GLuint draw_list_base;
   std::vector<bool> draw_flags;
@@ -97,7 +87,7 @@ class Between : public carve::csg::CSG::Collector {
   Between &operator=(const Between &);
 
 public:
-  std::list<carve::poly::Face> faces;
+  std::list<carve::poly::Face<3> > faces;
   const carve::poly::Polyhedron *src_a;
   const carve::poly::Polyhedron *src_b;
   
@@ -114,13 +104,13 @@ public:
     if (grp->classificationAgainst(src_b, 0) != carve::csg::FACE_OUT) return;
 
     for (carve::csg::FaceLoop *f = grp->face_loops.head; f; f = f->next) {
-      faces.push_back(carve::poly::Face());
+      faces.push_back(carve::poly::Face<3>());
       faces.back().init(f->orig_face, f->vertices, false);
     }
   }
 
   virtual carve::poly::Polyhedron *done(carve::csg::CSG::Hooks &hooks) {
-    return carve::poly::Polyhedron::make(faces);
+    return new carve::poly::Polyhedron(faces);
   }
 };
 

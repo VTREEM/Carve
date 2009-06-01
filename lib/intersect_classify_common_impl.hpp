@@ -55,14 +55,14 @@ namespace carve {
       for (FLGroupList::iterator i = a_groups.begin(); i != a_groups.end(); ++i) {
         if ((*i).face_loops.size() != 1) continue;
         FaceLoop *f = (*i).face_loops.head;
-        const carve::poly::Vertex *v = *std::min_element(f->vertices.begin(), f->vertices.end());
+        const carve::poly::Vertex<3> *v = *std::min_element(f->vertices.begin(), f->vertices.end());
         a_map[v].push_back(i);
       }
 
       for (FLGroupList::iterator i = b_groups.begin(); i != b_groups.end(); ++i) {
         if ((*i).face_loops.size() != 1) continue;
         FaceLoop *f = (*i).face_loops.head;
-        const carve::poly::Vertex *v = *std::min_element(f->vertices.begin(), f->vertices.end());
+        const carve::poly::Vertex<3> *v = *std::min_element(f->vertices.begin(), f->vertices.end());
         if (a_map.find(v) != a_map.end()) {
           b_map[v].push_back(i);
         }
@@ -71,7 +71,7 @@ namespace carve {
       // Then, iterate through the FaceLoops hashed in the first map, and
       // find candidate matches in the second map.
       for (GroupLookup::iterator j = b_map.begin(), je = b_map.end(); j != je; ++j) {
-        const carve::poly::Vertex *v = (*j).first;
+        const carve::poly::Vertex<3> *v = (*j).first;
         GroupLookup::iterator i = a_map.find(v);
 
         for (std::list<FLGroupList::iterator>::iterator bi = (*j).second.begin(), be = (*j).second.end(); bi != be;) {
@@ -165,7 +165,7 @@ namespace carve {
         FaceClass fc;
 
         for (FaceLoop *f = curr.head; f; f = f->next) {
-          const carve::poly::Vertex *v1, *v2;
+          const carve::poly::Vertex<3> *v1, *v2;
           v1 = f->vertices.back();
           for (size_t j = 0; j < f->vertices.size(); ++j) {
             v2 = f->vertices[j];
@@ -221,8 +221,8 @@ namespace carve {
 
         FaceLoop *fla = (*i).face_loops.head;
 
-        const carve::poly::Face *f = (fla->orig_face);
-        std::vector<const carve::poly::Vertex *> &loop = (fla->vertices);
+        const carve::poly::Face<3> *f = (fla->orig_face);
+        std::vector<const carve::poly::Vertex<3> *> &loop = (fla->vertices);
         std::vector<carve::geom2d::P2> proj;
         proj.reserve(loop.size());
         for (unsigned j = 0; j < loop.size(); ++j) {
@@ -234,7 +234,7 @@ namespace carve {
         }
         carve::geom3d::Vector v = carve::poly::face::unproject(f, pv);
 
-        const carve::poly::Face *hit_face;
+        const carve::poly::Face<3> *hit_face;
         PointClass pc = poly_a->containsVertex(v, &hit_face);
         switch (pc) {
         case POINT_IN: fc = FACE_IN; break;

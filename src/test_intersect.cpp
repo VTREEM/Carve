@@ -53,18 +53,6 @@
 
 
 
-#if defined(__GNUC__)
-#define __stdcall
-#endif
-
-#if defined(__APPLE__)
-  typedef GLvoid (*GLUTessCallback)(...);
-#else
-  typedef void (__stdcall *GLUTessCallback)();
-#endif
-
-
-
 struct Options : public opt::Parser {
   bool edge_classifier;
   bool rescale;
@@ -161,13 +149,13 @@ struct TestScene : public Scene {
       carve::geom3d::Vector to = r.v - r.D * 1000;
 
       //rays.push_back(LineSegment(g_scale * (from + g_translation), g_scale * (to + g_translation)));
-      std::vector<const carve::poly::Face *> faces;
+      std::vector<const carve::poly::Face<3> *> faces;
 
       g_result->findFacesNear(carve::geom3d::LineSegment(from, to), faces);
 
       // see if any of the faces intersect our ray
       for (int i = 0; i < faces.size();++i) {
-        const carve::poly::Face *f = faces[i];
+        const carve::poly::Face<3> *f = faces[i];
         carve::geom3d::Vector pos;
         if (f->lineSegmentIntersection(carve::geom3d::LineSegment(from, to), pos) > 0) {
           pos = g_scale * (pos + g_translation);
