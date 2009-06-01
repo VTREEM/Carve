@@ -112,8 +112,7 @@ namespace carve {
         return aabb;
       }
 
-      bool split(axis_pos split_at = axis_pos(-1, std::numeric_limits<double>::max()),
-                 inserter_t &inserter) {
+      bool split(axis_pos split_at, inserter_t &inserter) {
         if (c_neg) {
           // already split
           return false;
