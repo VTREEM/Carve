@@ -176,7 +176,7 @@ namespace carve {
       bool intersects(const IObj &a, const carve::poly::Edge<3> *e) {
         Intersections::const_iterator i = find(a);
         if (i == end()) return false;
-        for (Intersections::data_type::const_iterator j = i->second.begin(); j != i->second.end(); ++j) {
+        for (super::data_type::const_iterator j = i->second.begin(); j != i->second.end(); ++j) {
           const IObj &obj = j->first;
           switch (obj.obtype) {
           case IObj::OBTYPE_VERTEX:
