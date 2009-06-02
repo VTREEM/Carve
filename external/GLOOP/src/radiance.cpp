@@ -30,6 +30,7 @@
 #include <gloop/radiance.hpp>
 #include <gloop/exceptions.hpp>
 #include <iostream>
+#include <cstring>
 #include <stdio.h>
 
 namespace gloop {
@@ -225,9 +226,9 @@ namespace gloop {
       if (!str.compare(0, 7, "FORMAT=", 7)) {
         c = str.c_str() + 7;
         while (*c && isspace(*c)) c++;
-        if (!strcmp(c, "32-bit_rle_rgbe")) {
+        if (!std::strcmp(c, "32-bit_rle_rgbe")) {
           fmt = RADIANCE_FMT_RGB;
-        } else if (!strcmp(c, "32-bit_rle_xyze")) {
+        } else if (!std::strcmp(c, "32-bit_rle_xyze")) {
           fmt = RADIANCE_FMT_CIE;
         } else {
           throw std::runtime_error("bad image format: " + std::string(c));

@@ -1,5 +1,5 @@
 bin_PROGRAMS = intersect triangulate convert cut
-noinst_PROGRAMS = test_geom test_eigen test_aabb test_aabb_tri test_rescale tetrahedron
+noinst_PROGRAMS = test_geom test_eigen test_spacetree test_aabb test_aabb_tri test_rescale tetrahedron
 noinst_LTLIBRARIES = libcarve_fileformats.la libcarve_misc.la
 
 noinst_HEADERS= geom_draw.hpp geometry.hpp glu_triangulator.hpp		\
@@ -33,11 +33,14 @@ endif
 test_eigen_SOURCES=test_eigen.cpp
 test_eigen_LDADD=../lib/libintersect.la
 
-test_aabb_tri_SOURCES=test_aabb_tri.cpp
-test_aabb_tri_LDADD=../lib/libintersect.la
+test_spacetree_SOURCES=test_spacetree.cpp
+test_spacetree_LDADD=../lib/libintersect.la
 
 test_aabb_SOURCES=test_aabb.cpp
 test_aabb_LDADD=../lib/libintersect.la
+
+test_aabb_tri_SOURCES=test_aabb_tri.cpp
+test_aabb_tri_LDADD=../lib/libintersect.la
 
 test_triangulate_SOURCES=test_triangulate.cpp
 test_triangulate_LDADD=libcarve_ui.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
