@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <cstring>
+
 #include <carve/carve.hpp>
 
 #include <carve/math.hpp>
@@ -92,10 +94,10 @@ namespace carve {
         _31 = __31; _32 = __32; _33 = __33;
       }
       Matrix3(double _m[3][3]) {
-        memcpy(m, _m, sizeof(m));
+        std::memcpy(m, _m, sizeof(m));
       }
       Matrix3(double _v[9]) {
-        memcpy(v, _v, sizeof(v));
+        std::memcpy(v, _v, sizeof(v));
       }
       Matrix3() {
         _11 = 1.00; _12 = 0.00; _13 = 0.00;
@@ -128,10 +130,10 @@ namespace carve {
         _41 = __41; _42 = __42; _43 = __43; _44 = __44;
       }
       Matrix(double _m[4][4]) {
-        memcpy(m, _m, sizeof(m));
+        std::memcpy(m, _m, sizeof(m));
       }
       Matrix(double _v[16]) {
-        memcpy(v, _v, sizeof(v));
+        std::memcpy(v, _v, sizeof(v));
       }
       Matrix() {
         _11 = 1.00; _12 = 0.00; _13 = 0.00; _14 = 0.00;

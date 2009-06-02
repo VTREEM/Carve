@@ -22,7 +22,7 @@
 #include <carve/csg.hpp>
 
 std::ostream &carve::csg::operator<<(std::ostream &o, const carve::csg::FSet &s) {
-  char *sep="";
+  const char *sep="";
   for (carve::csg::FSet::const_iterator i = s.begin(); i != s.end(); ++i) {
     o << sep << *i; sep=",";
   }

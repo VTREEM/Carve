@@ -23,6 +23,7 @@
 
 #include <carve/timing.hpp>
 
+#include <cstring>
 #include <list>
 #include <stack>
 #include <vector>
@@ -220,8 +221,8 @@ namespace carve {
       getTime(snapshot.time);
       snapshot.memory_curr = carve::memoryCurr;
       snapshot.memory_total = carve::memoryTotal;
-      memcpy(snapshot.blk_cnt_curr, carve::blkCntCurr, sizeof(carve::blkCntCurr));
-      memcpy(snapshot.blk_cnt_total, carve::blkCntTotal, sizeof(carve::blkCntTotal));
+      std::memcpy(snapshot.blk_cnt_curr, carve::blkCntCurr, sizeof(carve::blkCntCurr));
+      std::memcpy(snapshot.blk_cnt_total, carve::blkCntTotal, sizeof(carve::blkCntTotal));
     }
 
     static void compareSnapshot(const Snapshot &from, const Snapshot &to, Entry *entry) {
