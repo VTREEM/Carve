@@ -19,6 +19,10 @@
 #  include <carve_config.h>
 #endif
 
+#if defined(HAVE_STDINT_H)
+#include <stdint.h>
+#endif
+
 #include <carve/csg.hpp>
 #include <carve/debug_hooks.hpp>
 
