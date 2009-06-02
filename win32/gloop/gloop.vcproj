@@ -107,7 +107,7 @@
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="../../external/gloop/include;../../external/glew/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_USE_MATH_DEFINES;NOMINMAX"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"

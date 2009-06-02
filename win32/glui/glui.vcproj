@@ -107,7 +107,7 @@
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="../../external/glui/include;../../external/glew/include;$(GLUT_DIR)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;GLUI_USE_STATIC_LIB;GLUI_NO_LIB_PRAGMA;NOMINMAX"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -203,90 +203,6 @@
 		</File>
 		<File
 			RelativePath="..\..\external\GLUI\src\glui_filebrowser.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_checkbox_0.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_checkbox_0_dis.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_checkbox_1.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_checkbox_1_dis.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_downarrow.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_leftarrow.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_listbox_down.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_listbox_up.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_listbox_up_dis.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_radiobutton_0.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_radiobutton_0_dis.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_radiobutton_1.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_radiobutton_1_dis.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_rightarrow.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_spindown_0.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_spindown_1.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_spindown_dis.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_spinup_0.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_spinup_1.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_spinup_dis.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\external\GLUI\src\glui_img_uparrow.c"
 			>
 		</File>
 		<File

@@ -26,6 +26,10 @@ namespace std {
   template <typename Key, typename T, typename Hash,
             typename Pred = std::equal_to<Key> >
   class unordered_map : public boost::unordered_map<Key, T, Hash, Pred> {
+
+  public:
+    typedef T data_type;
+
   };
 
   template <typename Value, typename Hash,

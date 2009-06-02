@@ -26,6 +26,10 @@
 
 namespace {
 
+#if defined(DEBUG)
+      void dumpPoly(const std::vector<carve::geom2d::P2> &points,
+                    const std::vector<carve::triangulate::tri_idx> &result);
+#endif 
   struct vertex_info;
 
   double ear_angle(const carve::geom2d::P2 &prev, const carve::geom2d::P2 &curr, const carve::geom2d::P2 &next) {
@@ -177,6 +181,12 @@ namespace {
   class EarQueue {
     std::vector<vertex_info *> queue;
 
+    void checkheap() {
+#ifdef __GNUC__
+      ASSERT(std::__is_heap(queue.begin(), queue.end(), vertex_info_ordering()));
+#endif
+    }
+
   public:
     EarQueue() {
     }
@@ -186,13 +196,13 @@ namespace {
     }
 
     void push(vertex_info *v) {
-      ASSERT(std::__is_heap(queue.begin(), queue.end(), vertex_info_ordering()));
+      checkheap();
       queue.push_back(v);
       std::push_heap(queue.begin(), queue.end(), vertex_info_ordering());
     }
 
     vertex_info *pop() {
-      ASSERT(std::__is_heap(queue.begin(), queue.end(), vertex_info_ordering()));
+      checkheap();
       std::pop_heap(queue.begin(), queue.end(), vertex_info_ordering());
       vertex_info *v = queue.back();
       queue.pop_back();
@@ -200,7 +210,7 @@ namespace {
     }
 
     void remove(vertex_info *v) {
-      ASSERT(std::__is_heap(queue.begin(), queue.end(), vertex_info_ordering()));
+      checkheap();
       ASSERT(std::find(queue.begin(), queue.end(), v) != queue.end());
       double score = v->score;
       if (v != queue[0]) {
@@ -215,7 +225,7 @@ namespace {
     }
 
     void changeScore(vertex_info *v, double score) {
-      ASSERT(std::__is_heap(queue.begin(), queue.end(), vertex_info_ordering()));
+      checkheap();
       ASSERT(std::find(queue.begin(), queue.end(), v) != queue.end());
       if (v->score != score) {
         v->score = score;
@@ -510,8 +520,6 @@ namespace {
 #if defined(DEBUG)
     {
       std::cerr << "remain = " << remain << std::endl;
-      void dumpPoly(const std::vector<carve::geom2d::P2> &points,
-                    const std::vector<carve::triangulate::tri_idx> &result);
       std::vector<carve::triangulate::tri_idx> dummy;
       std::vector<carve::geom2d::P2> dummy_p;
       vertex_info *v = begin;
