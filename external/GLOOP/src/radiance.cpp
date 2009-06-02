@@ -30,6 +30,7 @@
 #include <gloop/radiance.hpp>
 #include <gloop/exceptions.hpp>
 #include <iostream>
+#include <stdio.h>
 
 namespace gloop {
 

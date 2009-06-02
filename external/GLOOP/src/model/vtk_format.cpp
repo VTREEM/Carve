@@ -36,6 +36,7 @@
 #include <iterator>
 #include <iostream>
 #include <iomanip>
+#include <stdio.h>
 
 namespace {
 

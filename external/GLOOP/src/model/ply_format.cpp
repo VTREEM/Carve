@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <stdarg.h>
+#include <stdio.h>
 
 #ifdef WIN32
 
