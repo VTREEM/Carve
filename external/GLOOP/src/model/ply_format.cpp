@@ -49,6 +49,7 @@ typedef unsigned long uint32_t;
 #else 
 
 #include <stdint.h>
+#include <cstring>
 
 #endif
 
@@ -61,18 +62,18 @@ namespace {
 
   int strtype(const char *s) {
     if (s[0] == 'u') {
-      if (!strcmp(s, "uchar"  ) || !strcmp(s, "uint8"  )) return gloop::stream::U8;
-      if (!strcmp(s, "ushort" ) || !strcmp(s, "uint16" )) return gloop::stream::U16;
-      if (!strcmp(s, "uint"   ) || !strcmp(s, "uint32" )) return gloop::stream::U32;
+      if (!std::strcmp(s, "uchar"  ) || !std::strcmp(s, "uint8"  )) return gloop::stream::U8;
+      if (!std::strcmp(s, "ushort" ) || !std::strcmp(s, "uint16" )) return gloop::stream::U16;
+      if (!std::strcmp(s, "uint"   ) || !std::strcmp(s, "uint32" )) return gloop::stream::U32;
     } else if (s[0] == 'i') {
-      if (!strcmp(s, "int8"   )                         ) return gloop::stream::I8;
-      if (!strcmp(s, "int16"  )                         ) return gloop::stream::I16;
-      if (!strcmp(s, "int"    ) || !strcmp(s, "int32"  )) return gloop::stream::I32;
+      if (!std::strcmp(s, "int8"   )                              ) return gloop::stream::I8;
+      if (!std::strcmp(s, "int16"  )                              ) return gloop::stream::I16;
+      if (!std::strcmp(s, "int"    ) || !std::strcmp(s, "int32"  )) return gloop::stream::I32;
     } else {
-      if (!strcmp(s, "char"   )                         ) return gloop::stream::I8;
-      if (!strcmp(s, "short"  )                         ) return gloop::stream::I16;
-      if (!strcmp(s, "float"  ) || !strcmp(s, "float32")) return gloop::stream::F32;
-      if (!strcmp(s, "double" ) || !strcmp(s, "float64")) return gloop::stream::F64;
+      if (!std::strcmp(s, "char"   )                              ) return gloop::stream::I8;
+      if (!std::strcmp(s, "short"  )                              ) return gloop::stream::I16;
+      if (!std::strcmp(s, "float"  ) || !std::strcmp(s, "float32")) return gloop::stream::F32;
+      if (!std::strcmp(s, "double" ) || !std::strcmp(s, "float64")) return gloop::stream::F64;
     }
     return -1;
   }
@@ -617,9 +618,9 @@ namespace gloop {
       char fmt[128], ver[128];
       std::getline(in, s);
       if (sscanf(s.c_str(), "format %s %s", fmt, ver) == 2) {
-        if (!strcmp(fmt, "ascii")) binary = false;
-        else if (!strcmp(fmt, "binary_big_endian")) { binary = true; byteswap = !is_big_endian(); }
-        else if (!strcmp(fmt, "binary_little_endian")) { binary = true; byteswap = is_big_endian(); }
+        if (!std::strcmp(fmt, "ascii")) binary = false;
+        else if (!std::strcmp(fmt, "binary_big_endian")) { binary = true; byteswap = !is_big_endian(); }
+        else if (!std::strcmp(fmt, "binary_little_endian")) { binary = true; byteswap = is_big_endian(); }
         else {
           throw exception(str::format() << "bad PLY format [" <<  fmt << "]");
         }

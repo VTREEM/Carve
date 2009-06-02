@@ -25,6 +25,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 
 int main(int argc, char **argv) {
   carve::geom3d::AABB aabb(carve::geom::VECTOR(0,0,0), carve::geom::VECTOR(1,1,1));
@@ -52,8 +53,8 @@ int main(int argc, char **argv) {
     carve::geom3d::Ray r(v2 - v1, v1);
     carve::geom3d::LineSegment l(v1, v2);
 
-    ri = !strcmp(ray_intersects, "True");
-    li = !strcmp(lineseg_intersects, "True");
+    ri = !std::strcmp(ray_intersects, "True");
+    li = !std::strcmp(lineseg_intersects, "True");
 
     bool ri_t = aabb.intersects(r);
     bool li_t = aabb.intersectsLineSegment(l.v1, l.v2);
