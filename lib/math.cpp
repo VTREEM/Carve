@@ -24,6 +24,8 @@
 
 #include <limits>
 
+#include <stdio.h>
+
 #define M_2PI_3 2.0943951023931953
 #define M_SQRT_3_4 0.8660254037844386
 #define EPS std::numeric_limits<double>::epsilon()
