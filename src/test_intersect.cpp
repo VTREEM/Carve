@@ -107,7 +107,7 @@ struct TestScene : public Scene {
   std::vector<Option*> draw_flags;
 
   virtual bool key(unsigned char k, int x, int y) {
-    char *t;
+    const char *t;
     static const char *l = "1234567890!@#$%^&*()";
     t = strchr(l, k);
     if (t != NULL) {
