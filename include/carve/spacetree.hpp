@@ -21,10 +21,16 @@
 
 #include <carve/geom.hpp>
 #include <carve/aabb.hpp>
+#include <carve/vertex_decl.hpp>
+#include <carve/edge_decl.hpp>
+#include <carve/face_decl.hpp>
 
 namespace carve {
 
-  namespace csg {
+  namespace space {
+
+    const static double SLACK_FACTOR = 1.0009765625;
+    const static unsigned MAX_SPLIT_DEPTH = 32;
 
     struct nodedata_FaceEdge {
       std::vector<const carve::poly::Face<3> *> faces;
@@ -37,21 +43,31 @@ namespace carve {
       }
 
       void add(const carve::poly::Face<3> *face) {
-        faces.append(face);
+        faces.push_back(face);
       }
 
       void add(const carve::poly::Edge<3> *edge) {
-        edges.append(edge);
+        edges.push_back(edge);
+      }
+
+      template<typename iter_t>
+      void _fetch(iter_t &iter, const carve::poly::Edge<3> *) {
+        std::copy(edges.begin(), edges.end(), iter);
+      }
+
+      template<typename iter_t>
+      void _fetch(iter_t &iter, const carve::poly::Face<3> *) {
+        std::copy(faces.begin(), faces.end(), iter);
+      }
+
+      template<typename iter_t>
+      void fetch(iter_t &iter) {
+        return _fetch(iter, std::iterator_traits<iter_t>::value_type);
       }
     };
 
     template<unsigned n_dim, typename nodedata_t>
     class SpatialSubdivTree {
-      const static double SLACK_FACTOR=1.0009765625;
-      const static unsigned FACE_SPLIT_THRESHOLD=50U;
-      const static unsigned EDGE_SPLIT_THRESHOLD=50U;
-      const static unsigned POINT_SPLIT_THRESHOLD=20U;
-      const static unsigned MAX_SPLIT_DEPTH=32;
 
       typedef carve::geom::aabb<n_dim> aabb_t;
       typedef carve::geom::vector<n_dim> vector_t;
@@ -77,8 +93,8 @@ namespace carve {
         }
 
         inline aabb_t makeAABB() const {
-          vector_t centre = 0.5 * (node->min + node->max);
-          vector_t size = SLACK_FACTOR * 0.5 * (node->max - node->min);
+          vector_t centre = 0.5 * (min + max);
+          vector_t size = SLACK_FACTOR * 0.5 * (max - min);
           return aabb_t(centre, size);
         }
 
@@ -103,11 +119,11 @@ namespace carve {
                 new_max.v[c] = max.v[c];
               }
             }
-            children[i].setup(this, new_min, new_mid);
+            children[i].setup(this, new_min, new_max);
           }
         }
 
-        void dealloc_children {
+        void dealloc_children() {
           delete [] children;
         }
 
@@ -173,21 +189,22 @@ namespace carve {
       };
 
       template<typename obj_t, typename iter_t, typename filter_t>
-      void _findObjectsNear(Node *node, const obj_t &object, iter_t output, filter_t filter) {
+      void _findObjectsNear(Node *node, const obj_t &object, iter_t &output, filter_t filter) {
         if (!node->isLeaf()) {
           for (size_t i = 0; i < (1 << n_dim); ++i) {
-            if (nodedata_t::overlap_test(node->children[i].aabb, obj)) {
+            if (nodedata_t::overlap_test(node->children[i].aabb, object)) {
               _findObjectsNear(node->children + i, object, output, filter);
             }
           }
           return;
         }
+        node->data.fetch(output);
       }
 
       // in order to be used as an input, aabb_t::intersect(const obj_t &) must exist.
       template<typename obj_t, typename iter_t, typename filter_t>
       void findObjectsNear(const obj_t &object, iter_t output, filter_t filter) {
-        if (!nodedata_t::overlap_test(root->aabb, obj)) return;
+        if (!nodedata_t::overlap_test(root->aabb, object)) return;
         _findObjectsNear(root, object, output, filter);
       }
     };
