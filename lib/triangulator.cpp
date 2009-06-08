@@ -22,6 +22,9 @@
 #include <carve/csg.hpp>
 #include <carve/triangulator.hpp>
 
+#include <fstream>
+#include <sstream>
+
 #include <algorithm>
 
 namespace {
@@ -66,6 +69,8 @@ namespace {
     }
 
     static double triScore(const vertex_info *p, const vertex_info *v, const vertex_info *n) {
+
+    // different scoring functions.
 #if 0
       bool convex = isLeft(p, v, n);
       if (!convex) return -1e-5;
@@ -75,46 +80,49 @@ namespace {
       if (a1 < 0) a1 += M_PI * 2;
       if (a2 < 0) a2 += M_PI * 2;
 
-      std::cerr << "a1: " << a1 << " a2: " << a2 << " a3: " << (M_PI - a1 - a2) << std::endl;
-      std::cerr << "...score: " << std::min(a1, std::min(a2, M_PI - a1 - a2)) / (M_PI / 3) << std::endl;
       return std::min(a1, std::min(a2, M_PI - a1 - a2)) / (M_PI / 3);
 #endif
 
 #if 1
       // range: 0 - 1
       double a, b, c;
+
       bool convex = isLeft(p, v, n);
       if (!convex) return -1e-5;
+
       a = (n->p - v->p).length();
       b = (p->p - n->p).length();
       c = (v->p - p->p).length();
+
       if (a < 1e-10 || b < 1e-10 || c < 1e-10) return 0.0;
+
       return std::max(std::min((a+b)/c, std::min((a+c)/b, (b+c)/a)) - 1.0, 0.0);
 #endif
     }
 
     double calcScore() const {
+
 #if 0
+      // examine only this triangle.
       double this_tri = triScore(prev, this, next);
       return this_tri;
 #endif
 
 #if 1
+      // attempt to look ahead in the neighbourhood to attempt to clip ears that have good neighbours.
       double this_tri = triScore(prev, this, next);
       double next_tri = triScore(prev, next, next->next);
       double prev_tri = triScore(prev->prev, prev, next);
       double next_delta = next_tri - next->score;
       double prev_delta = prev_tri - prev->score;
-#if defined(DEBUG)
-      std::cerr << "calcScore: " << this_tri << ", " << prev_delta << ", " << next_delta << std::endl;
-#endif
+
       return this_tri + std::max(next_tri, prev_tri) * .5;
 #endif
 
 #if 0
+      // attempt to penalise ears that will require producing a sliver triangle.
       double score = triScore(prev, this, next);
 
-      // penalise ears that will require producing a sliver triangle.
       double a1, a2;
       a1 = carve::geom2d::atan2(prev->p - next->p);
       a2 = carve::geom2d::atan2(next->next->p - next->p);
@@ -237,6 +245,23 @@ namespace {
 
 
 
+  bool internalToAngle(const vertex_info *a,
+                       const vertex_info *b,
+                       const vertex_info *c,
+                       const carve::geom2d::P2 &p) {
+    bool reflex = carve::geom2d::orient2d(a->p, b->p, c->p) <= 0.0;
+
+    if (reflex) {
+      return
+        carve::geom2d::orient2d(a->p, b->p, p) >= 0.0 ||
+        carve::geom2d::orient2d(b->p, c->p, p) >= 0.0;
+    } else {
+      return
+        carve::geom2d::orient2d(a->p, b->p, p) > 0.0 &&
+        carve::geom2d::orient2d(b->p, c->p, p) > 0.0;
+    }
+  }
+
   bool inCone(const vertex_info *a,
               const vertex_info *b,
               const vertex_info *c,
@@ -274,10 +299,14 @@ namespace {
   // 60% of execution time
   bool isClipable(vertex_info *v) {
     for (vertex_info *v_test = v->next->next; v_test != v->prev; v_test = v_test->next) {
-      if (!v_test->convex &&
-          v_test->p != v->prev->p &&
-          v_test->p != v->next->p &&
-          pointInTriangle(v->prev, v, v->next, v_test)) {
+      if (v_test->convex ||
+          v_test->p == v->prev->p ||
+          v_test->p == v->next->p ||
+          (v_test->p == v->p && (v_test->next->p == v->prev->p || v_test->prev->p == v->next->p))) {
+        continue;
+      }
+
+      if (pointInTriangle(v->prev, v, v->next, v_test)) {
         return false;
       }
     }
@@ -289,24 +318,39 @@ namespace {
     vertex_info *n;
     size_t count = 0;
     do {
+      bool remove = false;
       if (v->p == v->next->p) {
+        remove = true;
+      } else if (v->p == v->next->next->p) {
+        if (v->next->p == v->next->next->next->p) {
+          // a 'z' in the loop: z (a) b a b c -> remove a-b-a -> z (a) a b c -> remove a-a-b (next loop) -> z a b c
+          // z --(a)-- b
+          //         /
+          //        /
+          //      a -- b -- d
+          remove = true;
+        } else {
+          // a 'shard' in the loop: z (a) b a c d -> remove a-b-a -> z (a) a b c d -> remove a-a-b (next loop) -> z a b c d
+          // z --(a)-- b
+          //         /
+          //        /
+          //      a -- c -- d
+          // n.b. can only do this if the shard is pointing out of the polygon. i.e. b is outside z-a-c
+          remove = !internalToAngle(v->prev, v, v->next->next->next, v->next->p);
+        }
+      }
+
+      if (remove) {
         result.push_back(carve::triangulate::tri_idx(v->idx, v->next->idx, v->next->next->idx));
         n = v->next;
         if (n == begin) begin = n->next;
         n->remove();
         count++;
         delete n;
-      } else if (v->p == v->next->next->p) {
-        if (v->next->p == v->next->next->p ||
-            (!v->convex && !v->next->next->convex)) {
-          result.push_back(carve::triangulate::tri_idx(v->idx, v->next->idx, v->next->next->idx));
-          // leave v where it is, so that the next degeneracy gets clipped.
-          v->next->remove();
-          count++;
-        }
-      } else {
-        v = v->next;
+        continue;
       }
+
+      v = v->next;
     } while (v != begin);
     return count;
   }
@@ -340,8 +384,8 @@ namespace {
       heap.clear();
 
       for (v2 = v1->next->next; v2 != v1->prev; v2 = v2->next) {
-        if (!inCone(v1->prev, v1, v1->next, v2->p) ||
-            !inCone(v2->prev, v2, v2->next, v1->p)) continue;
+        if (!internalToAngle(v1->prev, v1, v1->next, v2->p) ||
+            !internalToAngle(v2->prev, v2, v2->next, v1->p)) continue;
 
         heap.push_back(v2);
         std::push_heap(heap.begin(), heap.end(), vertex_info_l2norm_inc_ordering(v1));
@@ -462,8 +506,6 @@ namespace {
       remain++;
     } while (v != begin);
 
-    std::cerr << "doTriangulate; remain=" << remain << std::endl;
-
     while (vq.size()) {
       vertex_info *v = vq.pop();
       if (!isClipable(v)) {
@@ -495,28 +537,45 @@ namespace {
       updateVertex(p, vq);
 
       bool swapped = false;
-      std::cerr << "  continuation options: next; ";
-      if (n->isCandidate()) std::cerr << n->score << " "; else std::cerr << "---";
-      std::cerr << " prev; ";
-      if (p->isCandidate()) std::cerr << p->score << " "; else std::cerr << "---";
-      std::cerr << std::endl;
+
       if (n->score < p->score) { std::swap(n, p); swapped = true; }
 
       if (n->score > 0.25 && n->isCandidate() && isClipable(n)) {
-        std::cerr << "continue, " << (swapped ? "prev" : "next") << std::endl;
         vq.remove(n);
         v = n;
         goto continue_clipping;
       }
 
       if (p->score > 0.25 && p->isCandidate() && isClipable(p)) {
-        std::cerr << "continue, " << (swapped ? "next" : "prev") << std::endl;
         vq.remove(p);
         v = p;
         goto continue_clipping;
       }
 
-      std::cerr << "looking for new start point" << std::endl;
+#if defined(DEBUG)
+      {
+        std::cerr << "looking for new start point" << std::endl;
+        std::cerr << "remain = " << remain << std::endl;
+        std::vector<carve::triangulate::tri_idx> dummy;
+        std::vector<carve::geom2d::P2> dummy_p;
+        vertex_info *v = begin;
+        do {
+          dummy_p.push_back(v->p);
+          v = v->next;
+        } while (v != begin);
+        dumpPoly(dummy_p, dummy);
+      }
+#endif
+    }
+
+#if defined(DEBUG)
+    std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
+#endif
+
+    if (remain < 3) {
+      return true;
+    }
+
 #if defined(DEBUG)
     {
       std::cerr << "remain = " << remain << std::endl;
@@ -529,19 +588,17 @@ namespace {
       } while (v != begin);
       dumpPoly(dummy_p, dummy);
     }
+    std::cerr << "before removeDegeneracies: remain=" << remain << std::endl;
 #endif
-    }
-
-    std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
-
-    if (remain < 3) {
-      return true;
-    }
-
 
     if (remain > 3) {
       remain -= removeDegeneracies(begin, result);
     }
+
+#if defined(DEBUG)
+    std::cerr << "after removeDegeneracies: remain=" << remain << std::endl;
+#endif
+
     if (remain == 3) {
       result.push_back(carve::triangulate::tri_idx(begin->idx, begin->next->idx, begin->next->next->idx));
       return true;
@@ -556,6 +613,12 @@ namespace {
 #if defined(DEBUG)
   void dumpPoly(const std::vector<carve::geom2d::P2> &points,
                 const std::vector<carve::triangulate::tri_idx> &result) {
+    static int step = 0;
+    std::ostringstream filename;
+    filename << "poly_" << step++ << ".svg";
+    std::cerr << "dumping to " << filename.str() << std::endl;
+    std::ofstream out(filename.str().c_str());
+
     double minx = points[0].x, maxx = points[0].x;
     double miny = points[0].y, maxy = points[0].y;
 
@@ -563,43 +626,47 @@ namespace {
       minx = std::min(points[i].x, minx); maxx = std::max(points[i].x, maxx);
       miny = std::min(points[i].y, miny); maxy = std::max(points[i].y, maxy);
     }
+    double scale = 100 / std::max(maxx-minx, maxy-miny);
+
+    maxx *= scale; minx *= scale;
+    maxy *= scale; miny *= scale;
 
     double width = maxx - minx + 10;
     double height = maxy - miny + 10;
   
-    std::cerr << "\
+    out << "\
 <?xml version=\"1.0\"?>\n\
 <!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n\
 <svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"" << width << 
 "\" height=\"" << height << "\">\n \
 ";
 
-    std::cerr << "<polygon fill=\"rgb(0,0,0)\" stroke=\"blue\" stroke-width=\"1\" points=\"";
+    out << "<polygon fill=\"rgb(0,0,0)\" stroke=\"blue\" stroke-width=\"0.1\" points=\"";
     for (size_t i = 0; i < points.size(); ++i) {
-      if (i) std::cerr << ' ';
+      if (i) out << ' ';
       double x, y;
-      x = points[i].x - minx + 5;
-      y = points[i].y - miny + 5;
-      std::cerr << x << ',' << y;
+      x = scale * (points[i].x) - minx + 5;
+      y = scale * (points[i].y) - miny + 5;
+      out << x << ',' << y;
     }
-    std::cerr << "\" />" << std::endl;
+    out << "\" />" << std::endl;
 
     for (size_t i = 0; i < result.size(); ++i) {
-      std::cerr << "<polygon fill=\"rgb(255,255,255)\" stroke=\"black\" stroke-width=\"1\" points=\"";
+      out << "<polygon fill=\"rgb(255,255,255)\" stroke=\"black\" stroke-width=\"0.1\" points=\"";
       double x, y;
-      x = points[result[i].a].x - minx + 5;
-      y = points[result[i].a].y - miny + 5;
-      std::cerr << x << ',' << y << ' ';
-      x = points[result[i].b].x - minx + 5;
-      y = points[result[i].b].y - miny + 5;
-      std::cerr << x << ',' << y << ' ';
-      x = points[result[i].c].x - minx + 5;
-      y = points[result[i].c].y - miny + 5;
-      std::cerr << x << ',' << y;
-      std::cerr << "\" />" << std::endl;
+      x = scale * (points[result[i].a].x) - minx + 5;
+      y = scale * (points[result[i].a].y) - miny + 5;
+      out << x << ',' << y << ' ';        
+      x = scale * (points[result[i].b].x) - minx + 5;
+      y = scale * (points[result[i].b].y) - miny + 5;
+      out << x << ',' << y << ' ';        
+      x = scale * (points[result[i].c].x) - minx + 5;
+      y = scale * (points[result[i].c].y) - miny + 5;
+      out << x << ',' << y;
+      out << "\" />" << std::endl;
     }
 
-    std::cerr << "</svg>" << std::endl;
+    out << "</svg>" << std::endl;
   }
 #endif
 }
