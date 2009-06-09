@@ -90,6 +90,7 @@ namespace carve {
       void invert();
 
       bool containsPoint(const vector_t &p) const;
+      bool containsPointInProjection(const vector_t &p) const;
       bool simpleLineSegmentIntersection(const carve::geom::linesegment<ndim> &line,
                                          vector_t &intersection) const;
       IntersectionClass lineSegmentIntersection(const carve::geom::linesegment<ndim> &line,

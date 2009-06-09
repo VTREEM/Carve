@@ -937,11 +937,11 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::FV2SMap &face_edges,
         // determine whether the midpoint of the implied edge is contained in face_a and face_b
 
 #if defined(DEBUG)
-        std::cerr << "face_a->vertices.size() = " << face_a->vertices.size() << " face_a->containsPoint(c) = " << face_a->containsPoint(c) << std::endl;
-        std::cerr << "face_b->vertices.size() = " << face_b->vertices.size() << " face_b->containsPoint(c) = " << face_b->containsPoint(c) << std::endl;
+        std::cerr << "face_a->vertices.size() = " << face_a->vertices.size() << " face_a->containsPointInProjection(c) = " << face_a->containsPointInProjection(c) << std::endl;
+        std::cerr << "face_b->vertices.size() = " << face_b->vertices.size() << " face_b->containsPointInProjection(c) = " << face_b->containsPointInProjection(c) << std::endl;
 #endif
 
-        if (face_a->containsPoint(c) && face_b->containsPoint(c)) {
+        if (face_a->containsPointInProjection(c) && face_b->containsPointInProjection(c)) {
 #if defined(DEBUG)
           std::cerr << "adding edge: " << v1 << "-" << v2 << std::endl;
 #if defined(DEBUG_DRAW_FACE_EDGES)
@@ -980,12 +980,12 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::FV2SMap &face_edges,
 
 #if defined(DEBUG)
           std::cerr << "testing edge: " << v1 << "-" << v2 << " at " << c << std::endl;
-          std::cerr << "a: " << face_a->containsPoint(c) << " b: " << face_b->containsPoint(c) << std::endl;
-          std::cerr << "face_a->containsPoint(c): " << face_a->containsPoint(c) << std::endl;
-          std::cerr << "face_b->containsPoint(c): " << face_b->containsPoint(c) << std::endl;
+          std::cerr << "a: " << face_a->containsPointInProjection(c) << " b: " << face_b->containsPointInProjection(c) << std::endl;
+          std::cerr << "face_a->containsPointInProjection(c): " << face_a->containsPointInProjection(c) << std::endl;
+          std::cerr << "face_b->containsPointInProjection(c): " << face_b->containsPointInProjection(c) << std::endl;
 #endif
 
-          if (face_a->containsPoint(c) && face_b->containsPoint(c)) {
+          if (face_a->containsPointInProjection(c) && face_b->containsPointInProjection(c)) {
 #if defined(DEBUG)
             std::cerr << "adding edge: " << v1 << "-" << v2 << std::endl;
 #if defined(DEBUG_DRAW_FACE_EDGES)

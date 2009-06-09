@@ -221,6 +221,11 @@ namespace carve {
     }
 
     template<unsigned ndim>
+    bool Face<ndim>::containsPointInProjection(const vector_t &p) const {
+      return carve::geom2d::pointInPoly(vertices, p2_adapt_project<ndim>(project), face::project(this, p)).iclass != POINT_OUT;
+    }
+
+    template<unsigned ndim>
     bool Face<ndim>::simpleLineSegmentIntersection(const carve::geom::linesegment<ndim> &line,
                                                    vector_t &intersection) const {
       if (!line.OK()) return false;
