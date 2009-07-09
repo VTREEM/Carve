@@ -35,12 +35,12 @@ void GLUTriangulator::faceBegin(GLenum type) {
   vertices.clear();
 }
 
-void GLUTriangulator::faceVertex(const carve::poly::Vertex *vertex) {
+void GLUTriangulator::faceVertex(const carve::poly::Vertex<3> *vertex) {
   vertices.push_back(vertex);
 }
 
 void GLUTriangulator::faceEnd() {
-  std::vector<const carve::poly::Vertex *> fv;
+  std::vector<const carve::poly::Vertex<3> *> fv;
   fv.resize(3);
 
   switch (curr_type) {
@@ -87,7 +87,7 @@ static void __stdcall _faceBegin(GLenum type, void *data) {
 }
 
 static void __stdcall _faceVertex(void *vertex_data, void *data) {
-  static_cast<GLUTriangulator *>(data)->faceVertex(static_cast<const carve::poly::Vertex *>(vertex_data));
+  static_cast<GLUTriangulator *>(data)->faceVertex(static_cast<const carve::poly::Vertex<3> *>(vertex_data));
 }
 
 static void __stdcall _faceEnd(void *data) {
@@ -105,12 +105,12 @@ GLUTriangulator::~GLUTriangulator() {
   gluDeleteTess(tess);
 }
 
-void GLUTriangulator::processOutputFace(std::vector<carve::poly::Face *> &faces,
-                                        const carve::poly::Face *orig,
+void GLUTriangulator::processOutputFace(std::vector<carve::poly::Face<3> *> &faces,
+                                        const carve::poly::Face<3> *orig,
                                         bool flipped) {
   size_t f = 0;
   while (f < faces.size()) {
-    carve::poly::Face *face = faces[f];
+    carve::poly::Face<3> *face = faces[f];
     if (face->vertices.size() == 3) {
       ++f;
       continue;
