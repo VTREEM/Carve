@@ -24,7 +24,7 @@ if with_GUI
   noinst_LTLIBRARIES += libcarve_ui.la
   noinst_PROGRAMS += custom_collector test_intersect test_interpolate	\
 	  test_csg_interpolate test_slice test_slice_classify		\
-	  test_triangulate texture_example problem
+	  test_triangulate test_hole_incorporate texture_example problem
   libcarve_ui_la_SOURCES = geom_draw.cpp scene.cpp
   libcarve_ui_la_LIBADD = $(top_srcdir)/external/GLUI/libglui.la
 endif
@@ -44,6 +44,9 @@ test_aabb_tri_LDADD=../lib/libintersect.la
 
 test_triangulate_SOURCES=test_triangulate.cpp
 test_triangulate_LDADD=libcarve_ui.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
+
+test_hole_incorporate_SOURCES=test_hole_incorporate.cpp
+test_hole_incorporate_LDADD=libcarve_ui.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
 
 custom_collector_SOURCES=custom_collector.cpp
 custom_collector_LDADD=libcarve_fileformats.la libcarve_ui.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
