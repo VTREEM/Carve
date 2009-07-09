@@ -101,6 +101,10 @@ namespace carve {
 
     bool pickContainedPoint(const std::vector<P2> &poly, P2 &result);
 
+    static inline double signedArea(const P2 &a, const P2 &b, const P2 &c) {
+      return ((b.y + a.y) * (b.x - a.x) + (c.y + b.y) * (c.x - b.x) + (a.y + c.y) * (a.x - c.x)) / 2.0;
+    }
+
     template<typename T, typename adapt_t>
     double signedArea(const std::vector<T> &points, adapt_t adapt) {
       P2Vector::size_type l = points.size();
