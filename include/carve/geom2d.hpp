@@ -37,8 +37,8 @@ namespace carve {
     typedef carve::geom::linesegment<2> LineSegment2;
 
     struct p2_adapt_ident {
-      P2 &operator()(P2 &p) { return p; }
-      const P2 &operator()(const P2 &p) { return p; }
+      P2 &operator()(P2 &p) const { return p; }
+      const P2 &operator()(const P2 &p) const { return p; }
     };
 
     typedef std::vector<P2> P2Vector;
