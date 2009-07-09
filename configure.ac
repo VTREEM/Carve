@@ -164,7 +164,10 @@ fi
 AM_CONDITIONAL(with_GUI, test "x$with_GUI" = "xyes")
 AM_CONDITIONAL(with_BOOST, test "x$with_BOOST" != "xno")
 
-AC_SUBST([GL_CFLAGS GL_LIBS GLUT_CFLAGS GLUT_LIBS])
+AC_SUBST(GL_CFLAGS)
+AC_SUBST(GL_LIBS)
+AC_SUBST(GLUT_CFLAGS)
+AC_SUBST(GLUT_LIBS)
 
 AC_OUTPUT([
 	Makefile lib/Makefile src/Makefile external/Makefile
