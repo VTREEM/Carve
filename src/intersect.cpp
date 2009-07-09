@@ -52,6 +52,7 @@ struct Options : public opt::Parser {
   bool canonicalize;
   bool from_file;
   bool triangulate;
+  bool glu_triangulate;
   bool improve;
   carve::csg::CSG::CLASSIFY_TYPE classifier;
 
@@ -76,6 +77,7 @@ struct Options : public opt::Parser {
     if (o == "--ascii"        || o == "-a") { ascii = true; return; }
     if (o == "--rescale"      || o == "-r") { rescale = true; return; }
     if (o == "--triangulate"  || o == "-t") { triangulate = true; return; }
+    if (o == "--glu"          || o == "-g") { glu_triangulate = true; return; }
     if (o == "--improve"      || o == "-i") { improve = true; return; }
     if (o == "--edge"         || o == "-e") { classifier = carve::csg::CSG::CLASSIFY_EDGE; return; }
     if (o == "--epsilon"      || o == "-E") { carve::setEpsilon(strtod(v.c_str(), NULL)); return; }
@@ -145,6 +147,7 @@ struct Options : public opt::Parser {
     vtk = false;
     rescale = false;
     triangulate = false;
+    glu_triangulate = false;
     improve = false;
     classifier = carve::csg::CSG::CLASSIFY_NORMAL;
 
@@ -155,6 +158,7 @@ struct Options : public opt::Parser {
     option("vtk",          'V', false, "Output in .vtk format.");
     option("rescale",      'r', false, "Rescale prior to CSG operations.");
     option("triangulate",  't', false, "Triangulate output.");
+    option("glu",          'g', false, "Use GLU triangulator.");
     option("improve",      'i', false, "Improve triangulation by minimising internal edge lengths.");
     option("edge",         'e', false, "Use edge classifier.");
     option("epsilon",      'E', true,  "Set epsilon used for calculations.");
@@ -497,7 +501,11 @@ int main(int argc, char **argv) {
     try {
       carve::csg::CSG csg;
       if (options.triangulate) {
-        csg.hooks.registerHook(new carve::csg::CarveTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+        if (options.glu_triangulate) {
+          csg.hooks.registerHook(new GLUTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+        } else {
+          csg.hooks.registerHook(new carve::csg::CarveTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+        }
         if (options.improve) {
         }
       }

@@ -49,7 +49,8 @@ namespace carve {
           }
 
           std::vector<carve::triangulate::tri_idx> result;
-          carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(orig->project), face->vertices, result);
+
+          carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(face->project), face->vertices, result);
 
           std::vector<const carve::poly::Vertex<3> *> fv;
           fv.resize(3);
