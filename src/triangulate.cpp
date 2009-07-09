@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
       std::vector<carve::triangulate::tri_idx> result;
 
       carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
+      carve::triangulate::improve(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
 
       for (size_t j = 0; j < result.size(); ++j) {
         out_faces.push_back(carve::poly::Face<3>(
