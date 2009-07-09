@@ -105,7 +105,15 @@ static bool endswith(const std::string &a, const std::string &b) {
 carve::poly::Polyhedron *readModel(const std::string &file) {
   carve::poly::Polyhedron *poly;
 
-  if (endswith(file, ".ply")) {
+  if (file == "") {
+    if (options.obj) {
+      poly = readOBJ(std::cin);
+    } else if (options.vtk) {
+      poly = readVTK(std::cin);
+    } else {
+      poly = readPLY(std::cin);
+    }
+  } else if (endswith(file, ".ply")) {
     poly = readPLY(file);
   } else if (endswith(file, ".vtk")) {
     poly = readVTK(file);
@@ -124,10 +132,6 @@ carve::poly::Polyhedron *readModel(const std::string &file) {
 
 int main(int argc, char **argv) {
   options.parse(argc, argv);
-
-  if (options.file == "") {
-    exit(1);
-  }
 
   carve::poly::Polyhedron *poly = readModel(options.file);
 
