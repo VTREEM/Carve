@@ -1,5 +1,5 @@
-bin_PROGRAMS = intersect triangulate convert cut
-noinst_PROGRAMS = test_geom test_eigen test_spacetree test_aabb test_aabb_tri test_rescale tetrahedron
+bin_PROGRAMS = intersect triangulate convert
+noinst_PROGRAMS = test_geom test_eigen test_spacetree test_aabb test_aabb_tri test_rescale tetrahedron cutgraph
 noinst_LTLIBRARIES = libcarve_fileformats.la libcarve_misc.la
 
 noinst_HEADERS= geom_draw.hpp geometry.hpp glu_triangulator.hpp		\
@@ -54,8 +54,8 @@ test_intersect_LDADD=libcarve_fileformats.la libcarve_ui.la libcarve_misc.la ../
 triangulate_SOURCES=triangulate.cpp
 triangulate_LDADD=libcarve_fileformats.la ../lib/libintersect.la
 
-cut_SOURCES=cut.cpp
-cut_LDADD=libcarve_misc.la ../lib/libintersect.la libcarve_fileformats.la
+cutgraph_SOURCES=cut.cpp
+cutgraph_LDADD=libcarve_misc.la ../lib/libintersect.la libcarve_fileformats.la
 
 intersect_SOURCES=intersect.cpp
 intersect_LDADD=libcarve_fileformats.la libcarve_misc.la ../lib/libintersect.la
