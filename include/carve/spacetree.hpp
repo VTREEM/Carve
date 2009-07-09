@@ -29,18 +29,28 @@ namespace carve {
 
   namespace space {
 
-    const static double SLACK_FACTOR = 1.0009765625;
-    const static unsigned MAX_SPLIT_DEPTH = 32;
+    static inline bool intersection_test(const carve::geom::aabb<3> &aabb, const carve::poly::Face<3> *face) {
+      if (face->vertices.size() == 3) {
+        return aabb.intersects(carve::geom::tri<3>(face->vertices[0]->v, face->vertices[1]->v, face->vertices[2]->v));
+      } else {
+        // partial, conservative SAT.
+        return aabb.intersects(face->aabb) && aabb.intersects(face->plane_eqn);
+      }
+    }
+
+    static inline bool intersection_test(const carve::geom::aabb<3> &aabb, const carve::poly::Edge<3> *edge) {
+      return aabb.intersectsLineSegment(edge->v1->v, edge->v2->v);
+    }
+
+    static inline bool intersection_test(const carve::geom::aabb<3> &aabb, const carve::poly::Vertex<3> *vertex) {
+      return aabb.intersects(vertex->v);
+    }
+
+
 
     struct nodedata_FaceEdge {
       std::vector<const carve::poly::Face<3> *> faces;
       std::vector<const carve::poly::Edge<3> *> edges;
-
-      static bool overlap_test(const carve::geom::aabb<3> &aabb, const carve::poly::Face<3> *face) {
-      }
-
-      static bool overlap_test(const carve::geom::aabb<3> &aabb, const carve::poly::Edge<3> *edge) {
-      }
 
       void add(const carve::poly::Face<3> *face) {
         faces.push_back(face);
@@ -60,11 +70,22 @@ namespace carve {
         std::copy(faces.begin(), faces.end(), iter);
       }
 
+      template<typename node_t>
+      void propagate(node_t *node) {
+      }
+
       template<typename iter_t>
       void fetch(iter_t &iter) {
         return _fetch(iter, std::iterator_traits<iter_t>::value_type);
       }
     };
+
+
+
+    const static double SLACK_FACTOR = 1.0009765625;
+    const static unsigned MAX_SPLIT_DEPTH = 32;
+
+
 
     template<unsigned n_dim, typename nodedata_t>
     class SpatialSubdivTree {
@@ -73,7 +94,12 @@ namespace carve {
       typedef carve::geom::vector<n_dim> vector_t;
 
     public:
+
       class Node {
+        enum {
+          n_children = 1 << n_dim
+        };
+
       public:
         Node *parent;
         Node *children;
@@ -107,8 +133,8 @@ namespace carve {
 
         void alloc_children() {
           vector_t mid = 0.5 * (min + max);
-          children = new Node[1 << n_dim];
-          for (size_t i = 0; i < (1 << n_dim); ++i) {
+          children = new Node[n_children];
+          for (size_t i = 0; i < (n_children); ++i) {
             vector_t new_min, new_max;
             for (size_t c = 0; c < n_dim; ++c) {
               if (i & (1 << c)) {
@@ -142,19 +168,56 @@ namespace carve {
         bool split() {
           if (isLeaf()) {
             alloc_children();
-            // redistribute geometry to children.
+            data.propagate(this);
           }
           return isLeaf();
         }
 
-        // XXX: how do we manage node contents in n-dim?
-        // std::vector<const carve::poly::Face<3> *> faces;
-        // std::vector<const carve::poly::Edge<3> *> edges;
-        // std::vector<const carve::poly::Vertex<3> *> vertices;
+        template<typename obj_t>
+        bool insert(const obj_t &object) {
+          if (!isLeaf()) {
+            for (size_t i = 0; i < n_children; ++i) {
+              if (intersection_test(children[i].aabb, object)) {
+                children[i].insert(object);
+              }
+            }
+          } else {
+            data.add(object);
+          }
+        }
 
-        // bool mightContain(const carve::poly::Face<3> &face);
-        // bool mightContain(const carve::poly::Edge<3> &edge);
-        // bool mightContain(const carve::poly::Vertex<3> &p);
+        template<typename obj_t>
+        void insertVector(typename std::vector<obj_t>::iterator beg, typename std::vector<obj_t>::iterator end) {
+          if (isLeaf()) {
+            while (beg != end) {
+              data.add(*beg);
+            }
+          } else {
+            for (size_t i = 0; i < n_children; ++i) {
+              typename std::vector<obj_t>::iterator mid = std::partition(beg, end, std::bind1st(intersection_test, children[i].aabb));
+              children[i].insertVector(beg, mid);
+            }
+          }
+        }
+
+        template<typename iter_t>
+        void insertMany(iter_t begin, iter_t end) {
+          if (isLeaf()) {
+          }
+        }
+
+        template<typename obj_t, typename iter_t, typename filter_t>
+        void findObjectsNear(const obj_t &object, iter_t &output, filter_t filter) {
+          if (!isLeaf()) {
+            for (size_t i = 0; i < n_children; ++i) {
+              if (intersection_test(children[i].aabb, object)) {
+                children[i].findObjectsNear(object, output, filter);
+              }
+            }
+            return;
+          }
+          data.fetch(output);
+        }
 
         // bool hasGeometry();
 
@@ -188,25 +251,13 @@ namespace carve {
         }
       };
 
-      template<typename obj_t, typename iter_t, typename filter_t>
-      void _findObjectsNear(Node *node, const obj_t &object, iter_t &output, filter_t filter) {
-        if (!node->isLeaf()) {
-          for (size_t i = 0; i < (1 << n_dim); ++i) {
-            if (nodedata_t::overlap_test(node->children[i].aabb, object)) {
-              _findObjectsNear(node->children + i, object, output, filter);
-            }
-          }
-          return;
-        }
-        node->data.fetch(output);
-      }
-
       // in order to be used as an input, aabb_t::intersect(const obj_t &) must exist.
       template<typename obj_t, typename iter_t, typename filter_t>
       void findObjectsNear(const obj_t &object, iter_t output, filter_t filter) {
-        if (!nodedata_t::overlap_test(root->aabb, object)) return;
-        _findObjectsNear(root, object, output, filter);
+        if (!intersection_test(root->aabb, object)) return;
+        root->findObjectsNear(root, object, output, filter);
       }
+
     };
 
   }
