@@ -659,7 +659,8 @@ namespace {
       }
     }
 
-    // patch holes into faces.
+#if 0
+    // use old templated projection code to patch holes into faces.
     for (unsigned i = 0; i < face_loops.size(); ++i) {
       std::vector<std::vector<const poly_t::vertex_t *> > face_hole_loops;
       face_hole_loops.resize(face_holes[i].size());
@@ -673,6 +674,41 @@ namespace {
         f_loops.push_back(face_loops[i]);
       }
     }
+
+#else
+    // use new 2d-only hole patching code.
+    for (size_t i = 0; i < face_loops.size(); ++i) {
+      if (!face_holes[i].size()) {
+        f_loops.push_back(face_loops[i]);
+        continue;
+      }
+
+      std::vector<std::vector<carve::geom2d::P2> > projected_poly;
+      projected_poly.resize(face_holes[i].size() + 1);
+      projected_poly[0].reserve(face_loops[i].size());
+      for (size_t j = 0; j < face_loops[i].size(); ++j) {
+        projected_poly[0].push_back(face->project(face_loops[i][j]->v));
+      }
+      for (size_t j = 0; j < face_holes[i].size(); ++j) {
+        projected_poly[j+1].reserve(hole_loops[face_holes[i][j]].size());
+        for (size_t k = 0; k < hole_loops[face_holes[i][j]].size(); ++k) {
+          projected_poly[j+1].push_back(face->project(hole_loops[face_holes[i][j]][k]->v));
+        }
+      }
+
+      std::vector<std::pair<size_t, size_t> > result = carve::triangulate::incorporateHolesIntoPolygon(projected_poly);
+      f_loops.push_back(std::vector<const poly_t::vertex_t *>());
+      std::vector<const poly_t::vertex_t *> &out = f_loops.back();
+      out.reserve(result.size());
+      for (size_t j = 0; j < result.size(); ++j) {
+        if (result[j].first == 0) {
+          out.push_back(face_loops[i][result[j].second]);
+        } else {
+          out.push_back(hole_loops[face_holes[i][result[j].first-1]][result[j].second]);
+        }
+      }
+    }
+#endif
   }
 
 
