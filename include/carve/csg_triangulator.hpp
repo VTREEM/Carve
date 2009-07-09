@@ -30,32 +30,38 @@ namespace carve {
       virtual void processOutputFace(std::vector<carve::poly::Face<3> *> &faces,
                                      const carve::poly::Face<3> *orig,
                                      bool flipped) {
-        size_t f = 0;
-        while (f < faces.size()) {
+        std::vector<carve::poly::Face<3> *> out_faces;
+
+        size_t n_tris = 0;
+        for (size_t f = 0; f < faces.size(); ++f) {
+          ASSERT(faces[f]->vertices.size() >= 3);
+          n_tris += faces[f]->vertices.size() - 2;
+        }
+
+        out_faces.reserve(n_tris);
+
+        for (size_t f = 0; f < faces.size(); ++f) {
           carve::poly::Face<3> *face = faces[f];
+
           if (face->vertices.size() == 3) {
-            ++f;
+            out_faces.push_back(face);
             continue;
           }
-          std::vector<carve::geom2d::P2> projected;
-          projected.reserve(face->vertices.size());
-          for (size_t i = 0; i < face->vertices.size(); ++i) {
-            projected.push_back(face->project(face->vertices[i]->v));
-          }
+
           std::vector<carve::triangulate::tri_idx> result;
-          carve::triangulate::triangulate(projected, result);
-          
-          faces.erase(faces.begin() + f);
-          faces.insert(faces.begin() + f, result.size(), NULL);
+          carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(orig->project), face->vertices, result);
+
           std::vector<const carve::poly::Vertex<3> *> fv;
           fv.resize(3);
           for (size_t i = 0; i < result.size(); ++i) {
             fv[0] = face->vertices[result[i].a];
             fv[1] = face->vertices[result[i].b];
             fv[2] = face->vertices[result[i].c];
-            faces[f++] = face->create(fv, false);
+            out_faces.push_back(face->create(fv, false));
           }
+          delete face;
         }
+        std::swap(faces, out_faces);
       }
     };
 
