@@ -13,10 +13,11 @@ include_HEADERS= aabb.hpp carve.hpp classification.hpp collection.hpp	\
 	pointset_impl.hpp pointset_iter.hpp poly.hpp poly_decl.hpp	\
 	poly_impl.hpp polyhedron_decl.hpp polyhedron_impl.hpp		\
 	polyline.hpp polyline_decl.hpp polyline_impl.hpp		\
-	polyline_iter.hpp rescale.hpp tag.hpp timing.hpp tree.hpp	\
-	triangulator.hpp util.hpp vector.hpp vertex_decl.hpp		\
-	vertex_impl.hpp cbrt.h config.h gnu_cxx.h vcpp_config.h		\
-	win32.h xcode_config.h collection/unordered/boost_impl.hpp	\
+	polyline_iter.hpp rescale.hpp spacetree.hpp tag.hpp timing.hpp	\
+	tree.hpp triangulator.hpp triangulator_impl.hpp util.hpp	\
+	vector.hpp vertex_decl.hpp vertex_impl.hpp cbrt.h config.h	\
+	gnu_cxx.h vcpp_config.h win32.h xcode_config.h			\
+	collection/unordered/boost_impl.hpp				\
 	collection/unordered/fallback_impl.hpp				\
 	collection/unordered/libstdcpp_impl.hpp				\
 	collection/unordered/std_impl.hpp				\
