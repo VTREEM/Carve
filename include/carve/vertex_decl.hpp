@@ -77,6 +77,16 @@ namespace carve {
 
 
 
+    template<unsigned ndim>
+    double distance(const Vertex<ndim> *v1, const Vertex<ndim> *v2) {
+      return distance(v1->v, v2->v);
+    }
+
+    template<unsigned ndim>
+    double distance(const Vertex<ndim> &v1, const Vertex<ndim> &v2) {
+      return distance(v1.v, v2.v);
+    }
+
     struct vec_adapt_vertex_ref {
       template<unsigned ndim>
       const typename Vertex<ndim>::vector_t &operator()(const Vertex<ndim> &v) const { return v.v; }
