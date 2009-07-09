@@ -120,6 +120,7 @@ carve::poly::Polyhedron *readModel(const std::string &file) {
   } else if (endswith(file, ".obj")) {
     poly = readOBJ(file);
   }
+
   if (poly == NULL) return NULL;
 
   std::cerr << "loaded polyhedron " << poly << " has "
@@ -154,18 +155,9 @@ int main(int argc, char **argv) {
             &out_vertices[poly->vertexToIndex_fast(f.vertices[2])]
             ));
     } else {
-      std::vector<carve::geom2d::P2> projected;
-      projected.reserve(f.vertices.size());
-      for (size_t j = 0; j < f.vertices.size(); ++j) {
-        projected.push_back(f.project(f.vertices[j]->v));
-      }
-
       std::vector<carve::triangulate::tri_idx> result;
-      carve::triangulate::triangulate(projected, result);
-      std::cerr << "triangulation, :" << projected.size() << " points -> " << result.size() << " triangles" << std::endl;
-      for (size_t j = 0; j < projected.size(); ++j) {
-        std::cerr << "    " << j << ": " << projected[j] << std::endl;
-      }
+
+      carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
 
       std::map<std::pair<size_t, size_t>, int> pairs;
       for (size_t j = 0; j < result.size(); ++j) {
