@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
   try {
     result.clear();
     carve::triangulate::triangulate(poly, result);
+    carve::triangulate::improve(poly, result);
   } catch (carve::exception exc) {
     std::cerr << "FAIL: " << exc.str() << std::endl;
   }
