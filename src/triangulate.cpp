@@ -159,25 +159,12 @@ int main(int argc, char **argv) {
 
       carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
 
-      std::map<std::pair<size_t, size_t>, int> pairs;
       for (size_t j = 0; j < result.size(); ++j) {
-        std::cerr << "   " << result[j].a << " " << result[j].b << " " << result[j].c << std::endl;
-        if (result[j].a < result[j].b) pairs[std::make_pair(result[j].a, result[j].b)]++; else pairs[std::make_pair(result[j].b, result[j].a)]--;
-        if (result[j].b < result[j].c) pairs[std::make_pair(result[j].b, result[j].c)]++; else pairs[std::make_pair(result[j].c, result[j].b)]--;
-        if (result[j].c < result[j].a) pairs[std::make_pair(result[j].c, result[j].a)]++; else pairs[std::make_pair(result[j].a, result[j].c)]--;
         out_faces.push_back(carve::poly::Face<3>(
               &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].a])],
               &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].b])],
               &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].c])]
               ));
-      }
-      for (std::map<std::pair<size_t, size_t>, int>::const_iterator
-             j = pairs.begin();
-           j != pairs.end();
-           ++j) {
-        if ((*j).second) {
-          std::cerr << "   | " << (*j).first.first << "-" << (*j).first.second << " " << (*j).second << std::endl;
-        }
       }
     }
   }
