@@ -950,7 +950,7 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::FV2SMap &face_edges,
 #endif
           // record the edge, with class information.
           if (v1 > v2) std::swap(v1, v2);
-          eclass[unoriented_edge(v1, v2)] = EC2(EDGE_ON, EDGE_ON);
+          eclass[ordered_edge(v1, v2)] = EC2(EDGE_ON, EDGE_ON);
           face_edges[face_a].insert(std::make_pair(v1, v2));
           face_edges[face_b].insert(std::make_pair(v1, v2));
         }
@@ -994,7 +994,7 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::FV2SMap &face_edges,
 #endif
             // record the edge, with class information.
             if (v1 > v2) std::swap(v1, v2);
-            eclass[unoriented_edge(v1, v2)] = EC2(EDGE_ON, EDGE_ON);
+            eclass[ordered_edge(v1, v2)] = EC2(EDGE_ON, EDGE_ON);
             face_edges[face_a].insert(std::make_pair(v1, v2));
             face_edges[face_b].insert(std::make_pair(v1, v2));
           }
