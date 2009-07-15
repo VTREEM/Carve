@@ -36,16 +36,45 @@ namespace carve {
     typedef carve::geom::ray<2> Ray2;
     typedef carve::geom::linesegment<2> LineSegment2;
 
+
+
     struct p2_adapt_ident {
       P2 &operator()(P2 &p) const { return p; }
       const P2 &operator()(const P2 &p) const { return p; }
     };
 
+
+
     typedef std::vector<P2> P2Vector;
+
+    /** 
+     * \brief Return the orientation of c with respect to the ray defined by a->b.
+     *
+     * (Can be implemented exactly)
+     * 
+     * @param[in] a 
+     * @param[in] b 
+     * @param[in] c 
+     * 
+     * @return positive, if c to the left of a->b.
+     *         zero, if c is colinear with a->b.
+     *         negative, if c to the right of a->b.
+     */
+    inline double orient2d(const P2 &a, const P2 &b, const P2 &c) {
+      double acx = a.x - c.x;
+      double bcx = b.x - c.x;
+      double acy = a.y - c.y;
+      double bcy = b.y - c.y;
+      return acx * bcy - acy * bcx;
+    }
+
+
 
     static inline double atan2(const P2 &p) {
       return ::atan2(p.y, p.x);
     }
+
+
 
     struct LineIntersectionInfo {
       LineIntersectionClass iclass;
@@ -85,12 +114,6 @@ namespace carve {
     LineIntersectionInfo lineSegmentIntersection(const P2 &l1v1, const P2 &l1v2, const P2 &l2v1, const P2 &l2v2);
     LineIntersectionInfo lineSegmentIntersection(const LineSegment2 &l1, const LineSegment2 &l2);
 
-    double signedArea(const std::vector<P2> &points);
-
-    bool pointInPolySimple(const std::vector<P2> &points, const P2 &p);
-
-    PolyInclusionInfo pointInPoly(const std::vector<P2> &points, const P2 &p);
-
     int lineSegmentPolyIntersections(const std::vector<P2> &points,
                                      LineSegment2 line,
                                      std::vector<PolyInclusionInfo> &out);
@@ -99,7 +122,30 @@ namespace carve {
                                            LineSegment2 line,
                                            std::vector<PolyInclusionInfo> &out);
 
-    bool pickContainedPoint(const std::vector<P2> &poly, P2 &result);
+
+
+    static inline bool quadIsConvex(const T &a, const T &b, const T &c, const T &d) {
+      double s_1, s_2;
+
+      s_1 = carve::geom2d::orient2d(a, c, b);
+      s_2 = carve::geom2d::orient2d(a, c, d);
+      if ((s_1 < 0.0 && s_2 < 0.0) || (s_1 > 0.0 && s_2 > 0.0)) return false;
+
+      s_1 = carve::geom2d::orient2d(b, d, a);
+      s_2 = carve::geom2d::orient2d(b, d, c);
+      if ((s_1 < 0.0 && s_2 < 0.0) || (s_1 > 0.0 && s_2 > 0.0)) return false;
+
+      return true;
+    }
+
+    template<typename T, typename adapt_t>
+    inline bool quadIsConvex(const T &a, const T &b, const T &c, const T &d, adapt_t adapt) {
+      return quadIsConvex(adapt(a), adapt(b), adapt(c), adapt(d));
+    }
+
+
+
+    double signedArea(const std::vector<P2> &points);
 
     static inline double signedArea(const P2 &a, const P2 &b, const P2 &c) {
       return ((b.y + a.y) * (b.x - a.x) + (c.y + b.y) * (c.x - b.x) + (a.y + c.y) * (a.x - c.x)) / 2.0;
@@ -119,6 +165,8 @@ namespace carve {
     }
 
 
+
+    bool pointInPolySimple(const std::vector<P2> &points, const P2 &p);
 
     template<typename T, typename adapt_t>
     bool pointInPolySimple(const std::vector<T> &points, adapt_t adapt, const P2 &p) {
@@ -148,6 +196,8 @@ namespace carve {
 
 
 
+    PolyInclusionInfo pointInPoly(const std::vector<P2> &points, const P2 &p);
+
     template<typename T, typename adapt_t>
     PolyInclusionInfo pointInPoly(const std::vector<T> &points, adapt_t adapt, const P2 &p) {
       P2Vector::size_type l = points.size();
@@ -176,6 +226,8 @@ namespace carve {
 
 
 
+    bool pickContainedPoint(const std::vector<P2> &poly, P2 &result);
+
     template<typename T, typename adapt_t>
     bool pickContainedPoint(const std::vector<T> &poly, adapt_t adapt, P2 &result) {
 #if defined(DEBUG)
@@ -200,27 +252,6 @@ namespace carve {
         }
       }
       return false;
-    }
-
-    /** 
-     * \brief Return the orientation of c with respect to the ray defined by a->b.
-     *
-     * (Can be implemented exactly)
-     * 
-     * @param[in] a 
-     * @param[in] b 
-     * @param[in] c 
-     * 
-     * @return positive, if c to the left of a->b.
-     *         zero, if c is colinear with a->b.
-     *         negative, if c to the right of a->b.
-     */
-    inline double orient2d(const carve::geom2d::P2 &a, const carve::geom2d::P2 &b, const carve::geom2d::P2 &c) {
-      double acx = a.x - c.x;
-      double bcx = b.x - c.x;
-      double acy = a.y - c.y;
-      double bcy = b.y - c.y;
-      return acx * bcy - acy * bcx;
     }
 
   }
