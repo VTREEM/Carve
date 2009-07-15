@@ -23,6 +23,7 @@ namespace carve {
   namespace csg {
 
     typedef std::pair<const carve::poly::Vertex<3> *, const carve::poly::Vertex<3> *> V2;
+    typedef std::pair<const carve::poly::Face<3> *, const carve::poly::Face<3> *> F2;
 
     static inline V2 unoriented_edge(const carve::poly::Vertex<3> *a, const carve::poly::Vertex<3> *b) {
       return V2(std::min(a, b), std::max(a, b));
