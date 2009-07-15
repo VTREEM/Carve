@@ -503,10 +503,15 @@ int main(int argc, char **argv) {
       if (options.triangulate) {
         if (options.glu_triangulate) {
           csg.hooks.registerHook(new GLUTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+          if (options.improve) {
+            csg.hooks.registerHook(new carve::csg::CarveTriangulationImprover, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+          }
         } else {
-          csg.hooks.registerHook(new carve::csg::CarveTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
-        }
-        if (options.improve) {
+          if (options.improve) {
+            csg.hooks.registerHook(new carve::csg::CarveTriangulatorWithImprovement, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+          } else {
+            csg.hooks.registerHook(new carve::csg::CarveTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+          }
         }
       }
       result = p->eval(csg);
