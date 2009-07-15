@@ -85,6 +85,8 @@ namespace carve {
         struct { unsigned a, b, c; };
       };
 
+      tri_idx() : a(0), b(0), c(0) {
+      }
       tri_idx(unsigned _a, unsigned _b, unsigned _c) : a(_a), b(_b), c(_c) {
       }
     };
