@@ -124,7 +124,7 @@ namespace carve {
 
 
 
-    static inline bool quadIsConvex(const T &a, const T &b, const T &c, const T &d) {
+    static inline bool quadIsConvex(const P2 &a, const P2 &b, const P2 &c, const P2 &d) {
       double s_1, s_2;
 
       s_1 = carve::geom2d::orient2d(a, c, b);
