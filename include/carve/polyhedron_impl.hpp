@@ -196,6 +196,30 @@ namespace carve {
 
 
 
+    inline bool Polyhedron::edgeOnManifold(const edge_t *e, int m_id) const {
+      const std::vector<const face_t *> &edge_faces = connectivity.edge_to_face[edgeToIndex_fast(e)];
+
+      for (size_t i = 0; i < (edge_faces.size() & ~1U); ++i) {
+        const face_t *f1 = edge_faces[i];
+        const face_t *f2 = edge_faces[i+1];
+        assert (f1 || f2);
+        if (f1 && f1->manifold_id == m_id) return true;
+        if (f2 && f2->manifold_id == m_id) return true;
+      }
+      return false;
+    }
+
+    inline bool Polyhedron::vertexOnManifold(const vertex_t *v, int m_id) const {
+      const std::vector<const face_t *> &f = connectivity.vertex_to_face[vertexToIndex_fast(v)];
+
+      for (size_t i = 0; i < f.size(); ++i) {
+        if (f[i]->manifold_id == m_id) return true;
+      }
+      return false;
+    }
+
+
+
     template<typename T>
     int Polyhedron::edgeManifolds(const edge_t *e, T result) const {
       const std::vector<const face_t *> &edge_faces = connectivity.edge_to_face[edgeToIndex_fast(e)];
