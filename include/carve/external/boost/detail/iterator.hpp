@@ -148,7 +148,7 @@ struct iterator_traits<T const*>
 # include <cstddef>
 
 // should be the last #include
-# include "boost/type_traits/detail/bool_trait_def.hpp"
+# include "carve/external/boost/type_traits/detail/bool_trait_def.hpp"
 
 namespace boost { namespace detail {
 

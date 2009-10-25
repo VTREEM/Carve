@@ -9,7 +9,7 @@
 
 //  Kai C++ compiler setup:
 
-#include "boost/config/compiler/common_edg.hpp"
+#include "carve/external/boost/config/compiler/common_edg.hpp"
 
 #   if (__KCC_VERSION <= 4001) || !defined(BOOST_STRICT_CONFIG)
       // at least on Sun, the contents of <cwchar> is not in namespace std
@@ -20,8 +20,6 @@
 # if !defined(_EXCEPTIONS)
 #     define BOOST_NO_EXCEPTIONS
 # endif
-
-#define BOOST_COMPILER "Kai C++ version " BOOST_STRINGIZE(__KCC_VERSION)
 
 //
 // last known and checked version is 4001:

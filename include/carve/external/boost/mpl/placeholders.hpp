@@ -15,9 +15,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source: /Users/sargeant/projects/PERSONAL/CARVE-SVN/include/carve/external/boost/mpl/placeholders.hpp,v $
-// $Date: 2008/09/25 04:35:41 $
-// $Revision: a8b879c8853c $
+// $Id: placeholders.hpp 49267 2008-10-11 06:19:02Z agurtovoy $
+// $Date: 2008-10-11 02:19:02 -0400 (Sat, 11 Oct 2008) $
+// $Revision: 49267 $
 
 
 #if !defined(BOOST_MPL_PREPROCESSING_MODE)
@@ -69,7 +69,7 @@ using BOOST_MPL_AUX_ADL_BARRIER_NAMESPACE::_;
 /// agurt, 17/mar/02: one more placeholder for the last 'apply#' 
 /// specialization
 #define BOOST_PP_ITERATION_PARAMS_1 \
-    (3,(1, BOOST_MPL_LIMIT_METAFUNCTION_ARITY + 1, <boost/mpl/placeholders.hpp>))
+    (3,(1, BOOST_MPL_LIMIT_METAFUNCTION_ARITY + 1, <carve/external/boost/mpl/placeholders.hpp>))
 #include BOOST_PP_ITERATE()
 
 #endif // BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS

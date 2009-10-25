@@ -1,7 +1,4 @@
-BOOST unordered_map and unordered_set
-
-This is constructed partially from the boost sandbox and partially from
-Boost 1.35.
+BOOST unordered_map, unordered_set and random. From Boost 1.40
 
 Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
 Copyright (C) 2005-2007 Daniel James.

@@ -7,9 +7,9 @@
 // (See accompanying file LICENSE_1_0.txt or copy at 
 // http://www.boost.org/LICENSE_1_0.txt)
 
-// $Source: /Users/sargeant/projects/PERSONAL/CARVE-SVN/include/carve/external/boost/type_traits/detail/bool_trait_def.hpp,v $
-// $Date: 2008/09/25 04:35:41 $
-// $Revision: a8b879c8853c $
+// $Source$
+// $Date: 2006-07-12 07:10:22 -0400 (Wed, 12 Jul 2006) $
+// $Revision: 34511 $
 
 #include <carve/external/boost/type_traits/detail/template_arity_spec.hpp>
 #include <carve/external/boost/type_traits/integral_constant.hpp>

@@ -72,6 +72,10 @@
 //  Greenhills C++
 #   define BOOST_COMPILER_CONFIG "carve/external/boost/config/compiler/greenhills.hpp"
 
+#elif defined __CODEGEARC__
+//  CodeGear - must be checked for before Borland
+#   define BOOST_COMPILER_CONFIG "carve/external/boost/config/compiler/codegear.hpp"
+
 #elif defined __BORLANDC__
 //  Borland
 #   define BOOST_COMPILER_CONFIG "carve/external/boost/config/compiler/borland.hpp"

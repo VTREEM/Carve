@@ -10,9 +10,9 @@
 //
 // See http://www.boost.org/libs/mpl for documentation.
 
-// $Source: /Users/sargeant/projects/PERSONAL/CARVE-SVN/include/carve/external/boost/mpl/aux_/config/ttp.hpp,v $
-// $Date: 2008/09/25 04:35:41 $
-// $Revision: a8b879c8853c $
+// $Id: ttp.hpp 49267 2008-10-11 06:19:02Z agurtovoy $
+// $Date: 2008-10-11 02:19:02 -0400 (Sat, 11 Oct 2008) $
+// $Revision: 49267 $
 
 #include <carve/external/boost/mpl/aux_/config/msvc.hpp>
 #include <carve/external/boost/mpl/aux_/config/gcc.hpp>
@@ -31,7 +31,7 @@
 #if    !defined(BOOST_MPL_CFG_EXTENDED_TEMPLATE_PARAMETERS_MATCHING) \
     && !defined(BOOST_MPL_PREPROCESSING_MODE) \
     && (   BOOST_WORKAROUND(BOOST_MPL_CFG_GCC, BOOST_TESTED_AT(0x0302)) \
-        || BOOST_WORKAROUND(__BORLANDC__, < 0x600) \
+        || BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x610)) \
         )
 
 #   define BOOST_MPL_CFG_EXTENDED_TEMPLATE_PARAMETERS_MATCHING

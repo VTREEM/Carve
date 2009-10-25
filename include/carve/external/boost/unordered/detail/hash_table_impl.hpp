@@ -1,23 +1,23 @@
 
 // Copyright (C) 2003-2004 Jeremy B. Maitin-Shepard.
-// Copyright (C) 2005-2006 Daniel James
+// Copyright (C) 2005-2009 Daniel James
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-#define HASH_TABLE hash_table_equivalent_keys
-#define HASH_TABLE_DATA hash_table_data_equivalent_keys
-#define HASH_ITERATOR hash_iterator_equivalent_keys
-#define HASH_CONST_ITERATOR hash_const_iterator_equivalent_keys
-#define HASH_LOCAL_ITERATOR hash_local_iterator_equivalent_keys
-#define HASH_CONST_LOCAL_ITERATOR hash_const_local_iterator_equivalent_keys
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+#define BOOST_UNORDERED_TABLE hash_table_equivalent_keys
+#define BOOST_UNORDERED_TABLE_DATA hash_table_data_equivalent_keys
+#define BOOST_UNORDERED_ITERATOR hash_iterator_equivalent_keys
+#define BOOST_UNORDERED_CONST_ITERATOR hash_const_iterator_equivalent_keys
+#define BOOST_UNORDERED_LOCAL_ITERATOR hash_local_iterator_equivalent_keys
+#define BOOST_UNORDERED_CONST_LOCAL_ITERATOR hash_const_local_iterator_equivalent_keys
 #else
-#define HASH_TABLE hash_table_unique_keys
-#define HASH_TABLE_DATA hash_table_data_unique_keys
-#define HASH_ITERATOR hash_iterator_unique_keys
-#define HASH_CONST_ITERATOR hash_const_iterator_unique_keys
-#define HASH_LOCAL_ITERATOR hash_local_iterator_unique_keys
-#define HASH_CONST_LOCAL_ITERATOR hash_const_local_iterator_unique_keys
+#define BOOST_UNORDERED_TABLE hash_table_unique_keys
+#define BOOST_UNORDERED_TABLE_DATA hash_table_data_unique_keys
+#define BOOST_UNORDERED_ITERATOR hash_iterator_unique_keys
+#define BOOST_UNORDERED_CONST_ITERATOR hash_const_iterator_unique_keys
+#define BOOST_UNORDERED_LOCAL_ITERATOR hash_local_iterator_unique_keys
+#define BOOST_UNORDERED_CONST_LOCAL_ITERATOR hash_const_local_iterator_unique_keys
 #endif
 
 namespace boost {
@@ -28,23 +28,22 @@ namespace boost {
         //
         // Responsible for managing the hash buckets.
 
-        template <class Alloc>
-        class HASH_TABLE_DATA
+        template <typename Alloc>
+        class BOOST_UNORDERED_TABLE_DATA
         {
         public:
-            class node;
-            class node_links;
-            class bucket;
+            typedef BOOST_UNORDERED_TABLE_DATA data;
+
+            struct node;
+            struct bucket;
             typedef std::size_t size_type;
+            typedef std::ptrdiff_t difference_type;
 
             typedef Alloc value_allocator;
 
             typedef BOOST_DEDUCED_TYPENAME
                 boost::unordered_detail::rebind_wrap<Alloc, node>::type
                 node_allocator;
-            typedef BOOST_DEDUCED_TYPENAME
-                boost::unordered_detail::rebind_wrap<Alloc, node_links>::type
-                node_links_allocator;
             typedef BOOST_DEDUCED_TYPENAME
                 boost::unordered_detail::rebind_wrap<Alloc, bucket>::type
                 bucket_allocator;
@@ -53,149 +52,229 @@ namespace boost {
             typedef BOOST_DEDUCED_TYPENAME allocator_pointer<node_allocator>::type node_ptr;
             typedef BOOST_DEDUCED_TYPENAME allocator_pointer<bucket_allocator>::type bucket_ptr;
             typedef BOOST_DEDUCED_TYPENAME allocator_reference<value_allocator>::type reference;
+            typedef BOOST_DEDUCED_TYPENAME allocator_reference<bucket_allocator>::type bucket_reference;
+
+            typedef bucket_ptr link_ptr;
 
             // Hash Bucket
             //
             // all no throw
 
-            class bucket
+            struct bucket
             {
+            private:
                 bucket& operator=(bucket const&);
             public:
-                node_ptr first_;
+                link_ptr next_;
 
-                bucket() : first_()
+                bucket() : next_()
                 {
-                    BOOST_HASH_MSVC_RESET_PTR(first_);
+                    BOOST_UNORDERED_MSVC_RESET_PTR(next_);
                 }
 
-                bucket(bucket const& x) : first_(x.first_)
+                bucket(bucket const& x) : next_(x.next_)
                 {
                     // Only copy construct when allocating.
-                    BOOST_ASSERT(!x.first_);
+                    BOOST_ASSERT(!x.next_);
                 }
 
                 bool empty() const
                 {
-                    return !this->first_;
+                    return !this->next_;
                 }
+            };
+
+            // Value Base
+
+            struct value_base {
+                typename boost::aligned_storage<
+                    sizeof(value_type),
+                    ::boost::alignment_of<value_type>::value>::type data_;
+
+                void* address() { return this; }
             };
 
             // Hash Node
             //
             // all no throw
 
-            class node_links
-            {
+            struct node : value_base, bucket {
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
             public:
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-                node_links() : next_(), group_prev_()
+                node() : group_prev_()
                 {
-                    BOOST_HASH_MSVC_RESET_PTR(next_);
-                    BOOST_HASH_MSVC_RESET_PTR(group_prev_);
+                    BOOST_UNORDERED_MSVC_RESET_PTR(group_prev_);
                 }
 
-                node_ptr next_;
-                node_ptr group_prev_;
-#else
-                node_links() : next_()
-                {
-                    BOOST_HASH_MSVC_RESET_PTR(next_);
-                }
-
-                node_ptr next_;
+                link_ptr group_prev_;
 #endif
+
+                value_type& value() {
+                    return *static_cast<value_type*>(this->address());
+                }
             };
 
-            struct node
+            // allocators
+            //
+            // Stores all the allocators that we're going to need.
+
+            struct allocators
             {
-                node_links links_;
-                value_type value_;
+                node_allocator node_alloc_;
+                bucket_allocator bucket_alloc_;
+
+                allocators(value_allocator const& a)
+                    : node_alloc_(a), bucket_alloc_(a)
+                {}
+
+                void destroy(link_ptr ptr)
+                {
+                    node* raw_ptr = static_cast<node*>(&*ptr);
+                    BOOST_UNORDERED_DESTRUCT(&raw_ptr->value(), value_type);
+                    node_ptr n(node_alloc_.address(*raw_ptr));
+                    node_alloc_.destroy(n);
+                    node_alloc_.deallocate(n, 1);
+                }
+
+                void swap(allocators& x)
+                {
+                    boost::swap(node_alloc_, x.node_alloc_);
+                    boost::swap(bucket_alloc_, x.bucket_alloc_);
+                }
+
+                bool operator==(allocators const& x)
+                {
+                    return node_alloc_ == x.node_alloc_;
+                }
             };
 
             // node_constructor
             //
             // Used to construct nodes in an exception safe manner.
 
-            struct allocators
-            {
-                node_allocator node_alloc_;
-                bucket_allocator bucket_alloc_;
-                value_allocator value_alloc_;
-                node_links_allocator node_links_alloc_;
-
-                allocators(value_allocator const& a)
-                    : node_alloc_(a), bucket_alloc_(a),
-                    value_alloc_(a), node_links_alloc_(a)
-                {}
-
-                void destroy(node_ptr n)
-                {
-                    value_alloc_.destroy(value_alloc_.address(n->value_));
-                    node_links_alloc_.destroy(node_links_alloc_.address(n->links_));
-                    node_alloc_.deallocate(n, 1);
-                }
-
-                void swap(allocators& x)
-                {
-                    hash_swap(node_alloc_, x.node_alloc_);
-                    hash_swap(bucket_alloc_, x.bucket_alloc_);
-                    hash_swap(value_alloc_, x.value_alloc_);
-                    hash_swap(node_links_alloc_, x.node_links_alloc_);
-                }
-
-                bool operator==(allocators const& x)
-                {
-                    return value_alloc_ == x.value_alloc_;
-                }
-            };
-
             class node_constructor
             {
                 allocators& allocators_;
 
                 node_ptr node_;
+                bool node_constructed_;
                 bool value_constructed_;
-                bool node_links_constructed_;
 
             public:
 
                 node_constructor(allocators& a)
                     : allocators_(a),
-                    node_(), value_constructed_(false), node_links_constructed_(false)
+                    node_(), node_constructed_(false), value_constructed_(false)
                 {
-                    BOOST_HASH_MSVC_RESET_PTR(node_);
                 }
 
                 ~node_constructor()
                 {
                     if (node_) {
-                        if (value_constructed_)
-                            allocators_.value_alloc_.destroy(
-                                allocators_.value_alloc_.address(node_->value_));
-                        if (node_links_constructed_)
-                            allocators_.node_links_alloc_.destroy(
-                                allocators_.node_links_alloc_.address(node_->links_));
+                        if (value_constructed_) {
+                            BOOST_UNORDERED_DESTRUCT(&node_->value(), value_type);
+                        }
 
+                        if (node_constructed_)
+                            allocators_.node_alloc_.destroy(node_);
                         allocators_.node_alloc_.deallocate(node_, 1);
                     }
                 }
 
-                template <class V>
-                void construct(V const& v)
+                void construct_preamble()
                 {
-                    BOOST_ASSERT(!node_);
-                    value_constructed_ = node_links_constructed_ = false;
+                    if(!node_) {
+                        node_constructed_ = false;
+                        value_constructed_ = false;
 
-                    node_ = allocators_.node_alloc_.allocate(1);
+                        node_ = allocators_.node_alloc_.allocate(1);
+                        allocators_.node_alloc_.construct(node_, node());
+                        node_constructed_ = true;
+                    }
+                    else {
+                        BOOST_ASSERT(node_constructed_ && value_constructed_);
+                        BOOST_UNORDERED_DESTRUCT(&node_->value(), value_type);
+                        value_constructed_ = false;
+                    }
+                }
 
-                    allocators_.node_links_alloc_.construct(
-                            allocators_.node_links_alloc_.address(node_->links_),
-                            node_links());
-                    node_links_constructed_ = true;
+#if defined(BOOST_UNORDERED_STD_FORWARD)
+                template <typename... Args>
+                void construct(Args&&... args)
+                {
+                    construct_preamble();
+                    new(node_->address()) value_type(std::forward<Args>(args)...);
+                    value_constructed_ = true;
+                }
+#else
 
-                    allocators_.value_alloc_.construct(
-                            allocators_.value_alloc_.address(node_->value_), v);
+#define BOOST_UNORDERED_CONSTRUCT_IMPL(z, n, _)                                 \
+                template <                                                      \
+                    BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                         \
+                >                                                               \
+                void construct(                                                 \
+                    BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                       \
+                )                                                               \
+                {                                                               \
+                    construct_preamble();                                       \
+                    construct_impl(                                             \
+                        (value_type*) 0,                                        \
+                        BOOST_UNORDERED_CALL_PARAMS(z, n)                       \
+                    );                                                          \
+                    value_constructed_ = true;                                  \
+                }                                                               \
+                                                                                \
+                template <                                                      \
+                    typename T,                                                 \
+                    BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                         \
+                >                                                               \
+                void construct_impl(                                            \
+                    T*,                                                         \
+                    BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                       \
+                )                                                               \
+                {                                                               \
+                    new(node_->address()) value_type(                           \
+                        BOOST_UNORDERED_CALL_PARAMS(z, n)                       \
+                    );                                                          \
+                }
+                                                                                
+#define BOOST_UNORDERED_CONSTRUCT_IMPL2(z, n, _)                                \
+                template <typename First, typename Second, typename Key,        \
+                    BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                         \
+                >                                                               \
+                void construct_impl(                                            \
+                    std::pair<First, Second>*,                                  \
+                    Key const& k,                                               \
+                    BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                       \
+                )                                                               \
+                {                                                               \
+                    new(node_->address()) value_type(k,                         \
+                        Second(                                                 \
+                        BOOST_UNORDERED_CALL_PARAMS(z, n)                       \
+                        )                                                       \
+                    );                                                          \
+                }
+
+                BOOST_PP_REPEAT_FROM_TO(1, BOOST_UNORDERED_EMPLACE_LIMIT,
+                    BOOST_UNORDERED_CONSTRUCT_IMPL, _)
+                BOOST_PP_REPEAT_FROM_TO(1, BOOST_UNORDERED_EMPLACE_LIMIT,
+                    BOOST_UNORDERED_CONSTRUCT_IMPL2, _)
+                
+                template <typename First, typename Second, typename T1, typename T2>
+                void construct_impl(std::pair<First, Second>*,
+                    std::pair<T1, T2> const& arg0)
+                {
+                    new(node_->address()) value_type(arg0);
+                }
+
+#undef BOOST_UNORDERED_CONSTRUCT_IMPL
+
+#endif
+                template <typename K, typename M>
+                void construct_pair(K const& k, M*)
+                {
+                    construct_preamble();
+                    new(node_->address()) value_type(k, M());                    
                     value_constructed_ = true;
                 }
 
@@ -206,11 +285,11 @@ namespace boost {
                 }
 
                 // no throw
-                node_ptr release()
+                link_ptr release()
                 {
-                    node_ptr n = node_;
+                    node_ptr p = node_;
                     unordered_detail::reset(node_);
-                    return n;
+                    return link_ptr(allocators_.bucket_alloc_.address(*p));
                 }
 
             private:
@@ -220,127 +299,87 @@ namespace boost {
 
             // Methods for navigating groups of elements with equal keys.
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-            static node_ptr& prev_in_group(node_ptr n) {
-                return n->links_.group_prev_;
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+            static inline link_ptr& prev_in_group(link_ptr n) {
+                return static_cast<node*>(&*n)->group_prev_;
             }
 
             // pre: Must be pointing to the first node in a group.
-            static node_ptr last_in_group(node_ptr n) {
-                BOOST_ASSERT(n && n != prev_in_group(n)->links_.next_);
-                return prev_in_group(n);
-            }
-
-            // pre: Must be pointing to the first node in a group.
-            static node_ptr& next_group(node_ptr n) {
-                BOOST_ASSERT(n && n != prev_in_group(n)->links_.next_);
-                return prev_in_group(n)->links_.next_;
+            static inline link_ptr& next_group(link_ptr n) {
+                BOOST_ASSERT(BOOST_UNORDERED_BORLAND_BOOL(n) && n != prev_in_group(n)->next_);
+                return prev_in_group(n)->next_;
             }
 #else
-            static node_ptr last_in_group(node_ptr n) {
-                return n;
-            }
-
-            static node_ptr& next_group(node_ptr n) {
+            static inline link_ptr& next_group(link_ptr n) {
                 BOOST_ASSERT(n);
-                return n->links_.next_;
+                return n->next_;
             }
 #endif
 
-            class local_iterator_base
+            // pre: Must be pointing to a node
+            static inline node& get_node(link_ptr p) {
+                BOOST_ASSERT(p);
+                return *static_cast<node*>(&*p);
+            }
+
+            // pre: Must be pointing to a node
+            static inline reference get_value(link_ptr p) {
+                return get_node(p).value();
+            }
+
+            class iterator_base
             {
+                typedef BOOST_UNORDERED_TABLE_DATA<Alloc> data;
             public:
-                node_ptr node_;
+                bucket_ptr bucket_;
+                link_ptr node_;
 
-                local_iterator_base()
-                    : node_()
+                iterator_base()
+                    : bucket_(), node_()
                 {
-                    BOOST_HASH_MSVC_RESET_PTR(node_);
+                    BOOST_UNORDERED_MSVC_RESET_PTR(bucket_);
+                    BOOST_UNORDERED_MSVC_RESET_PTR(node_);
                 }
 
-                explicit local_iterator_base(node_ptr n)
-                    : node_(n) {}
+                explicit iterator_base(bucket_ptr b)
+                    : bucket_(b), node_(b->next_) {}
 
-                bool not_finished() const
-                {
-                    return node_ ? true : false;
-                }
+                iterator_base(bucket_ptr b, link_ptr n)
+                    : bucket_(b), node_(n) {}
 
-                bool operator==(local_iterator_base const& x) const
+                bool operator==(iterator_base const& x) const
                 {
                     return node_ == x.node_;
                 }
 
-                bool operator!=(local_iterator_base const& x) const
+                bool operator!=(iterator_base const& x) const
                 {
                     return node_ != x.node_;
                 }
 
                 reference operator*() const
                 {
-                    return node_->value_;
-                }
-
-                void increment()
-                {
-                    BOOST_ASSERT(node_);
-                    node_ = node_->links_.next_;
-                }
-
-                void next_group()
-                {
-                    node_ = HASH_TABLE_DATA::next_group(node_);
-                }
-            };
-
-            class iterator_base
-            {
-            public:
-                bucket_ptr bucket_;
-                local_iterator_base local_;
-
-                iterator_base()
-                    : bucket_(), local_() {}
-
-                explicit iterator_base(bucket_ptr b)
-                    : bucket_(b), local_(b->first_) {}
-
-                iterator_base(bucket_ptr b, node_ptr n)
-                    : bucket_(b), local_(n) {}
-
-                iterator_base(bucket_ptr b, local_iterator_base const& it)
-                    : bucket_(b), local_(it) {}
-
-                bool operator==(iterator_base const& x) const
-                {
-                    return local_ == x.local_;
-                }
-
-                bool operator!=(iterator_base const& x) const
-                {
-                    return local_ != x.local_;
-                }
-
-                reference operator*() const
-                {
-                    return *local_;
+                    return get_value(node_);
                 }
 
                 void increment()
                 {
                     BOOST_ASSERT(bucket_);
-                    local_.increment();
+                    node_ = node_->next_;
 
-                    if(!local_.node_) {
-                        do {
-                            ++bucket_;
-                        } while(!bucket_->first_);
+                    while (!node_) {
+                        ++bucket_;
+                        node_ = bucket_->next_;
+                    }
+                }
 
-                        // If at the end of the buckets...
-                        if(bucket_->first_ == (bucket_ + 1)->first_)
-                            unordered_detail::reset(local_);
-                        else
-                            local_ = local_iterator_base(bucket_->first_);
+                void increment_group()
+                {
+                    node_ = data::next_group(node_);
+
+                    while (!node_) {
+                        ++bucket_;
+                        node_ = bucket_->next_;
                     }
                 }
             };
@@ -349,46 +388,78 @@ namespace boost {
 
             allocators allocators_;
             bucket_ptr buckets_;
-            size_type bucket_count_;
+            bucket_manager bucket_manager_;
             bucket_ptr cached_begin_bucket_;
-            size_type size_;
+            size_type size_;           
 
             // Constructors/Deconstructor
 
-            HASH_TABLE_DATA(size_type n, value_allocator const& a)
+            BOOST_UNORDERED_TABLE_DATA(size_type n, value_allocator const& a)
               : allocators_(a),
-                buckets_(), bucket_count_(next_prime(n)),
+                buckets_(), bucket_manager_(n),
                 cached_begin_bucket_(), size_(0)
             {
-                // The array constructor will clean up in the event of an
-                // exception.
-                allocator_array_constructor<bucket_allocator>
-                    constructor(allocators_.bucket_alloc_);
-
-                // Creates two extra buckets to act as sentinels.
-                constructor.construct(bucket(), bucket_count_ + 2);
-
-                cached_begin_bucket_ = constructor.get() + bucket_count_;
-
-                // Only release the buckets once everything is successfully
-                // done.
-                buckets_ = constructor.release();
+                BOOST_UNORDERED_MSVC_RESET_PTR(buckets_);
+                create_buckets();
             }
 
-            HASH_TABLE_DATA(HASH_TABLE_DATA const& x, size_type n)
+            BOOST_UNORDERED_TABLE_DATA(BOOST_UNORDERED_TABLE_DATA const& x, size_type n)
               : allocators_(x.allocators_),
-                buckets_(), bucket_count_(next_prime(n)),
+                buckets_(), bucket_manager_(n),
                 cached_begin_bucket_(), size_(0)
             {
+                BOOST_UNORDERED_MSVC_RESET_PTR(buckets_);
+                create_buckets();
+            }
+
+            BOOST_UNORDERED_TABLE_DATA(BOOST_UNORDERED_TABLE_DATA& x, move_tag)
+                : allocators_(x.allocators_),
+                buckets_(x.buckets_), bucket_manager_(x.bucket_manager_),
+                cached_begin_bucket_(x.cached_begin_bucket_), size_(x.size_)
+            {
+                unordered_detail::reset(x.buckets_);
+            }
+
+            BOOST_UNORDERED_TABLE_DATA(BOOST_UNORDERED_TABLE_DATA& x,
+                    value_allocator const& a, size_type n, move_tag)
+                : allocators_(a), buckets_(), bucket_manager_(),
+                cached_begin_bucket_(), size_(0)
+            {
+                if(allocators_ == x.allocators_) {
+                    buckets_ = x.buckets_;
+                    bucket_manager_ = x.bucket_manager_;
+                    cached_begin_bucket_ = x.cached_begin_bucket_;
+                    size_ = x.size_;
+                    unordered_detail::reset(x.buckets_);
+                }
+                else {
+                    BOOST_UNORDERED_MSVC_RESET_PTR(buckets_);
+                    bucket_manager_ = bucket_manager(n);
+                    create_buckets();
+                }
+            }
+
+            // no throw
+            ~BOOST_UNORDERED_TABLE_DATA()
+            {
+                delete_buckets();
+            }
+
+            void create_buckets() {
+                size_type bucket_count = bucket_manager_.bucket_count();
+            
                 // The array constructor will clean up in the event of an
                 // exception.
                 allocator_array_constructor<bucket_allocator>
                     constructor(allocators_.bucket_alloc_);
 
-                // Creates two extra buckets to act as sentinels.
-                constructor.construct(bucket(), bucket_count_ + 2);
+                // Creates an extra bucket to act as a sentinel.
+                constructor.construct(bucket(), bucket_count + 1);
 
-                cached_begin_bucket_ = constructor.get() + bucket_count_;
+                cached_begin_bucket_ = constructor.get() + static_cast<difference_type>(bucket_count);
+
+                // Set up the sentinel.
+                cached_begin_bucket_->next_ = link_ptr(cached_begin_bucket_);
 
                 // Only release the buckets once everything is successfully
                 // done.
@@ -396,51 +467,78 @@ namespace boost {
             }
 
             // no throw
-            ~HASH_TABLE_DATA()
+            void delete_buckets()
             {
                 if(buckets_) {
                     bucket_ptr begin = cached_begin_bucket_;
-                    bucket_ptr end = buckets_ + bucket_count_;
+                    bucket_ptr end = buckets_end();
                     while(begin != end) {
                         clear_bucket(begin);
                         ++begin;
                     }
 
-                    // Destroy two extra buckets for the sentinels.
-                    for(size_type i2 = 0; i2 < bucket_count_ + 2; ++i2)
-                        allocators_.bucket_alloc_.destroy(buckets_ + i2);
+                    // Destroy an extra bucket for the sentinels.
+                    ++end;
+                    for(begin = buckets_; begin != end; ++begin)
+                        allocators_.bucket_alloc_.destroy(begin);
 
-                    allocators_.bucket_alloc_.deallocate(buckets_, bucket_count_ + 2);
+                    allocators_.bucket_alloc_.deallocate(buckets_,
+                        bucket_manager_.bucket_count() + 1);
                 }
             }
 
         private:
 
-            HASH_TABLE_DATA(HASH_TABLE_DATA const&);
-            HASH_TABLE_DATA& operator=(HASH_TABLE_DATA const&);
+            BOOST_UNORDERED_TABLE_DATA(BOOST_UNORDERED_TABLE_DATA const&);
+            BOOST_UNORDERED_TABLE_DATA& operator=(BOOST_UNORDERED_TABLE_DATA const&);
 
         public:
 
             // no throw
-            void swap(HASH_TABLE_DATA& other)
+            void swap(BOOST_UNORDERED_TABLE_DATA& other)
             {
                 std::swap(buckets_, other.buckets_);
-                std::swap(bucket_count_, other.bucket_count_);
+                std::swap(bucket_manager_, other.bucket_manager_);
                 std::swap(cached_begin_bucket_, other.cached_begin_bucket_);
                 std::swap(size_, other.size_);
             }
 
-            // Return the bucket index for a hashed value.
+            // no throw
+            void move(BOOST_UNORDERED_TABLE_DATA& other)
+            {
+                delete_buckets();
+                buckets_ = other.buckets_;
+                unordered_detail::reset(other.buckets_);
+                bucket_manager_ = other.bucket_manager_;
+                cached_begin_bucket_ = other.cached_begin_bucket_;
+                size_ = other.size_;
+            }
+
+            // Return the bucket number for a hashed value.
             //
             // no throw
-            size_type index_from_hash(size_type hashed) const
+            size_type bucket_from_hash(size_type hashed) const
             {
-                return hashed % bucket_count_;
+                return bucket_manager_.bucket_from_hash(hashed);
+            }
+
+            // Return the bucket for a hashed value.
+            //
+            // no throw
+            bucket_ptr bucket_ptr_from_hash(size_type hashed) const
+            {
+                return buckets_ + static_cast<difference_type>(
+                    bucket_manager_.bucket_from_hash(hashed));
             }
 
             // Begin & End
             //
             // no throw
+
+            bucket_ptr buckets_end() const
+            {
+                return buckets_ + static_cast<difference_type>(bucket_manager_.bucket_count());
+            }
 
             iterator_base begin() const
             {
@@ -451,44 +549,43 @@ namespace boost {
 
             iterator_base end() const
             {
-                return iterator_base(buckets_ + bucket_count_, local_iterator_base());
+                return iterator_base(buckets_end());
             }
 
-            local_iterator_base begin(size_type n) const
+            link_ptr begin(size_type n) const
             {
-                return local_iterator_base(buckets_[n].first_);
+                return (buckets_ + static_cast<difference_type>(n))->next_;
             }
 
-            local_iterator_base end(size_type) const
+            link_ptr end(size_type) const
             {
-                return local_iterator_base();
+                return unordered_detail::null_ptr<link_ptr>();
             }
 
-            local_iterator_base begin(bucket_ptr b) const
+            link_ptr begin(bucket_ptr b) const
             {
-                return local_iterator_base(b->first_);
+                return b->next_;
             }
 
             // Bucket Size
 
             // no throw
-            size_type node_count(local_iterator_base it) const
+            static inline size_type node_count(link_ptr it)
             {
                 size_type count = 0;
-                while(it.not_finished()) {
+                while(BOOST_UNORDERED_BORLAND_BOOL(it)) {
                     ++count;
-                    it.increment();
+                    it = it->next_;
                 }
                 return count;
             }
 
-            size_type node_count(local_iterator_base it1,
-                    local_iterator_base it2) const
+            static inline size_type node_count(link_ptr it1, link_ptr it2)
             {
                 size_type count = 0;
                 while(it1 != it2) {
                     ++count;
-                    it1.increment();
+                    it1 = it1->next_;
                 }
                 return count;
             }
@@ -498,20 +595,13 @@ namespace boost {
                 return node_count(begin(n));
             }
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-            size_type group_count(local_iterator_base first_node) const
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+            static inline size_type group_count(link_ptr it)
             {
-                size_type count = 0;
-                node_ptr it = first_node.node_;
-                node_ptr first = it;
-                do {
-                    ++count;
-                    it = prev_in_group(it);
-                } while (it != first); // throws, strong
-                return count;
+                return node_count(it, next_group(it));
             }
 #else
-            size_type group_count(local_iterator_base) const
+            static inline size_type group_count(link_ptr)
             {
                 return 1;
             }
@@ -523,29 +613,29 @@ namespace boost {
             //
             // no throw
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-            node_ptr* get_for_erase(iterator_base r) const
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+            static link_ptr* get_for_erase(iterator_base r)
             {
-                node_ptr n = r.local_.node_;
+                link_ptr n = r.node_;
 
                 // If the element isn't the first in its group, then
                 // the link to it will be found in the previous element
                 // in the group.
-                node_ptr* it = &prev_in_group(n)->links_.next_;
+                link_ptr* it = &prev_in_group(n)->next_;
                 if(*it == n) return it;
 
                 // The element is the first in its group, so iterate
                 // throught the groups, checking against the first element.
-                it = &r.bucket_->first_;
-                while(*it != n) it = &HASH_TABLE_DATA::next_group(*it);
+                it = &r.bucket_->next_;
+                while(*it != n) it = &BOOST_UNORDERED_TABLE_DATA::next_group(*it);
                 return it;
             }
 #else
-            node_ptr* get_for_erase(iterator_base r) const
+            static link_ptr* get_for_erase(iterator_base r)
             {
-                node_ptr n = r.local_.node_;
-                node_ptr* it = &r.bucket_->first_;
-                while(*it != n) it = &(*it)->links_.next_;
+                link_ptr n = r.node_;
+                link_ptr* it = &r.bucket_->next_;
+                while(*it != n) it = &(*it)->next_;
                 return it;
             }
 #endif
@@ -557,111 +647,114 @@ namespace boost {
             //
             // no throw
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-            void link_node(node_ptr n, local_iterator_base pos)
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+            // If n points to the first node in a group, this adds it to the
+            // end of that group.
+            link_ptr link_node(node_constructor& a, link_ptr pos)
             {
-                node_links& links = pos.node_->links_;
-
-                n->links_.next_ = links.group_prev_->links_.next_;
-                n->links_.group_prev_ = links.group_prev_;
-                links.group_prev_->links_.next_ = n;
-                links.group_prev_ = n;
+                link_ptr n = a.release();
+                node& node_ref = get_node(n);
+                node& pos_ref = get_node(pos);
+                node_ref.next_ = pos_ref.group_prev_->next_;
+                node_ref.group_prev_ = pos_ref.group_prev_;
+                pos_ref.group_prev_->next_ = n;
+                pos_ref.group_prev_ = n;
                 ++size_;
+                return n;
             }
 
-            void link_node(node_ptr n, bucket_ptr base)
+            link_ptr link_node_in_bucket(node_constructor& a, bucket_ptr base)
             {
-                n->links_.next_ = base->first_;
-                n->links_.group_prev_ = n;
-                base->first_ = n;
+                link_ptr n = a.release();
+                node& node_ref = get_node(n);
+                node_ref.next_ = base->next_;
+                node_ref.group_prev_ = n;
+                base->next_ = n;
                 ++size_;
-                if(base < cached_begin_bucket_) {
-                    cached_begin_bucket_ = base;
-                    buckets_[bucket_count_].first_ = cached_begin_bucket_->first_;
-                    buckets_[bucket_count_+1].first_ = cached_begin_bucket_->first_;
-                }
+                if(base < cached_begin_bucket_) cached_begin_bucket_ = base;
+                return n;
             }
 
-            void link_group(node_ptr n, bucket_ptr base, size_type count)
+            void link_group(link_ptr n, bucket_ptr base, size_type count)
             {
-                n->links_.group_prev_->links_.next_ = base->first_;
-                base->first_ = n;
+                node& node_ref = get_node(n);
+                node& last_ref = get_node(node_ref.group_prev_);
+                last_ref.next_ = base->next_;
+                base->next_ = n;
                 size_ += count;
-                if(base < cached_begin_bucket_) {
-                    cached_begin_bucket_ = base;
-                    buckets_[bucket_count_].first_ = cached_begin_bucket_->first_;
-                    buckets_[bucket_count_+1].first_ = cached_begin_bucket_->first_;
-                }
+                if(base < cached_begin_bucket_) cached_begin_bucket_ = base;
             }
 #else
-            void link_node(node_ptr n, bucket_ptr base)
+            void link_node(link_ptr n, bucket_ptr base)
             {
-                n->links_.next_ = base->first_;
-                base->first_ = n;
+                n->next_ = base->next_;
+                base->next_ = n;
                 ++size_;
-                if(base < cached_begin_bucket_) {
-                    cached_begin_bucket_ = base;
-                    buckets_[bucket_count_].first_ = cached_begin_bucket_->first_;
-                    buckets_[bucket_count_+1].first_ = cached_begin_bucket_->first_;
-                }
+                if(base < cached_begin_bucket_) cached_begin_bucket_ = base;
             }
 
-            void link_group(node_ptr n, bucket_ptr base, size_type)
+            link_ptr link_node_in_bucket(node_constructor& a, bucket_ptr base)
+            {
+                link_ptr n = a.release();
+                link_node(n, base);
+                return n;
+            }
+
+            void link_group(link_ptr n, bucket_ptr base, size_type)
             {
                 link_node(n, base);
             }
 #endif
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
             void unlink_node(iterator_base it)
             {
-                node_ptr* pos = get_for_erase(it);
-                node_ptr n = *pos;
-                node_ptr next = n->links_.next_;
+                link_ptr* pos = get_for_erase(it);
+                node* n = &get_node(it.node_);
+                link_ptr next = n->next_;
 
-                if(n->links_.group_prev_ == n) {
+                if(n->group_prev_ == *pos) {
                     // The deleted node is the sole node in the group, so
-                    // no need to unlink it from a goup.
+                    // no need to unlink it from a group.
                 }
-                else if(next && prev_in_group(next) == *pos)
+                else if(BOOST_UNORDERED_BORLAND_BOOL(next) && prev_in_group(next) == *pos)
                 {
                     // The deleted node is not at the end of the group, so
                     // change the link from the next node.
-                    prev_in_group(next) = n->links_.group_prev_;
+                    prev_in_group(next) = n->group_prev_;
                 }
                 else {
                     // The deleted node is at the end of the group, so the
-                    // node in the group pointing to it is at the beginning
-                    // of the group. Find that to change its pointer.
-                    node_ptr it = n->links_.group_prev_;
+                    // first node in the group is pointing to it.
+                    // Find that to change its pointer.
+                    link_ptr it = n->group_prev_;
                     while(prev_in_group(it) != *pos) {
                         it = prev_in_group(it);
                     }
-                    prev_in_group(it) = n->links_.group_prev_;
+                    prev_in_group(it) = n->group_prev_;
                 }
                 *pos = next;
                 --size_;
             }
 
-            size_type unlink_group(node_ptr* pos)
+            size_type unlink_group(link_ptr* pos)
             {
-                size_type count = group_count(local_iterator_base(*pos));
+                size_type count = group_count(*pos);
                 size_ -= count;
-                node_ptr last = last_in_group(*pos);
-                *pos = last->links_.next_;
+                *pos = next_group(*pos);
                 return count;
             }
 #else
             void unlink_node(iterator_base n)
             {
-                node_ptr* pos = get_for_erase(n);
-                *pos = (*pos)->links_.next_;
+                link_ptr* pos = get_for_erase(n);
+                *pos = (*pos)->next_;
                 --size_;
             }
 
-            size_type unlink_group(node_ptr* pos)
+            size_type unlink_group(link_ptr* pos)
             {
-                *pos = (*pos)->links_.next_;
+                *pos = (*pos)->next_;
                 --size_;
                 return 1;
             }
@@ -669,145 +762,105 @@ namespace boost {
 
             void unlink_nodes(iterator_base n)
             {
-                node_ptr* it = get_for_erase(n);
+                link_ptr* it = get_for_erase(n);
                 split_group(*it);
                 unordered_detail::reset(*it);
-                size_ -= node_count(n.local_);
+                size_ -= node_count(n.node_);
             }
 
             void unlink_nodes(iterator_base begin, iterator_base end)
             {
                 BOOST_ASSERT(begin.bucket_ == end.bucket_);
-                local_iterator_base local_end = end.local_;
-
-                size_ -= node_count(begin.local_, local_end);
-                node_ptr* it = get_for_erase(begin);
-                split_group(*it, local_end.node_);
-                *it = local_end.node_;
+                size_ -= node_count(begin.node_, end.node_);
+                link_ptr* it = get_for_erase(begin);
+                split_group(*it, end.node_);
+                *it = end.node_;
             }
 
             void unlink_nodes(bucket_ptr base, iterator_base end)
             {
                 BOOST_ASSERT(base == end.bucket_);
 
-                local_iterator_base local_end = end.local_;
-                split_group(local_end.node_);
-            
-                node_ptr ptr(base->first_);
-                base->first_ = local_end.node_;
+                split_group(end.node_);
 
-                size_ -= node_count(local_iterator_base(ptr), local_end);
+                link_ptr ptr(base->next_);
+                base->next_ = end.node_;
+
+                size_ -= node_count(ptr, end.node_);
             }
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-            // Break a ciruclar list into two, with split as the beginneing
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+            // Break a ciruclar list into two, with split as the beginning
             // of the second group (if split is at the beginning then don't
             // split).
-            node_ptr split_group(node_ptr split)
+            static inline link_ptr split_group(link_ptr split)
             {
                 // If split is at the beginning of the group then there's
                 // nothing to split.
-                if(prev_in_group(split)->links_.next_ != split)
-                    return node_ptr();
+                if(prev_in_group(split)->next_ != split)
+                    return unordered_detail::null_ptr<link_ptr>();
 
                 // Find the start of the group.
-                node_ptr start = split;
+                link_ptr start = split;
                 do {
                     start = prev_in_group(start);
-                } while(prev_in_group(start)->links_.next_ == start);
+                } while(prev_in_group(start)->next_ == start);
 
-                node_ptr last = prev_in_group(start);
+                link_ptr last = prev_in_group(start);
                 prev_in_group(start) = prev_in_group(split);
                 prev_in_group(split) = last;
 
                 return start;
             }
 
-            void split_group(node_ptr split1, node_ptr split2)
+            static inline void split_group(link_ptr split1, link_ptr split2)
             {
-                node_ptr begin1 = split_group(split1);
-                node_ptr begin2 = split_group(split2);
+                link_ptr begin1 = split_group(split1);
+                link_ptr begin2 = split_group(split2);
 
-                if(begin1 && split1 == begin2) {
-                    node_ptr end1 = prev_in_group(begin1);
+                if(BOOST_UNORDERED_BORLAND_BOOL(begin1) && split1 == begin2) {
+                    link_ptr end1 = prev_in_group(begin1);
                     prev_in_group(begin1) = prev_in_group(begin2);
                     prev_in_group(begin2) = end1;
                 }
             }
 #else
-            void split_group(node_ptr)
+            static inline void split_group(link_ptr)
             {
             }
 
-            void split_group(node_ptr, node_ptr)
+            static inline void split_group(link_ptr, link_ptr)
             {
             }
 #endif
 
-            // throws, strong exception-safety:
-            node_ptr construct_node(value_type const& v)
+            // copy_group
+            //
+            // Basic exception safety.
+            // If it throws, it only copies some of the nodes in the group.
+
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+            void copy_group(link_ptr it, bucket_ptr dst)
             {
                 node_constructor a(allocators_);
-                a.construct(v);
-                return a.release();
-            }
 
-            // Create Node
-            //
-            // Create a node and add it to the buckets in the given position.
-            //
-            // strong exception safety.
+                link_ptr end = next_group(it);
 
-            iterator_base create_node(value_type const& v, bucket_ptr base)
-            {
-                // throws, strong exception-safety:
-                node_ptr n = construct_node(v);
+                a.construct(get_value(it));                     // throws
+                link_ptr n = link_node_in_bucket(a, dst);
 
-                // Rest is no throw
-                link_node(n, base);
-                return iterator_base(base, n);
-            }
-
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-            iterator_base create_node(value_type const& v, iterator_base position)
-            {
-                // throws, strong exception-safety:
-                node_ptr n = construct_node(v);
-
-                // Rest is no throw
-                link_node(n, position.local_);
-                return iterator_base(position.bucket_, n);
-            }
-
-            iterator_base create_node(value_type const& v,
-                    bucket_ptr base, local_iterator_base position)
-            {
-                // throws, strong exception-safety:
-                node_ptr n = construct_node(v);
-
-                // Rest is no throw
-                if(position.not_finished())
-                    link_node(n, position);
-                else
-                    link_node(n, base);
-
-                return iterator_base(base, n);
-            }
-#endif
-
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-            void copy_group(local_iterator_base it, bucket_ptr dst)
-            {
-                local_iterator_base end = it;
-                end.next_group();
-                iterator_base pos = create_node(*it, dst);
-                for(it.increment(); it != end; it.increment())
-                    create_node(*it, pos);
+                for(it = it->next_; it != end; it = it->next_) {
+                    a.construct(get_value(it));                 // throws
+                    link_node(a, n);
+                }
             }
 #else
-            void copy_group(local_iterator_base it, bucket_ptr dst)
+            void copy_group(link_ptr it, bucket_ptr dst)
             {
-                create_node(*it, dst);
+                node_constructor a(allocators_);
+
+                a.construct(get_value(it));                     // throws
+                link_node_in_bucket(a, dst);
             }
 #endif
 
@@ -818,31 +871,31 @@ namespace boost {
             //
             // no throw
 
-            void delete_to_bucket_end(node_ptr begin)
+            void delete_to_bucket_end(link_ptr begin)
             {
                 while(begin) {
-                    node_ptr node = begin;
-                    begin = begin->links_.next_;
+                    link_ptr node = begin;
+                    begin = begin->next_;
                     allocators_.destroy(node);
                 }
             }
 
-            void delete_nodes(node_ptr begin, node_ptr end)
+            void delete_nodes(link_ptr begin, link_ptr end)
             {
                 while(begin != end) {
-                    node_ptr node = begin;
-                    begin = begin->links_.next_;
+                    link_ptr node = begin;
+                    begin = begin->next_;
                     allocators_.destroy(node);
                 }
             }
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
-            void delete_group(node_ptr first_node)
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+            void delete_group(link_ptr first_node)
             {
-                delete_nodes(first_node, prev_in_group(first_node)->links_.next_);
+                delete_nodes(first_node, prev_in_group(first_node)->next_);
             }
 #else
-            void delete_group(node_ptr node)
+            void delete_group(link_ptr node)
             {
                 allocators_.destroy(node);
             }
@@ -856,15 +909,15 @@ namespace boost {
 
             void clear_bucket(bucket_ptr b)
             {
-                node_ptr first_node = b->first_;
-                unordered_detail::reset(b->first_);
+                link_ptr first_node = b->next_;
+                unordered_detail::reset(b->next_);
                 delete_to_bucket_end(first_node);
             }
 
             void clear()
             {
-                bucket_ptr begin = buckets_;
-                bucket_ptr end = buckets_ + bucket_count_;
+                bucket_ptr begin = cached_begin_bucket_;
+                bucket_ptr end = buckets_end();
 
                 size_ = 0;
                 cached_begin_bucket_ = end;
@@ -877,9 +930,6 @@ namespace boost {
 
             // Erase
             //
-            // Return type of erase(const_iterator):
-            // http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2005/n1753.html#130
-            //
             // no throw
 
             iterator_base erase(iterator_base r)
@@ -888,13 +938,13 @@ namespace boost {
                 iterator_base next = r;
                 next.increment();
                 unlink_node(r);
-                allocators_.destroy(r.local_.node_);
+                allocators_.destroy(r.node_);
                 // r has been invalidated but its bucket is still valid
                 recompute_begin_bucket(r.bucket_, next.bucket_);
                 return next;
             }
 
-            iterator_base erase(iterator_base r1, iterator_base r2)
+            iterator_base erase_range(iterator_base r1, iterator_base r2)
             {
                 if(r1 != r2)
                 {
@@ -902,7 +952,7 @@ namespace boost {
 
                     if (r1.bucket_ == r2.bucket_) {
                         unlink_nodes(r1, r2);
-                        delete_nodes(r1.local_.node_, r2.local_.node_);
+                        delete_nodes(r1.node_, r2.node_);
 
                         // No need to call recompute_begin_bucket because
                         // the nodes are only deleted from one bucket, which
@@ -913,17 +963,18 @@ namespace boost {
                         BOOST_ASSERT(r1.bucket_ < r2.bucket_);
 
                         unlink_nodes(r1);
-                        delete_to_bucket_end(r1.local_.node_);
+                        delete_to_bucket_end(r1.node_);
 
-                        for(bucket_ptr i = r1.bucket_ + 1; i != r2.bucket_; ++i) {
-                            size_ -= node_count(local_iterator_base(i->first_));
+                        bucket_ptr i = r1.bucket_;
+                        for(++i; i != r2.bucket_; ++i) {
+                            size_ -= node_count(i->next_);
                             clear_bucket(i);
                         }
 
                         if(r2 != end()) {
-                            node_ptr first = r2.bucket_->first_;
+                            link_ptr first = r2.bucket_->next_;
                             unlink_nodes(r2.bucket_, r2);
-                            delete_nodes(first, r2.local_.node_);
+                            delete_nodes(first, r2.node_);
                         }
 
                         // r1 has been invalidated but its bucket is still
@@ -946,16 +997,14 @@ namespace boost {
             {
                 BOOST_ASSERT(!(b < cached_begin_bucket_));
 
-                if (size_ == 0) {
-                    cached_begin_bucket_ = buckets_ + bucket_count_;
-                }
-                else if(b == cached_begin_bucket_ && b->empty()) {
-                    do {
-                        ++cached_begin_bucket_;
-                    } while (cached_begin_bucket_->empty());
-                    
-                    buckets_[bucket_count_].first_ = cached_begin_bucket_->first_;
-                    buckets_[bucket_count_+1].first_ = cached_begin_bucket_->first_;
+                if(b == cached_begin_bucket_)
+                {
+                    if (size_ != 0) {
+                        while (cached_begin_bucket_->empty())
+                            ++cached_begin_bucket_;
+                    } else {
+                        cached_begin_bucket_ = buckets_end();
+                    }
                 }
             }
 
@@ -966,25 +1015,19 @@ namespace boost {
             void recompute_begin_bucket(bucket_ptr b1, bucket_ptr b2)
             {
                 BOOST_ASSERT(!(b1 < cached_begin_bucket_) && !(b2 < b1));
-                BOOST_ASSERT(b2 == buckets_ + bucket_count_ || !b2->empty());
+                BOOST_ASSERT(b2 == buckets_end() || !b2->empty());
 
-                if(size_ == 0) {
+                if(b1 == cached_begin_bucket_ && b1->empty())
                     cached_begin_bucket_ = b2;
-                } else if(b1 == cached_begin_bucket_ && b1->empty()) {                    
-                    cached_begin_bucket_ = b2;
-
-                    buckets_[bucket_count_].first_ = cached_begin_bucket_->first_;
-                    buckets_[bucket_count_+1].first_ = cached_begin_bucket_->first_;
-                }
             }
 
-            size_type erase_group(node_ptr* pos, bucket_ptr b)
+            size_type erase_group(link_ptr* it, bucket_ptr bucket)
             {
-                node_ptr first_node = *pos;
-                size_type count = unlink_group(pos);
-                delete_group(first_node);
+                link_ptr pos = *it;
+                size_type count = unlink_group(it);
+                delete_group(pos);
 
-                this->recompute_begin_bucket(b);
+                this->recompute_begin_bucket(bucket);
 
                 return count;
             }
@@ -992,7 +1035,7 @@ namespace boost {
 
 #if defined(BOOST_MPL_CFG_MSVC_ETI_BUG)
         template <>
-        class HASH_TABLE_DATA<int>
+        class BOOST_UNORDERED_TABLE_DATA<int>
         {
         public:
             typedef int size_type;
@@ -1004,17 +1047,16 @@ namespace boost {
         // Hash Table
         //
 
-        template <class ValueType, class KeyType,
-            class Hash, class Pred,
-            class Alloc>
-        class HASH_TABLE
-            : public HASH_TABLE_DATA<Alloc>
+        template <typename ValueType, typename KeyType,
+            typename Hash, typename Pred,
+            typename Alloc>
+        class BOOST_UNORDERED_TABLE
         {
-            typedef HASH_TABLE_DATA<Alloc> data;
+            typedef BOOST_UNORDERED_TABLE_DATA<Alloc> data;
 
-            typedef typename data::node_constructor node_constructor;
-            typedef typename data::bucket_ptr bucket_ptr;
-            typedef typename data::node_ptr node_ptr;
+            typedef BOOST_DEDUCED_TYPENAME data::node_constructor node_constructor;
+            typedef BOOST_DEDUCED_TYPENAME data::bucket_ptr bucket_ptr;
+            typedef BOOST_DEDUCED_TYPENAME data::link_ptr link_ptr;
 
         public:
 
@@ -1028,62 +1070,40 @@ namespace boost {
             typedef Pred key_equal;
             typedef ValueType value_type;
             typedef std::size_t size_type;
+            typedef std::ptrdiff_t difference_type;
 
             // iterators
 
-            typedef BOOST_DEDUCED_TYPENAME data::local_iterator_base local_iterator_base;
             typedef BOOST_DEDUCED_TYPENAME data::iterator_base iterator_base;
 
         private:
 
-            class functions
-            {
-                std::pair<hasher, key_equal> functions_;
 
-            public:
+            typedef boost::unordered_detail::buffered_functions<Hash, Pred>
+                function_store;
+            typedef BOOST_DEDUCED_TYPENAME function_store::functions functions;
+            typedef BOOST_DEDUCED_TYPENAME function_store::functions_ptr
+                functions_ptr;
 
-                functions(hasher const& h, key_equal const& k)
-                    : functions_(h, k) {}
-
-                hasher const& hash_function() const
-                {
-                    return functions_.first;
-                }
-
-                key_equal const& key_eq() const
-                {
-                    return functions_.second;
-                }
-            };
-
-            // Both hasher and key_equal's copy/assign can throw so double
-            // buffering is used to copy them. func_ points to the currently
-            // active function objects.
-
-            typedef functions HASH_TABLE::*functions_ptr;
-
-            functions func1_;
-            functions func2_;
-            functions_ptr func_;
-
+            function_store functions_;
             float mlf_;
             size_type max_load_;
 
         public:
 
+            data data_;
+
             // Constructors
             //
             // In the constructors, if anything throws an exception,
-            // HASH_TABLE_DATA's destructor will clean up.
+            // BOOST_UNORDERED_TABLE_DATA's destructor will clean up.
 
-            HASH_TABLE(size_type n,
+            BOOST_UNORDERED_TABLE(size_type n,
                     hasher const& hf, key_equal const& eq,
                     value_allocator const& a)
-                : data(n, a),         // throws, cleans itself up
-                func1_(hf, eq),       // throws      "     "
-                func2_(hf, eq),       // throws      "     "
-                func_(&HASH_TABLE::func1_), // no throw
-                mlf_(1.0f)            // no throw
+                : functions_(hf, eq), // throws, cleans itself up
+                mlf_(1.0f),           // no throw
+                data_(n, a)           // throws, cleans itself up
             {
                 calculate_max_load(); // no throw
             }
@@ -1098,22 +1118,22 @@ namespace boost {
             //
             // no throw
 
-            template <class I>
+            template <typename I>
             size_type initial_size(I i, I j, size_type n,
                     boost::forward_traversal_tag)
             {
                 // max load factor isn't set yet, but when it is, it'll be 1.0.
-                return (std::max)(static_cast<size_type>(std::distance(i, j)) + 1, n);
+                return (std::max)(static_cast<size_type>(unordered_detail::distance(i, j)) + 1, n);
             }
 
-            template <class I>
+            template <typename I>
             size_type initial_size(I, I, size_type n,
                     boost::incrementable_traversal_tag)
             {
                 return n;
             }
 
-            template <class I>
+            template <typename I>
             size_type initial_size(I i, I j, size_type n)
             {
                 BOOST_DEDUCED_TYPENAME boost::iterator_traversal<I>::type
@@ -1121,54 +1141,93 @@ namespace boost {
                 return initial_size(i, j, n, iterator_traversal_tag);
             }
 
-            template <class I>
-            HASH_TABLE(I i, I j, size_type n,
+            template <typename I>
+            BOOST_UNORDERED_TABLE(I i, I j, size_type n,
                     hasher const& hf, key_equal const& eq,
                     value_allocator const& a)
-                : data(initial_size(i, j, n), a),  // throws, cleans itself up
-                    func1_(hf, eq),                // throws    "      "
-                    func2_(hf, eq),                // throws    "      "
-                    func_(&HASH_TABLE::func1_),    // no throw
-                    mlf_(1.0f)                     // no throw
+                : functions_(hf, eq),              // throws, cleans itself up
+                  mlf_(1.0f),                      // no throw
+                  data_(initial_size(i, j, n), a)  // throws, cleans itself up
             {
                 calculate_max_load(); // no throw
 
-                // This can throw, but HASH_TABLE_DATA's destructor will clean up.
-                insert(i, j);
+                // This can throw, but BOOST_UNORDERED_TABLE_DATA's destructor will clean up.
+                insert_range(i, j);
             }
+
             // Copy Construct
 
-            HASH_TABLE(HASH_TABLE const& x)
-                : data(x, x.min_buckets_for_size(x.size())), // throws
-                func1_(x.current_functions()), // throws
-                func2_(x.current_functions()), // throws
-                func_(&HASH_TABLE::func1_), // no throw
-                mlf_(x.mlf_) // no throw
+            BOOST_UNORDERED_TABLE(BOOST_UNORDERED_TABLE const& x)
+                : functions_(x.functions_), // throws
+                  mlf_(x.mlf_),             // no throw
+                  data_(x.data_, x.min_buckets_for_size(x.size()))  // throws
             {
                 calculate_max_load(); // no throw
 
-                // This can throw, but HASH_TABLE_DATA's destructor will clean
+                // This can throw, but BOOST_UNORDERED_TABLE_DATA's destructor will clean
                 // up.
-                copy_buckets(x, *this, current_functions());
+                x.copy_buckets_to(data_);
+            }
+
+            // Copy Construct with allocator
+
+            BOOST_UNORDERED_TABLE(BOOST_UNORDERED_TABLE const& x,
+                    value_allocator const& a)
+                : functions_(x.functions_), // throws
+                mlf_(x.mlf_),               // no throw
+                data_(x.min_buckets_for_size(x.size()), a)
+            {
+                calculate_max_load(); // no throw
+
+                // This can throw, but BOOST_UNORDERED_TABLE_DATA's destructor will clean
+                // up.
+                x.copy_buckets_to(data_);
+            }
+
+            // Move Construct
+
+            BOOST_UNORDERED_TABLE(BOOST_UNORDERED_TABLE& x, move_tag m)
+                : functions_(x.functions_), // throws
+                  mlf_(x.mlf_),             // no throw
+                  data_(x.data_, m)         // throws
+            {
+                calculate_max_load(); // no throw
+            }
+
+            BOOST_UNORDERED_TABLE(BOOST_UNORDERED_TABLE& x,
+                    value_allocator const& a, move_tag m)
+                : functions_(x.functions_), // throws
+                  mlf_(x.mlf_),             // no throw
+                  data_(x.data_, a,
+                        x.min_buckets_for_size(x.size()), m)  // throws
+            {
+                calculate_max_load(); // no throw
+
+                if(x.data_.buckets_) {
+                    // This can throw, but BOOST_UNORDERED_TABLE_DATA's destructor will clean
+                    // up.
+                    x.copy_buckets_to(data_);
+                }
             }
 
             // Assign
             //
-            // basic exception safety, if copy_functions of reserver throws
-            // the container is left in a sane, empty state. If copy_buckets
+            // basic exception safety, if buffered_functions::buffer or reserver throws
+            // the container is left in a sane, empty state. If copy_buckets_to
             // throws the container is left with whatever was successfully
             // copied.
 
-            HASH_TABLE& operator=(HASH_TABLE const& x)
+            BOOST_UNORDERED_TABLE& operator=(BOOST_UNORDERED_TABLE const& x)
             {
                 if(this != &x)
                 {
-                    this->clear();                        // no throw
-                    func_ = copy_functions(x);            // throws, strong
+                    data_.clear();                        // no throw
+                    functions_.set(functions_.buffer(x.functions_));
+                                                          // throws, strong
                     mlf_ = x.mlf_;                        // no throw
                     calculate_max_load();                 // no throw
                     reserve(x.size());                    // throws
-                    copy_buckets(x, *this, current_functions()); // throws
+                    x.copy_buckets_to(data_); // throws
                 }
 
                 return *this;
@@ -1176,176 +1235,164 @@ namespace boost {
 
             // Swap
             //
-            // Swap's behaviour when allocators aren't equal is in dispute, see
-            // this paper for full details:
+            // Swap's behaviour when allocators aren't equal is in dispute, for
+            // details see:
             //
-            // http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2004/n1599.html
-            //
-            // It lists 3 possible behaviours:
-            //
-            // 1 - If the allocators aren't equal then throw an exception.
-            // 2 - Reallocate the elements in the containers with the
-            //     appropriate allocators - messing up exception safety in
-            //     the process.
-            // 3 - Swap the allocators, hoping that the allocators have a
-            //     no-throw swap.
-            //
-            // The paper recommends #3.
-            //
-            // I've implemented all three, but actived #3 by default, to change
-            // it '#define BOOST_UNORDERED_SWAP_METHOD n' where n is the option.
+            // http://unordered.nfshost.com/doc/html/unordered/rationale.html#swapping_containers_with_unequal_allocators
             //
             // ----------------------------------------------------------------
             //
             // Strong exception safety (might change unused function objects)
             //
-            // Can throw if hash or predicate object's copy constructor throws.
-            // If allocators are unequal:
-            //     Method 1: always throws.
-            //     Method 2: can throw if copying throws
-            //          (memory allocation/hash function object)
-            //     Method 3: Can throw if allocator's swap throws
-            //          (This one will go wrong if the allocator's swap throws
-            //           but since there's no guarantee what the allocators
-            //           will contain it's hard to know what to do. Maybe it
-            //           could double buffer the allocators).
+            // Can throw if hash or predicate object's copy constructor throws
+            // or if allocators are unequal.
 
-            void swap(HASH_TABLE& x)
+            void swap(BOOST_UNORDERED_TABLE& x)
             {
-                // This only effects the function objects that aren't in use
-                // so it is strongly exception safe, via. double buffering.
-                functions_ptr new_func_this = copy_functions(x);       // throws
-                functions_ptr new_func_that = x.copy_functions(*this); // throws
+                // The swap code can work when swapping a container with itself
+                // but it triggers an assertion in buffered_functions.
+                // At the moment, I'd rather leave that assertion in and add a
+                // check here, rather than remove the assertion. I might change
+                // this at a later date.
+                if(this == &x) return;
 
-                if(this->allocators_ == x.allocators_) {
-                    this->data::swap(x); // no throw
+                // These can throw, but they only affect the function objects
+                // that aren't in use so it is strongly exception safe, via.
+                // double buffering.
+                functions_ptr new_func_this = functions_.buffer(x.functions_);
+                functions_ptr new_func_that = x.functions_.buffer(functions_);
+
+                if(data_.allocators_ == x.data_.allocators_) {
+                    data_.swap(x.data_); // no throw
                 }
                 else {
-#if BOOST_UNORDERED_SWAP_METHOD == 1
-                    throw std::runtime_error(
-                            "Swapping containers with different allocators.");
-#elif BOOST_UNORDERED_SWAP_METHOD == 2
                     // Create new buckets in separate HASH_TABLE_DATA objects
                     // which will clean up if anything throws an exception.
                     // (all can throw, but with no effect as these are new objects).
-                    data new_this(*this, x.min_buckets_for_size(x.size_));
-                    copy_buckets(x, new_this, this->*new_func_this);
+                    data new_this(data_, x.min_buckets_for_size(x.data_.size_));
+                    x.copy_buckets_to(new_this);
 
-                    data new_that(x, min_buckets_for_size(this->size_));
-                    x.copy_buckets(*this, new_that, x.*new_func_that);
+                    data new_that(x.data_, min_buckets_for_size(data_.size_));
+                    copy_buckets_to(new_that);
 
                     // Start updating the data here, no throw from now on.
-                    this->data::swap(new_this);
-                    x.data::swap(new_that);
-#elif BOOST_UNORDERED_SWAP_METHOD == 3
-                    // Note: I'm not sure that allocator swap is guaranteed to be no
-                    // throw.
-                    this->allocators_.swap(x.allocators_);
-                    this->data::swap(x);
-#else
-#error "Invalid swap method"
-#endif
+                    data_.swap(new_this);
+                    x.data_.swap(new_that);
                 }
 
                 // We've made it, the rest is no throw.
                 std::swap(mlf_, x.mlf_);
 
-                func_ = new_func_this;
-                x.func_ = new_func_that;
+                functions_.set(new_func_this);
+                x.functions_.set(new_func_that);
 
                 calculate_max_load();
                 x.calculate_max_load();
             }
 
-        private:
-
-            functions const& current_functions() const
-            {
-                return this->*func_;
-            }
-
-            // This copies the given function objects into the currently unused
-            // function objects and returns a pointer, that func_ can later be
-            // set to, to commit the change.
+            // Move
             //
-            // Strong exception safety (since only usued function objects are
-            // changed).
-            functions_ptr copy_functions(HASH_TABLE const& x)
-            {
-                // no throw:
-                functions_ptr ptr = func_ == &HASH_TABLE::func1_
-                    ? &HASH_TABLE::func2_ : &HASH_TABLE::func1_;
-                // throws, functions not in use, so strong
-                this->*ptr = x.current_functions();
-                return ptr;
-            }
+            // ----------------------------------------------------------------
+            //
+            // Strong exception safety (might change unused function objects)
+            //
+            // Can throw if hash or predicate object's copy constructor throws
+            // or if allocators are unequal.
 
-        public:
+            void move(BOOST_UNORDERED_TABLE& x)
+            {
+                // This can throw, but it only affects the function objects
+                // that aren't in use so it is strongly exception safe, via.
+                // double buffering.
+                functions_ptr new_func_this = functions_.buffer(x.functions_);
+
+                if(data_.allocators_ == x.data_.allocators_) {
+                    data_.move(x.data_); // no throw
+                }
+                else {
+                    // Create new buckets in separate HASH_TABLE_DATA objects
+                    // which will clean up if anything throws an exception.
+                    // (all can throw, but with no effect as these are new objects).
+                    data new_this(data_, x.min_buckets_for_size(x.data_.size_));
+                    x.copy_buckets_to(new_this);
+
+                    // Start updating the data here, no throw from now on.
+                    data_.move(new_this);
+                }
+
+                // We've made it, the rest is no throw.
+                mlf_ = x.mlf_;
+                functions_.set(new_func_this);
+                calculate_max_load();
+            }
 
             // accessors
 
             // no throw
-            value_allocator get_allocator() const
+            node_allocator get_allocator() const
             {
-                return this->allocators_.value_alloc_;
+                return data_.allocators_.node_alloc_;
             }
 
             // no throw
             hasher const& hash_function() const
             {
-                return current_functions().hash_function();
+                return functions_.current().hash_function();
             }
 
             // no throw
             key_equal const& key_eq() const
             {
-                return current_functions().key_eq();
+                return functions_.current().key_eq();
             }
 
             // no throw
             size_type size() const
             {
-                return this->size_;
+                return data_.size_;
             }
 
             // no throw
             bool empty() const
             {
-                return this->size_ == 0;
+                return data_.size_ == 0;
             }
 
             // no throw
             size_type max_size() const
             {
+                using namespace std;
+
                 // size < mlf_ * count
-                return float_to_size_t(ceil(
-                        max_bucket_count() * mlf_)) - 1;
+                return double_to_size_t(ceil(
+                        (double) mlf_ * max_bucket_count())) - 1;
             }
 
             // strong safety
             size_type bucket(key_type const& k) const
             {
                 // hash_function can throw:
-                return this->index_from_hash(hash_function()(k));
+                return data_.bucket_from_hash(hash_function()(k));
             }
+
 
             // strong safety
             bucket_ptr get_bucket(key_type const& k) const
             {
-                return this->buckets_ + bucket(k);
+                return data_.buckets_ + static_cast<difference_type>(bucket(k));
             }
 
             // no throw
             size_type bucket_count() const
             {
-                return this->bucket_count_;
+                return data_.bucket_manager_.bucket_count();
             }
 
             // no throw
             size_type max_bucket_count() const
             {
                 // -1 to account for the end marker.
-                return prev_prime(this->allocators_.bucket_alloc_.max_size() - 1);
+                return prev_prime(data_.allocators_.bucket_alloc_.max_size() - 1);
             }
 
         private:
@@ -1363,7 +1410,7 @@ namespace boost {
                 //
                 // Or from rehash post-condition:
                 // count > size / mlf_
-                return static_cast<size_type>(floor(n / mlf_)) + 1;
+                return double_to_size_t(floor(n / (double) mlf_)) + 1;
             }
 
             // no throw
@@ -1373,7 +1420,8 @@ namespace boost {
 
                 // From 6.3.1/13:
                 // Only resize when size >= mlf_ * count
-                max_load_ = float_to_size_t(ceil(mlf_ * this->bucket_count_));
+                max_load_ = double_to_size_t(ceil(
+                        (double) mlf_ * data_.bucket_manager_.bucket_count()));
             }
 
             // basic exception safety
@@ -1387,17 +1435,15 @@ namespace boost {
             }
 
             // basic exception safety
-            //
-            // This version of reserve is called when inserting a range
-            // into a container with equivalent keys, it creates more buckets
-            // if the resulting load factor would be over 80% of the load
-            // factor. This is to try to avoid excessive rehashes.
-            bool reserve_extra(size_type n)
+            bool reserve_for_insert(size_type n)
             {
                 bool need_to_reserve = n >= max_load_;
                 // throws - basic:
                 if (need_to_reserve) {
-                    rehash_impl(static_cast<size_type>(floor(n / mlf_ * 1.25)) + 1);
+                    size_type s = size();
+                    s = s + (s >> 1);
+                    s = s > n ? s : n;
+                    rehash_impl(min_buckets_for_size(s));
                 }
                 BOOST_ASSERT(n < max_load_ || n > max_size());
                 return need_to_reserve;
@@ -1422,16 +1468,35 @@ namespace boost {
             // no throw
             float load_factor() const
             {
-                BOOST_ASSERT(this->bucket_count_ != 0);
-                return static_cast<float>(this->size_)
-                    / static_cast<float>(this->bucket_count_);
+                BOOST_ASSERT(data_.bucket_manager_.bucket_count() != 0);
+                return static_cast<float>(data_.size_)
+                    / static_cast<float>(data_.bucket_manager_.bucket_count());
             }
 
-        private:
-
             // key extractors
-
+            //
             // no throw
+            //
+            // 'extract_key' is called with the emplace parameters to return a
+            // key if available or 'no_key' is one isn't and will need to be
+            // constructed.
+
+            struct no_key {
+                no_key() {}
+                template <class T> no_key(T const&) {}
+            };
+
+
+            // If emplace is called with no arguments then there obviously
+            // isn't an available key.
+
+            static no_key extract_key()
+            {
+                return no_key();
+            }
+            
+            // Emplace or insert was called with the value type.
+            
             static key_type const& extract_key(value_type const& v)
             {
                 return extract(v, (type_wrapper<value_type>*)0);
@@ -1448,6 +1513,68 @@ namespace boost {
             {
                 return v.first;
             }
+            
+            // For maps, if emplace is called with just a key, then it's the value type
+            // with the second value default initialised.
+            
+            template <typename Arg>
+            static BOOST_DEDUCED_TYPENAME
+                boost::mpl::if_<boost::is_same<Arg, key_type>, key_type const&, no_key>::type
+                extract_key(Arg const& k)
+            {
+                return k;
+            }
+
+            // For a map, the argument might be a pair with the key as the first
+            // part and a convertible value as the second part.
+
+            template <typename First, typename Second>
+            static BOOST_DEDUCED_TYPENAME
+                boost::mpl::if_<
+                    boost::mpl::and_<
+                        boost::mpl::not_<boost::is_same<key_type, value_type> >,
+                        boost::is_same<key_type,
+                            typename boost::remove_const<
+                                typename boost::remove_reference<First>::type
+                            >::type>
+                    >,
+                    key_type const&, no_key
+                >::type extract_key(std::pair<First, Second> const& v)
+            {
+                return v.first;
+            }
+
+            // For maps if there is more than one argument, the key can be the first argument.
+
+#if defined(BOOST_UNORDERED_STD_FORWARD)
+            template <typename Arg, typename Arg1, typename... Args>
+            static BOOST_DEDUCED_TYPENAME
+                boost::mpl::if_<
+                    boost::mpl::and_<
+                        boost::mpl::not_<boost::is_same<value_type, key_type> >,
+                        boost::is_same<Arg, key_type>
+                    >,
+                    key_type const&, no_key
+                >::type extract_key(Arg const& k, Arg1 const&, Args const&...)
+            {
+                return k;
+            }
+
+#else
+            template <typename Arg, typename Arg1>
+            static BOOST_DEDUCED_TYPENAME
+                boost::mpl::if_<
+                    boost::mpl::and_<
+                        boost::mpl::not_<boost::is_same<value_type, key_type> >,
+                        boost::is_same<Arg, key_type>
+                    >,
+                    key_type const&, no_key
+                >::type extract_key(Arg const& k, Arg1 const&)
+            {
+                return k;
+            }
+
+#endif
 
         public:
 
@@ -1462,7 +1589,7 @@ namespace boost {
                 // basic/strong:
                 rehash_impl(min_size > n ? min_size : n);
 
-                BOOST_ASSERT(bucket_count() > size() / max_load_factor()
+                BOOST_ASSERT((float) bucket_count() > (float) size() / max_load_factor()
                         && bucket_count() >= n);
             }
 
@@ -1477,41 +1604,39 @@ namespace boost {
                 if (n == bucket_count())  // no throw
                     return;
 
-                data new_buckets(*this, n); // throws, seperate
-                move_buckets(*this, new_buckets, hash_function());
-                                                        // basic/no throw
-                new_buckets.swap(*this);                // no throw
+                data new_buckets(data_, n); // throws, seperate
+                move_buckets_to(new_buckets);           // basic/no throw
+                new_buckets.swap(data_);                // no throw
                 calculate_max_load();                   // no throw
             }
 
-            // move_buckets & copy_buckets
+            // move_buckets_to & copy_buckets_to
             //
             // if the hash function throws, basic excpetion safety
             // no throw otherwise
 
-            static void move_buckets(data& src, data& dst, hasher const& hf)
+            void move_buckets_to(data& dst)
             {
                 BOOST_ASSERT(dst.size_ == 0);
+                //BOOST_ASSERT(src.allocators_.node_alloc_ == dst.allocators_.node_alloc_);
 
-                // I'm assuming that this can't throw...
-                BOOST_ASSERT(src.allocators_ == dst.allocators_);
-
-                bucket_ptr end = src.buckets_ + src.bucket_count_;
+                data& src = this->data_;
+                hasher const& hf = this->hash_function();
+                bucket_ptr end = src.buckets_end();
 
                 for(; src.cached_begin_bucket_ != end;
                         ++src.cached_begin_bucket_) {
                     bucket_ptr src_bucket = src.cached_begin_bucket_;
-                    while(src_bucket->first_) {
+                    while(src_bucket->next_) {
                         // Move the first group of equivalent nodes in
                         // src_bucket to dst.
 
                         // This next line throws iff the hash function throws.
-                        bucket_ptr dst_bucket = dst.buckets_ +
-                            dst.index_from_hash(
-                                hf(extract_key(src_bucket->first_->value_)));
+                        bucket_ptr dst_bucket = dst.bucket_ptr_from_hash(
+                                hf(extract_key(data::get_value(src_bucket->next_))));
 
-                        node_ptr n = src_bucket->first_;
-                        size_type count = src.unlink_group(&src_bucket->first_);
+                        link_ptr n = src_bucket->next_;
+                        size_type count = src.unlink_group(&src_bucket->next_);
                         dst.link_group(n, dst_bucket, count);
                     }
                 }
@@ -1520,21 +1645,23 @@ namespace boost {
             // basic excpetion safety. If an exception is thrown this will
             // leave dst partially filled.
 
-            static void copy_buckets(data const& src, data& dst, functions const& f)
+            void copy_buckets_to(data& dst) const
             {
                 BOOST_ASSERT(dst.size_ == 0);
+
                 // no throw:
-                bucket_ptr end = src.buckets_ + src.bucket_count_;
-                hasher const& hf = f.hash_function();
+                data const& src = this->data_;
+                hasher const& hf = this->hash_function();
+                bucket_ptr end = src.buckets_end();
 
                 // no throw:
                 for(bucket_ptr i = src.cached_begin_bucket_; i != end; ++i) {
                     // no throw:
-                    for(local_iterator_base it = src.begin(i);
-                            it.not_finished(); it.next_group()) {
+                    for(link_ptr it = src.begin(i);
+                            BOOST_UNORDERED_BORLAND_BOOL(it); it = data::next_group(it)) {
                         // hash function can throw.
-                        bucket_ptr dst_bucket = dst.buckets_ +
-                            dst.index_from_hash(hf(extract_key(*it)));
+                        bucket_ptr dst_bucket = dst.bucket_ptr_from_hash(
+                                hf(extract_key(data::get_value(it))));
                         // throws, strong
                         dst.copy_group(it, dst_bucket);
                     }
@@ -1548,73 +1675,125 @@ namespace boost {
             // basic exception safety, if hash function throws
             // strong otherwise.
 
-#if BOOST_UNORDERED_HASH_EQUIVALENT
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
 
-            // Insert (equivalent key containers)
+#if defined(BOOST_UNORDERED_STD_FORWARD)
+
+            // Emplace (equivalent key containers)
+            // (I'm using an overloaded emplace for both 'insert' and 'emplace')
 
             // if hash function throws, basic exception safety
             // strong otherwise
-            iterator_base insert(value_type const& v)
+            template <class... Args>
+            iterator_base emplace(Args&&... args)
             {
-                key_type const& k = extract_key(v);
-                size_type hash_value = hash_function()(k);
-                bucket_ptr bucket = this->buckets_
-                    + this->index_from_hash(hash_value);
-                local_iterator_base position = find_iterator(bucket, k);
-
                 // Create the node before rehashing in case it throws an
                 // exception (need strong safety in such a case).
-                node_constructor a(this->allocators_);
-                a.construct(v);
+                node_constructor a(data_.allocators_);
+                a.construct(std::forward<Args>(args)...);
+
+                return emplace_impl(a);
+            }
+
+            // Emplace (equivalent key containers)
+            // (I'm using an overloaded emplace for both 'insert' and 'emplace')
+
+            // if hash function throws, basic exception safety
+            // strong otherwise
+            template <class... Args>
+            iterator_base emplace_hint(iterator_base const& it, Args&&... args)
+            {
+                // Create the node before rehashing in case it throws an
+                // exception (need strong safety in such a case).
+                node_constructor a(data_.allocators_);
+                a.construct(std::forward<Args>(args)...);
+
+                return emplace_hint_impl(it, a);
+            }
+
+#else
+
+#define BOOST_UNORDERED_INSERT_IMPL(z, n, _)                                        \
+            template <                                                              \
+               BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                                  \
+            >                                                                       \
+            iterator_base emplace(                                                  \
+               BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                                \
+            )                                                                       \
+            {                                                                       \
+                node_constructor a(data_.allocators_);                              \
+                a.construct(                                                        \
+                    BOOST_UNORDERED_CALL_PARAMS(z, n)                               \
+                );                                                                  \
+                return emplace_impl(a);                                             \
+            }                                                                       \
+                                                                                    \
+            template <                                                              \
+               BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                                  \
+            >                                                                       \
+            iterator_base emplace_hint(iterator_base const& it,                     \
+               BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                                \
+            )                                                                       \
+            {                                                                       \
+                node_constructor a(data_.allocators_);                              \
+                a.construct(                                                        \
+                    BOOST_UNORDERED_CALL_PARAMS(z, n)                               \
+                );                                                                  \
+                return emplace_hint_impl(it, a);                                    \
+            }
+
+            BOOST_PP_REPEAT_FROM_TO(1, BOOST_UNORDERED_EMPLACE_LIMIT,
+                BOOST_UNORDERED_INSERT_IMPL, _)
+
+#undef BOOST_UNORDERED_INSERT_IMPL
+#endif
+
+            iterator_base emplace_impl(node_constructor& a)
+            {
+                key_type const& k = extract_key(a.get()->value());
+                size_type hash_value = hash_function()(k);
+                bucket_ptr bucket = data_.bucket_ptr_from_hash(hash_value);
+                link_ptr position = find_iterator(bucket, k);
 
                 // reserve has basic exception safety if the hash function
                 // throws, strong otherwise.
-                if(reserve(size() + 1))
-                    bucket = this->buckets_ + this->index_from_hash(hash_value);
+                if(reserve_for_insert(size() + 1))
+                    bucket = data_.bucket_ptr_from_hash(hash_value);
 
-                // Nothing after the point can throw.
-
-                node_ptr n = a.release();
-
-                // I'm relying on local_iterator_base not being invalidated by
+                // I'm relying on link_ptr not being invalidated by
                 // the rehash here.
-                if(position.not_finished())
-                    this->link_node(n, position);
-                else
-                    this->link_node(n, bucket);
-
-                return iterator_base(bucket, n);
+                return iterator_base(bucket,
+                    (BOOST_UNORDERED_BORLAND_BOOL(position)) ?
+                    data_.link_node(a, position) :
+                    data_.link_node_in_bucket(a, bucket)
+                );
             }
 
-            // Insert (equivalent key containers)
-
-            // if hash function throws, basic exception safety
-            // strong otherwise
-            iterator_base insert(iterator_base const& it, value_type const& v)
+            iterator_base emplace_hint_impl(iterator_base const& it, node_constructor& a)
             {
                 // equal can throw, but with no effects
-                if (it == this->end() || !equal(extract_key(v), *it)) {
-                    // Use the standard insert if the iterator doesn't point
+                if (it == data_.end() || !equal(extract_key(a.get()->value()), *it)) {
+                    // Use the standard emplace if the iterator doesn't point
                     // to a matching key.
-                    return insert(v);
+                    return emplace_impl(a);
                 }
                 else {
-                    // Create the node before rehashing in case it throws an
-                    // exception (need strong safety in such a case).
-                    node_constructor a(this->allocators_);
-                    a.construct(v);
+                    // Find the first node in the group - so that the node
+                    // will be added at the end of the group.
+
+                    link_ptr start(it.node_);
+                    while(data_.prev_in_group(start)->next_ == start)
+                        start = data_.prev_in_group(start);
 
                     // reserve has basic exception safety if the hash function
                     // throws, strong otherwise.
-                    bucket_ptr base = reserve(size() + 1) ?
-                        get_bucket(extract_key(v)) : it.bucket_;
+                    bucket_ptr base = reserve_for_insert(size() + 1) ?
+                        get_bucket(extract_key(a.get()->value())) : it.bucket_;
 
                     // Nothing after this point can throw
 
-                    node_ptr n = a.release();
-                    this->link_node(n, it.local_);
-
-                    return iterator_base(base, n);
+                    return iterator_base(base,
+                            data_.link_node(a, start));
                 }
             }
 
@@ -1624,50 +1803,50 @@ namespace boost {
 
             // if hash function throws, or inserting > 1 element, basic exception safety
             // strong otherwise
-            template <class I>
+            template <typename I>
             void insert_for_range(I i, I j, forward_traversal_tag)
             {
-                size_type distance = std::distance(i, j);
+                size_type distance = unordered_detail::distance(i, j);
                 if(distance == 1) {
-                    insert(*i);
+                    emplace(*i);
                 }
                 else {
                     // Only require basic exception safety here
-                    reserve_extra(size() + distance);
+                    reserve_for_insert(size() + distance);
+                    node_constructor a(data_.allocators_);
 
                     for (; i != j; ++i) {
-                        node_constructor a(this->allocators_);
                         a.construct(*i);
 
-                        key_type const& k = extract_key(a.get()->value_);
+                        key_type const& k = extract_key(a.get()->value());
                         bucket_ptr bucket = get_bucket(k);
-                        local_iterator_base position = find_iterator(bucket, k);
+                        link_ptr position = find_iterator(bucket, k);
 
-                        if(position.not_finished())
-                            link_node(a.release(), position);
+                        if(BOOST_UNORDERED_BORLAND_BOOL(position))
+                            data_.link_node(a, position);
                         else
-                            link_node(a.release(), bucket);
+                            data_.link_node_in_bucket(a, bucket);
                     }
                 }
             }
 
             // if hash function throws, or inserting > 1 element, basic exception safety
             // strong otherwise
-            template <class I>
+            template <typename I>
             void insert_for_range(I i, I j,
                     boost::incrementable_traversal_tag)
             {
                 // If only inserting 1 element, get the required
                 // safety since insert is only called once.
-                for (; i != j; ++i) insert(*i);
+                for (; i != j; ++i) emplace(*i);
             }
 
         public:
 
             // if hash function throws, or inserting > 1 element, basic exception safety
             // strong otherwise
-            template <class I>
-            void insert(I i, I j)
+            template <typename I>
+            void insert_range(I i, I j)
             {
                 BOOST_DEDUCED_TYPENAME boost::iterator_traversal<I>::type
                     iterator_traversal_tag;
@@ -1683,47 +1862,69 @@ namespace boost {
                 typedef BOOST_DEDUCED_TYPENAME value_type::second_type mapped_type;
 
                 size_type hash_value = hash_function()(k);
-                bucket_ptr bucket = this->buckets_ + this->index_from_hash(hash_value);
-                local_iterator_base pos = find_iterator(bucket, k);
+                bucket_ptr bucket = data_.bucket_ptr_from_hash(hash_value);
+                link_ptr pos = find_iterator(bucket, k);
 
-                if (pos.not_finished())
-                    return *pos;
+                if (BOOST_UNORDERED_BORLAND_BOOL(pos))
+                    return data::get_value(pos);
                 else
                 {
                     // Side effects only in this block.
 
                     // Create the node before rehashing in case it throws an
                     // exception (need strong safety in such a case).
-                    node_constructor a(this->allocators_);
-                    a.construct(value_type(k, mapped_type()));
+                    node_constructor a(data_.allocators_);
+                    a.construct_pair(k, (mapped_type*) 0);
 
                     // reserve has basic exception safety if the hash function
                     // throws, strong otherwise.
-                    if (reserve(size() + 1))
-                        bucket = this->buckets_ + this->index_from_hash(hash_value);
+                    if(reserve_for_insert(size() + 1))
+                        bucket = data_.bucket_ptr_from_hash(hash_value);
 
                     // Nothing after this point can throw.
 
-                    node_ptr n = a.release();
-                    this->link_node(n, bucket);
-
-                    return *local_iterator_base(n);
+                    return data::get_value(data_.link_node_in_bucket(a, bucket));
                 }
             }
 
-            // Insert (unique keys)
+#if defined(BOOST_UNORDERED_STD_FORWARD)
+
+            // Emplace (unique keys)
+            // (I'm using an overloaded emplace for both 'insert' and 'emplace')
 
             // if hash function throws, basic exception safety
             // strong otherwise
-            std::pair<iterator_base, bool> insert(value_type const& v)
+            template<typename... Args>
+            std::pair<iterator_base, bool> emplace(Args&&... args)
+            {
+                return emplace_impl(
+                    extract_key(std::forward<Args>(args)...),
+                    std::forward<Args>(args)...);
+            }
+
+            // Insert (unique keys)
+            // (I'm using an overloaded emplace for both 'insert' and 'emplace')
+            // I'm just ignoring hints here for now.
+
+            // if hash function throws, basic exception safety
+            // strong otherwise
+            template<typename... Args>
+            iterator_base emplace_hint(iterator_base const&, Args&&... args)
+            {
+                return emplace_impl(
+                    extract_key(std::forward<Args>(args)...),
+                    std::forward<Args>(args)...).first;
+            }
+
+            template<typename... Args>
+            std::pair<iterator_base, bool> emplace_impl(key_type const& k, Args&&... args)
             {
                 // No side effects in this initial code
-                key_type const& k = extract_key(v);
                 size_type hash_value = hash_function()(k);
-                bucket_ptr bucket = this->buckets_ + this->index_from_hash(hash_value);
-                local_iterator_base pos = find_iterator(bucket, k);
-                
-                if (pos.not_finished()) {
+                bucket_ptr bucket = data_.bucket_ptr_from_hash(hash_value);
+                link_ptr pos = find_iterator(bucket, k);
+
+                if (BOOST_UNORDERED_BORLAND_BOOL(pos)) {
                     // Found an existing key, return it (no throw).
                     return std::pair<iterator_base, bool>(
                         iterator_base(bucket, pos), false);
@@ -1734,51 +1935,164 @@ namespace boost {
 
                     // Create the node before rehashing in case it throws an
                     // exception (need strong safety in such a case).
-                    node_constructor a(this->allocators_);
-                    a.construct(v);
+                    node_constructor a(data_.allocators_);
+                    a.construct(std::forward<Args>(args)...);
 
                     // reserve has basic exception safety if the hash function
                     // throws, strong otherwise.
-                    if(reserve(size() + 1))
-                        bucket = this->buckets_ + this->index_from_hash(hash_value);
+                    if(reserve_for_insert(size() + 1))
+                        bucket = data_.bucket_ptr_from_hash(hash_value);
 
                     // Nothing after this point can throw.
 
-                    node_ptr n = a.release();
-                    this->link_node(n, bucket);
-
-                    return std::pair<iterator_base, bool>(
-                        iterator_base(bucket, n), true);
+                    return std::pair<iterator_base, bool>(iterator_base(bucket,
+                        data_.link_node_in_bucket(a, bucket)), true);
                 }
             }
 
-            // Insert (unique keys)
-
-            // if hash function throws, basic exception safety
-            // strong otherwise
-            iterator_base insert(iterator_base const& it, value_type const& v)
+            template<typename... Args>
+            std::pair<iterator_base, bool> emplace_impl(no_key, Args&&... args)
             {
-                if(it != this->end() && equal(extract_key(v), *it))
-                    return it;
-                else
-                    return insert(v).first;
+                // Construct the node regardless - in order to get the key.
+                // It will be discarded if it isn't used
+                node_constructor a(data_.allocators_);
+                a.construct(std::forward<Args>(args)...);
+                return emplace_impl_with_node(a);
+            }
+#else
+            template <typename Arg0>
+            std::pair<iterator_base, bool> emplace(Arg0 const& arg0)
+            {
+                return emplace_impl(extract_key(arg0), arg0);
+            }
+
+            template <typename Arg0>
+            iterator_base emplace_hint(iterator_base const& it, Arg0 const& arg0)
+            {
+                return emplace_impl(extract_key(arg0), arg0).first;
+            }
+
+
+#define BOOST_UNORDERED_INSERT_IMPL(z, n, _)                                        \
+            template <                                                              \
+               BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                                  \
+            >                                                                       \
+            std::pair<iterator_base, bool> emplace(                                 \
+               BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                                \
+            )                                                                       \
+            {                                                                       \
+                return emplace_impl(                                                \
+                    extract_key(arg0, arg1),                                        \
+                    BOOST_UNORDERED_CALL_PARAMS(z, n)                               \
+                );                                                                  \
+            }                                                                       \
+                                                                                    \
+            template <                                                              \
+               BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                                  \
+            >                                                                       \
+            iterator_base emplace_hint(iterator_base const& it,                     \
+               BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                                \
+            )                                                                       \
+            {                                                                       \
+                return emplace_impl(                                                \
+                    extract_key(arg0, arg1),                                        \
+                    BOOST_UNORDERED_CALL_PARAMS(z, n)                               \
+                ).first;                                                            \
+            }                                                                       \
+            BOOST_UNORDERED_INSERT_IMPL2(z, n, _)
+
+#define BOOST_UNORDERED_INSERT_IMPL2(z, n, _)                                       \
+            template <                                                              \
+               BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                                  \
+            >                                                                       \
+            std::pair<iterator_base, bool> emplace_impl(key_type const& k,          \
+               BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                                \
+            )                                                                       \
+            {                                                                       \
+                size_type hash_value = hash_function()(k);                          \
+                bucket_ptr bucket = data_.bucket_ptr_from_hash(hash_value);         \
+                link_ptr pos = find_iterator(bucket, k);                            \
+                                                                                    \
+                if (BOOST_UNORDERED_BORLAND_BOOL(pos)) {                            \
+                    return std::pair<iterator_base, bool>(                          \
+                        iterator_base(bucket, pos), false);                         \
+                } else {                                                            \
+                    node_constructor a(data_.allocators_);                          \
+                    a.construct(                                                    \
+                        BOOST_UNORDERED_CALL_PARAMS(z, n)                           \
+                    );                                                              \
+                                                                                    \
+                    if(reserve_for_insert(size() + 1))                              \
+                        bucket = data_.bucket_ptr_from_hash(hash_value);            \
+                                                                                    \
+                    return std::pair<iterator_base, bool>(iterator_base(bucket,     \
+                        data_.link_node_in_bucket(a, bucket)), true);               \
+                }                                                                   \
+            }                                                                       \
+                                                                                    \
+            template <                                                              \
+               BOOST_UNORDERED_TEMPLATE_ARGS(z, n)                                  \
+            >                                                                       \
+            std::pair<iterator_base, bool> emplace_impl(no_key,                     \
+               BOOST_UNORDERED_FUNCTION_PARAMS(z, n)                                \
+            )                                                                       \
+            {                                                                       \
+                node_constructor a(data_.allocators_);                              \
+                a.construct(                                                        \
+                    BOOST_UNORDERED_CALL_PARAMS(z, n)                               \
+                );                                                                  \
+                return emplace_impl_with_node(a);                                   \
+            }
+
+            BOOST_UNORDERED_INSERT_IMPL2(1, 1, _)
+
+            BOOST_PP_REPEAT_FROM_TO(2, BOOST_UNORDERED_EMPLACE_LIMIT,
+                BOOST_UNORDERED_INSERT_IMPL, _)
+
+#undef BOOST_UNORDERED_INSERT_IMPL
+
+#endif
+
+            std::pair<iterator_base, bool> emplace_impl_with_node(node_constructor& a)
+            {
+                // No side effects in this initial code
+                key_type const& k = extract_key(a.get()->value());
+                size_type hash_value = hash_function()(k);
+                bucket_ptr bucket = data_.bucket_ptr_from_hash(hash_value);
+                link_ptr pos = find_iterator(bucket, k);
+                
+                if (BOOST_UNORDERED_BORLAND_BOOL(pos)) {
+                    // Found an existing key, return it (no throw).
+                    return std::pair<iterator_base, bool>(
+                        iterator_base(bucket, pos), false);
+                } else {
+                    // reserve has basic exception safety if the hash function
+                    // throws, strong otherwise.
+                    if(reserve_for_insert(size() + 1))
+                        bucket = data_.bucket_ptr_from_hash(hash_value);
+
+                    // Nothing after this point can throw.
+
+                    return std::pair<iterator_base, bool>(iterator_base(bucket,
+                        data_.link_node_in_bucket(a, bucket)), true);
+                }
             }
 
             // Insert from iterators (unique keys)
 
-            template <class I>
+            template <typename I>
             size_type insert_size(I i, I j, boost::forward_traversal_tag)
             {
-                return std::distance(i, j);
+                return unordered_detail::distance(i, j);
             }
 
-            template <class I>
-            size_type insert_size(I i, I j, boost::incrementable_traversal_tag)
+            template <typename I>
+            size_type insert_size(I, I, boost::incrementable_traversal_tag)
             {
                 return 1;
             }
 
-            template <class I>
+            template <typename I>
             size_type insert_size(I i, I j)
             {
                 BOOST_DEDUCED_TYPENAME boost::iterator_traversal<I>::type
@@ -1788,66 +2102,88 @@ namespace boost {
 
             // if hash function throws, or inserting > 1 element, basic exception safety
             // strong otherwise
-            template <class InputIterator>
-            void insert(InputIterator i, InputIterator j)
+            template <typename InputIterator>
+            void insert_range(InputIterator i, InputIterator j)
             {
-                // If only inserting 1 element, get the required
-                // safety since insert is only called once.
+                if(i != j)
+                    return insert_range_impl(extract_key(*i), i, j);
+            }
+            
+            template <typename InputIterator>
+            void insert_range_impl(key_type const&, InputIterator i, InputIterator j)
+            {
+                node_constructor a(data_.allocators_);
+
                 for (; i != j; ++i) {
                     // No side effects in this initial code
                     size_type hash_value = hash_function()(extract_key(*i));
-                    bucket_ptr bucket = this->buckets_
-                        + this->index_from_hash(hash_value);
-                    local_iterator_base pos = find_iterator(bucket, extract_key(*i));
-                    
-                    if (!pos.not_finished()) {
+                    bucket_ptr bucket = data_.bucket_ptr_from_hash(hash_value);
+                    link_ptr pos = find_iterator(bucket, extract_key(*i));
+
+                    if (!BOOST_UNORDERED_BORLAND_BOOL(pos)) {
                         // Doesn't already exist, add to bucket.
                         // Side effects only in this block.
 
                         // Create the node before rehashing in case it throws an
                         // exception (need strong safety in such a case).
-                        node_constructor a(this->allocators_);
-                        value_type const& v = *i;
-                        a.construct(v);
+                        a.construct(*i);
 
                         // reserve has basic exception safety if the hash function
                         // throws, strong otherwise.
                         if(size() + 1 >= max_load_) {
-                            reserve(size() + insert_size(i, j));
-                            bucket = this->buckets_ + this->index_from_hash(hash_value);
+                            reserve_for_insert(size() + insert_size(i, j));
+                            bucket = data_.bucket_ptr_from_hash(hash_value);
                         }
 
                         // Nothing after this point can throw.
-                        this->link_node(a.release(), bucket);
+                        data_.link_node_in_bucket(a, bucket);
+                    }
+                }
+            }
+
+            template <typename InputIterator>
+            void insert_range_impl(no_key, InputIterator i, InputIterator j)
+            {
+                node_constructor a(data_.allocators_);
+
+                for (; i != j; ++i) {
+                    // No side effects in this initial code
+                    a.construct(*i);
+                    key_type const& k = extract_key(a.get()->value());
+                    size_type hash_value = hash_function()(extract_key(k));
+                    bucket_ptr bucket = data_.bucket_ptr_from_hash(hash_value);
+                    link_ptr pos = find_iterator(bucket, k);
+
+                    if (!BOOST_UNORDERED_BORLAND_BOOL(pos)) {
+                        // Doesn't already exist, add to bucket.
+                        // Side effects only in this block.
+
+                        // reserve has basic exception safety if the hash function
+                        // throws, strong otherwise.
+                        if(size() + 1 >= max_load_) {
+                            reserve_for_insert(size() + insert_size(i, j));
+                            bucket = data_.bucket_ptr_from_hash(hash_value);
+                        }
+
+                        // Nothing after this point can throw.
+                        data_.link_node_in_bucket(a, bucket);
                     }
                 }
             }
 #endif
         public:
 
-            // erase
-
-            // no throw
-            iterator_base erase(iterator_base const& r)
-            {
-                return this->data::erase(r);
-            }
+            // erase_key
 
             // strong exception safety
-            size_type erase(key_type const& k)
+            size_type erase_key(key_type const& k)
             {
                 // No side effects in initial section
                 bucket_ptr bucket = get_bucket(k);
-                node_ptr* it = find_for_erase(bucket, k);
+                link_ptr* it = find_for_erase(bucket, k);
 
                 // No throw.
-                return *it ? this->erase_group(it, bucket) : 0;
-            }
-
-            // no throw
-            iterator_base erase(iterator_base const& r1, iterator_base const& r2)
-            {
-                return this->data::erase(r1, r2);
+                return *it ? data_.erase_group(it, bucket) : 0;
             }
 
             // count
@@ -1855,8 +2191,8 @@ namespace boost {
             // strong exception safety, no side effects
             size_type count(key_type const& k) const
             {
-                local_iterator_base it = find_iterator(k); // throws, strong
-                return it.not_finished() ? group_count(it) : 0;
+                link_ptr it = find_iterator(k); // throws, strong
+                return BOOST_UNORDERED_BORLAND_BOOL(it) ? data::group_count(it) : 0;
             }
 
             // find
@@ -1865,12 +2201,23 @@ namespace boost {
             iterator_base find(key_type const& k) const
             {
                 bucket_ptr bucket = get_bucket(k);
-                local_iterator_base it = find_iterator(bucket, k);
+                link_ptr it = find_iterator(bucket, k);
 
-                if (it.not_finished())
+                if (BOOST_UNORDERED_BORLAND_BOOL(it))
                     return iterator_base(bucket, it);
                 else
-                    return this->end();
+                    return data_.end();
+            }
+
+            value_type& at(key_type const& k) const
+            {
+                bucket_ptr bucket = get_bucket(k);
+                link_ptr it = find_iterator(bucket, k);
+
+                if (BOOST_UNORDERED_BORLAND_BOOL(it))
+                    return data::get_value(it);
+                else
+                    throw std::out_of_range("Unable to find key in unordered_map.");
             }
 
             // equal_range
@@ -1879,20 +2226,18 @@ namespace boost {
             std::pair<iterator_base, iterator_base> equal_range(key_type const& k) const
             {
                 bucket_ptr bucket = get_bucket(k);
-                local_iterator_base it = find_iterator(bucket, k);
-                if (it.not_finished()) {
+                link_ptr it = find_iterator(bucket, k);
+                if (BOOST_UNORDERED_BORLAND_BOOL(it)) {
                     iterator_base first(iterator_base(bucket, it));
-                    iterator_base second(iterator_base(bucket, last_in_group(it.node_)));
-                    second.increment();
+                    iterator_base second(first);
+                    second.increment_group();
                     return std::pair<iterator_base, iterator_base>(first, second);
                 }
                 else {
                     return std::pair<iterator_base, iterator_base>(
-                            this->end(), this->end());
+                            data_.end(), data_.end());
                 }
             }
-
-        private:
 
             // strong exception safety, no side effects
             bool equal(key_type const& k, value_type const& v) const
@@ -1901,47 +2246,134 @@ namespace boost {
             }
 
             // strong exception safety, no side effects
-            local_iterator_base find_iterator(key_type const& k) const
+            link_ptr find_iterator(key_type const& k) const
             {
                 return find_iterator(get_bucket(k), k);
             }
 
             // strong exception safety, no side effects
-            local_iterator_base find_iterator(bucket_ptr bucket,
+            link_ptr find_iterator(bucket_ptr bucket,
                     key_type const& k) const
             {
-                local_iterator_base it = this->begin(bucket);
-                while (it.not_finished() && !equal(k, *it))
-                    it.next_group();
+                link_ptr it = data_.begin(bucket);
+                while (BOOST_UNORDERED_BORLAND_BOOL(it) && !equal(k, data::get_value(it))) {
+                    it = data::next_group(it);
+                }
 
                 return it;
             }
 
             // strong exception safety, no side effects
-            node_ptr* find_for_erase(bucket_ptr bucket, key_type const& k) const
+            link_ptr* find_for_erase(bucket_ptr bucket, key_type const& k) const
             {
-                node_ptr* it = &bucket->first_;
-                while(*it && !equal(k, (*it)->value_))
-                    it = &this->next_group(*it);
+                link_ptr* it = &bucket->next_;
+                while(BOOST_UNORDERED_BORLAND_BOOL(*it) && !equal(k, data::get_value(*it)))
+                    it = &data::next_group(*it);
 
                 return it;
             }
         };
 
+        //
+        // Equals - unordered container equality comparison.
+        //
+
+#if BOOST_UNORDERED_EQUIVALENT_KEYS
+        template <typename A, typename KeyType>
+        inline bool group_equals(
+                BOOST_UNORDERED_TABLE_DATA<A>*,
+                typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr it1,
+                typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr it2,
+                KeyType*,
+                type_wrapper<KeyType>*)
+        {
+            typedef BOOST_UNORDERED_TABLE_DATA<A> data;
+            return data::group_count(it1) == data::group_count(it2);
+        }
+
+        template <typename A, typename KeyType>
+        inline bool group_equals(
+                BOOST_UNORDERED_TABLE_DATA<A>*,
+                typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr it1,
+                typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr it2,
+                KeyType*,
+                void*)
+        {
+            typedef BOOST_UNORDERED_TABLE_DATA<A> data;
+            typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr end1 = data::next_group(it1);
+            typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr end2 = data::next_group(it2);
+
+            do {
+                if(data::get_value(it1).second != data::get_value(it2).second) return false;
+                it1 = it1->next_;
+                it2 = it2->next_;
+            } while(it1 != end1 && it2 != end2);
+            return it1 == end1 && it2 == end2;
+        }
+#else
+        template <typename A, typename KeyType>
+        inline bool group_equals(
+                BOOST_UNORDERED_TABLE_DATA<A>*,
+                typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr,
+                typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr,
+                KeyType*,
+                type_wrapper<KeyType>*)
+        {
+            return true;
+        }
+
+        template <typename A, typename KeyType>
+        inline bool group_equals(
+                BOOST_UNORDERED_TABLE_DATA<A>*,
+                typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr it1,
+                typename BOOST_UNORDERED_TABLE_DATA<A>::link_ptr it2,
+                KeyType*,
+                void*)
+        {
+            typedef BOOST_UNORDERED_TABLE_DATA<A> data;
+            return data::get_value(it1).second == data::get_value(it2).second;
+        }
+#endif
+
+        template <typename V, typename K, typename H, typename P, typename A>
+        bool equals(BOOST_UNORDERED_TABLE<V, K, H, P, A> const& t1,
+                BOOST_UNORDERED_TABLE<V, K, H, P, A> const& t2)
+        {
+            typedef BOOST_UNORDERED_TABLE_DATA<A> data;
+            typedef typename data::bucket_ptr bucket_ptr;
+            typedef typename data::link_ptr link_ptr;
+
+            if(t1.size() != t2.size()) return false;
+
+            for(bucket_ptr i = t1.data_.cached_begin_bucket_,
+                    j = t1.data_.buckets_end(); i != j; ++i)
+            {
+                for(link_ptr it(i->next_); BOOST_UNORDERED_BORLAND_BOOL(it); it = data::next_group(it))
+                {
+                    link_ptr other_pos = t2.find_iterator(t2.extract_key(data::get_value(it)));
+                    if(!BOOST_UNORDERED_BORLAND_BOOL(other_pos) ||
+                        !group_equals((data*)0, it, other_pos, (K*)0, (type_wrapper<V>*)0))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
         // Iterators
-        
-        template <class Alloc> class HASH_ITERATOR;
-        template <class Alloc> class HASH_CONST_ITERATOR;
-        template <class Alloc> class HASH_LOCAL_ITERATOR;
-        template <class Alloc> class HASH_CONST_LOCAL_ITERATOR;
+
+        template <typename Alloc> class BOOST_UNORDERED_ITERATOR;
+        template <typename Alloc> class BOOST_UNORDERED_CONST_ITERATOR;
+        template <typename Alloc> class BOOST_UNORDERED_LOCAL_ITERATOR;
+        template <typename Alloc> class BOOST_UNORDERED_CONST_LOCAL_ITERATOR;
         class iterator_access;
 
         // Local Iterators
         //
         // all no throw
 
-        template <class Alloc>
-        class HASH_LOCAL_ITERATOR
+        template <typename Alloc>
+        class BOOST_UNORDERED_LOCAL_ITERATOR
             : public boost::iterator <
                 std::forward_iterator_tag,
                 BOOST_DEDUCED_TYPENAME allocator_value_type<Alloc>::type,
@@ -1953,28 +2385,31 @@ namespace boost {
             typedef BOOST_DEDUCED_TYPENAME allocator_value_type<Alloc>::type value_type;
 
         private:
-            typedef BOOST_DEDUCED_TYPENAME HASH_TABLE_DATA<Alloc>::local_iterator_base base;
-            typedef HASH_CONST_LOCAL_ITERATOR<Alloc> const_local_iterator;
+            typedef BOOST_UNORDERED_TABLE_DATA<Alloc> data;
+            typedef BOOST_DEDUCED_TYPENAME data::link_ptr ptr;
+            typedef BOOST_UNORDERED_CONST_LOCAL_ITERATOR<Alloc> const_local_iterator;
 
-            friend class HASH_CONST_LOCAL_ITERATOR<Alloc>;
-            base base_;
+            friend class BOOST_UNORDERED_CONST_LOCAL_ITERATOR<Alloc>;
+            ptr ptr_;
 
         public:
-            HASH_LOCAL_ITERATOR() : base_() {}
-            explicit HASH_LOCAL_ITERATOR(base x) : base_(x) {}
+            BOOST_UNORDERED_LOCAL_ITERATOR() : ptr_() {
+                BOOST_UNORDERED_MSVC_RESET_PTR(ptr_);
+            }
+            explicit BOOST_UNORDERED_LOCAL_ITERATOR(ptr x) : ptr_(x) {}
             BOOST_DEDUCED_TYPENAME allocator_reference<Alloc>::type operator*() const
-                { return *base_; }
-            value_type* operator->() const { return &*base_; }
-            HASH_LOCAL_ITERATOR& operator++() { base_.increment(); return *this; }
-            HASH_LOCAL_ITERATOR operator++(int) { HASH_LOCAL_ITERATOR tmp(base_); base_.increment(); return tmp; }
-            bool operator==(HASH_LOCAL_ITERATOR x) const { return base_ == x.base_; }
-            bool operator==(const_local_iterator x) const { return base_ == x.base_; }
-            bool operator!=(HASH_LOCAL_ITERATOR x) const { return base_ != x.base_; }
-            bool operator!=(const_local_iterator x) const { return base_ != x.base_; }
+                { return data::get_value(ptr_); }
+            value_type* operator->() const { return &data::get_value(ptr_); }
+            BOOST_UNORDERED_LOCAL_ITERATOR& operator++() { ptr_ = ptr_->next_; return *this; }
+            BOOST_UNORDERED_LOCAL_ITERATOR operator++(int) { BOOST_UNORDERED_LOCAL_ITERATOR tmp(ptr_); ptr_ = ptr_->next_; return tmp; }
+            bool operator==(BOOST_UNORDERED_LOCAL_ITERATOR x) const { return ptr_ == x.ptr_; }
+            bool operator==(const_local_iterator x) const { return ptr_ == x.ptr_; }
+            bool operator!=(BOOST_UNORDERED_LOCAL_ITERATOR x) const { return ptr_ != x.ptr_; }
+            bool operator!=(const_local_iterator x) const { return ptr_ != x.ptr_; }
         };
 
-        template <class Alloc>
-        class HASH_CONST_LOCAL_ITERATOR
+        template <typename Alloc>
+        class BOOST_UNORDERED_CONST_LOCAL_ITERATOR
             : public boost::iterator <
                 std::forward_iterator_tag,
                 BOOST_DEDUCED_TYPENAME allocator_value_type<Alloc>::type,
@@ -1986,24 +2421,27 @@ namespace boost {
             typedef BOOST_DEDUCED_TYPENAME allocator_value_type<Alloc>::type value_type;
 
         private:
-            typedef BOOST_DEDUCED_TYPENAME HASH_TABLE_DATA<Alloc>::local_iterator_base base;
-            typedef HASH_LOCAL_ITERATOR<Alloc> local_iterator;
-            friend class HASH_LOCAL_ITERATOR<Alloc>;
-            base base_;
+            typedef BOOST_UNORDERED_TABLE_DATA<Alloc> data;
+            typedef BOOST_DEDUCED_TYPENAME data::link_ptr ptr;
+            typedef BOOST_UNORDERED_LOCAL_ITERATOR<Alloc> local_iterator;
+            friend class BOOST_UNORDERED_LOCAL_ITERATOR<Alloc>;
+            ptr ptr_;
 
         public:
-            HASH_CONST_LOCAL_ITERATOR() : base_() {}
-            explicit HASH_CONST_LOCAL_ITERATOR(base x) : base_(x) {}
-            HASH_CONST_LOCAL_ITERATOR(local_iterator x) : base_(x.base_) {}
+            BOOST_UNORDERED_CONST_LOCAL_ITERATOR() : ptr_() {
+                BOOST_UNORDERED_MSVC_RESET_PTR(ptr_);
+            }
+            explicit BOOST_UNORDERED_CONST_LOCAL_ITERATOR(ptr x) : ptr_(x) {}
+            BOOST_UNORDERED_CONST_LOCAL_ITERATOR(local_iterator x) : ptr_(x.ptr_) {}
             BOOST_DEDUCED_TYPENAME allocator_const_reference<Alloc>::type
-                operator*() const { return *base_; }
-            value_type const* operator->() const { return &*base_; }
-            HASH_CONST_LOCAL_ITERATOR& operator++() { base_.increment(); return *this; }
-            HASH_CONST_LOCAL_ITERATOR operator++(int) { HASH_CONST_LOCAL_ITERATOR tmp(base_); base_.increment(); return tmp; }
-            bool operator==(local_iterator x) const { return base_ == x.base_; }
-            bool operator==(HASH_CONST_LOCAL_ITERATOR x) const { return base_ == x.base_; }
-            bool operator!=(local_iterator x) const { return base_ != x.base_; }
-            bool operator!=(HASH_CONST_LOCAL_ITERATOR x) const { return base_ != x.base_; }
+                operator*() const { return data::get_value(ptr_); }
+            value_type const* operator->() const { return &data::get_value(ptr_); }
+            BOOST_UNORDERED_CONST_LOCAL_ITERATOR& operator++() { ptr_ = ptr_->next_; return *this; }
+            BOOST_UNORDERED_CONST_LOCAL_ITERATOR operator++(int) { BOOST_UNORDERED_CONST_LOCAL_ITERATOR tmp(ptr_); ptr_ = ptr_->next_; return tmp; }
+            bool operator==(local_iterator x) const { return ptr_ == x.ptr_; }
+            bool operator==(BOOST_UNORDERED_CONST_LOCAL_ITERATOR x) const { return ptr_ == x.ptr_; }
+            bool operator!=(local_iterator x) const { return ptr_ != x.ptr_; }
+            bool operator!=(BOOST_UNORDERED_CONST_LOCAL_ITERATOR x) const { return ptr_ != x.ptr_; }
         };
 
         // iterators
@@ -2011,8 +2449,8 @@ namespace boost {
         // all no throw
 
 
-        template <class Alloc>
-        class HASH_ITERATOR
+        template <typename Alloc>
+        class BOOST_UNORDERED_ITERATOR
             : public boost::iterator <
                 std::forward_iterator_tag,
                 BOOST_DEDUCED_TYPENAME allocator_value_type<Alloc>::type,
@@ -2024,28 +2462,28 @@ namespace boost {
             typedef BOOST_DEDUCED_TYPENAME allocator_value_type<Alloc>::type value_type;
 
         private:
-            typedef BOOST_DEDUCED_TYPENAME HASH_TABLE_DATA<Alloc>::iterator_base base;
-            typedef HASH_CONST_ITERATOR<Alloc> const_iterator;
-            friend class HASH_CONST_ITERATOR<Alloc>;
+            typedef BOOST_DEDUCED_TYPENAME BOOST_UNORDERED_TABLE_DATA<Alloc>::iterator_base base;
+            typedef BOOST_UNORDERED_CONST_ITERATOR<Alloc> const_iterator;
+            friend class BOOST_UNORDERED_CONST_ITERATOR<Alloc>;
             base base_;
 
         public:
 
-            HASH_ITERATOR() : base_() {}
-            explicit HASH_ITERATOR(base const& x) : base_(x) {}
+            BOOST_UNORDERED_ITERATOR() : base_() {}
+            explicit BOOST_UNORDERED_ITERATOR(base const& x) : base_(x) {}
             BOOST_DEDUCED_TYPENAME allocator_reference<Alloc>::type
                 operator*() const { return *base_; }
             value_type* operator->() const { return &*base_; }
-            HASH_ITERATOR& operator++() { base_.increment(); return *this; }
-            HASH_ITERATOR operator++(int) { HASH_ITERATOR tmp(base_); base_.increment(); return tmp; }
-            bool operator==(HASH_ITERATOR const& x) const { return base_ == x.base_; }
+            BOOST_UNORDERED_ITERATOR& operator++() { base_.increment(); return *this; }
+            BOOST_UNORDERED_ITERATOR operator++(int) { BOOST_UNORDERED_ITERATOR tmp(base_); base_.increment(); return tmp; }
+            bool operator==(BOOST_UNORDERED_ITERATOR const& x) const { return base_ == x.base_; }
             bool operator==(const_iterator const& x) const { return base_ == x.base_; }
-            bool operator!=(HASH_ITERATOR const& x) const { return base_ != x.base_; }
+            bool operator!=(BOOST_UNORDERED_ITERATOR const& x) const { return base_ != x.base_; }
             bool operator!=(const_iterator const& x) const { return base_ != x.base_; }
         };
 
-        template <class Alloc>
-        class HASH_CONST_ITERATOR
+        template <typename Alloc>
+        class BOOST_UNORDERED_CONST_ITERATOR
             : public boost::iterator <
                 std::forward_iterator_tag,
                 BOOST_DEDUCED_TYPENAME allocator_value_type<Alloc>::type,
@@ -2057,36 +2495,33 @@ namespace boost {
             typedef BOOST_DEDUCED_TYPENAME allocator_value_type<Alloc>::type value_type;
 
         private:
-            typedef BOOST_DEDUCED_TYPENAME HASH_TABLE_DATA<Alloc>::iterator_base base;
-            typedef HASH_ITERATOR<Alloc> iterator;
-            friend class HASH_ITERATOR<Alloc>;
+            typedef BOOST_DEDUCED_TYPENAME BOOST_UNORDERED_TABLE_DATA<Alloc>::iterator_base base;
+            typedef BOOST_UNORDERED_ITERATOR<Alloc> iterator;
+            friend class BOOST_UNORDERED_ITERATOR<Alloc>;
             friend class iterator_access;
             base base_;
 
         public:
 
-            HASH_CONST_ITERATOR() : base_() {}
-            explicit HASH_CONST_ITERATOR(base const& x) : base_(x) {}
-            HASH_CONST_ITERATOR(iterator const& x) : base_(x.base_) {}
+            BOOST_UNORDERED_CONST_ITERATOR() : base_() {}
+            explicit BOOST_UNORDERED_CONST_ITERATOR(base const& x) : base_(x) {}
+            BOOST_UNORDERED_CONST_ITERATOR(iterator const& x) : base_(x.base_) {}
             BOOST_DEDUCED_TYPENAME allocator_const_reference<Alloc>::type
                 operator*() const { return *base_; }
             value_type const* operator->() const { return &*base_; }
-            HASH_CONST_ITERATOR& operator++() { base_.increment(); return *this; }
-            HASH_CONST_ITERATOR operator++(int) { HASH_CONST_ITERATOR tmp(base_); base_.increment(); return tmp; }
+            BOOST_UNORDERED_CONST_ITERATOR& operator++() { base_.increment(); return *this; }
+            BOOST_UNORDERED_CONST_ITERATOR operator++(int) { BOOST_UNORDERED_CONST_ITERATOR tmp(base_); base_.increment(); return tmp; }
             bool operator==(iterator const& x) const { return base_ == x.base_; }
-            bool operator==(HASH_CONST_ITERATOR const& x) const { return base_ == x.base_; }
+            bool operator==(BOOST_UNORDERED_CONST_ITERATOR const& x) const { return base_ == x.base_; }
             bool operator!=(iterator const& x) const { return base_ != x.base_; }
-            bool operator!=(HASH_CONST_ITERATOR const& x) const { return base_ != x.base_; }
+            bool operator!=(BOOST_UNORDERED_CONST_ITERATOR const& x) const { return base_ != x.base_; }
         };
     }
 }
 
-#undef HASH_TABLE
-#undef HASH_TABLE_DATA
-#undef HASH_ITERATOR
-#undef HASH_CONST_ITERATOR
-#undef HASH_LOCAL_ITERATOR
-#undef HASH_CONST_LOCAL_ITERATOR
-
-
-
+#undef BOOST_UNORDERED_TABLE
+#undef BOOST_UNORDERED_TABLE_DATA
+#undef BOOST_UNORDERED_ITERATOR
+#undef BOOST_UNORDERED_CONST_ITERATOR
+#undef BOOST_UNORDERED_LOCAL_ITERATOR
+#undef BOOST_UNORDERED_CONST_LOCAL_ITERATOR

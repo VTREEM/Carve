@@ -13,7 +13,7 @@
 //  HP aCC C++ compiler setup:
 
 #if defined(__EDG__)
-#include "boost/config/compiler/common_edg.hpp"
+#include "carve/external/boost/config/compiler/common_edg.hpp"
 #endif
 
 #if (__HP_aCC <= 33100)
@@ -83,6 +83,36 @@
       // must compile using the option +hpxstd98 with version A.03.80 and above
 #     error "Compiler option '+hpxstd98' is required for proper support"
 #  endif //PA-RISC
+#endif
+
+//
+// C++0x features
+//
+//   See boost\config\suffix.hpp for BOOST_NO_LONG_LONG
+//
+#if !defined(__EDG__)
+
+#define BOOST_NO_AUTO_DECLARATIONS
+#define BOOST_NO_AUTO_MULTIDECLARATIONS
+#define BOOST_NO_CHAR16_T
+#define BOOST_NO_CHAR32_T
+#define BOOST_NO_CONCEPTS
+#define BOOST_NO_CONSTEXPR
+#define BOOST_NO_DECLTYPE
+#define BOOST_NO_DEFAULTED_FUNCTIONS
+#define BOOST_NO_DELETED_FUNCTIONS
+#define BOOST_NO_EXPLICIT_CONVERSION_OPERATORS
+#define BOOST_NO_EXTERN_TEMPLATE
+#define BOOST_NO_INITIALIZER_LISTS
+#define BOOST_NO_LAMBDAS
+#define BOOST_NO_NULLPTR
+#define BOOST_NO_RAW_LITERALS
+#define BOOST_NO_RVALUE_REFERENCES
+#define BOOST_NO_SCOPED_ENUMS
+#define BOOST_NO_STATIC_ASSERT
+#define BOOST_NO_TEMPLATE_ALIASES
+#define BOOST_NO_UNICODE_LITERALS
+#define BOOST_NO_VARIADIC_TEMPLATES
 #endif
 
 //
