@@ -32,6 +32,7 @@
 
 #include <algorithm>
 
+#include <carve/external/boost/random.hpp>
 namespace carve {
   namespace poly {
 
