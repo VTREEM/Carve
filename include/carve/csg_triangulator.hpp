@@ -15,6 +15,7 @@
 // End:
 
 #include <carve/csg.hpp>
+#include <carve/tag.hpp>
 #include <carve/triangulator.hpp>
 
 namespace carve {
@@ -146,5 +147,89 @@ namespace carve {
       }
     };
 
+    class CarveTriangulationQuadMerger : public csg::CSG::Hook {
+      typedef std::map<V2, F2> edge_map_t;
+
+    public:
+      CarveTriangulationQuadMerger() {
+      }
+
+      virtual ~CarveTriangulationQuadMerger() {
+      }
+
+      double scoreQuad(edge_map_t::iterator i, edge_map_t &edge_map) {
+        if (!(*i).second.first || !(*i).second.second) return -1;
+      }
+
+      poly::Face<3> *mergeQuad(edge_map_t::iterator i, edge_map_t &edge_map) {
+      }
+
+      void recordEdge(const poly::Vertex<3> *v1,
+                      const poly::Vertex<3> *v2,
+                      const poly::Face<3> *f,
+                      edge_map_t &edge_map) {
+        if (v1 < v2) {
+          edge_map[V2(v1, v2)].first = f;
+        } else {
+          edge_map[V2(v2, v1)].second = f;
+        }
+      }
+
+      virtual void processOutputFace(std::vector<poly::Face<3> *> &faces,
+                                     const poly::Face<3> *orig,
+                                     bool flipped) {
+        if (faces.size() == 1) return;
+
+        std::vector<poly::Face<3> *> out_faces;
+        edge_map_t edge_map;
+
+        out_faces.reserve(faces.size());
+
+        poly::p2_adapt_project<3> projector(faces[0]->project);
+
+        for (size_t f = 0; f < faces.size(); ++f) {
+          poly::Face<3> *face = faces[f];
+          if (face->vertices.size() != 3) {
+            out_faces.push_back(face);
+          } else {
+            recordEdge(face->vertices[0], face->vertices[1], face, edge_map);
+            recordEdge(face->vertices[1], face->vertices[2], face, edge_map);
+            recordEdge(face->vertices[2], face->vertices[0], face, edge_map);
+          }
+        }
+
+        for (edge_map_t::iterator i = edge_map.begin(); i != edge_map.end();) {
+          if ((*i).second.first && (*i).second.second) {
+            ++i;
+          } else {
+            edge_map.erase(i++);
+          }
+        }
+
+        while (edge_map.size()) {
+          edge_map_t::iterator i = edge_map.begin();
+          edge_map_t::iterator best = i;
+          double best_score = scoreQuad(i, edge_map);
+          for (++i; i != edge_map.end(); ++i) {
+            double score = scoreQuad(i, edge_map);
+            if (score > best_score) best = i;
+          }
+          if (best_score < 0) break;
+          out_faces.push_back(mergeQuad(best, edge_map));
+        }
+
+        if (edge_map.size()) {
+          tagable::tag_begin();
+          for (edge_map_t::iterator i = edge_map.begin(); i != edge_map.end(); ++i) {
+            poly::Face<3> *a = const_cast<poly::Face<3> *>((*i).second.first);
+            poly::Face<3> *b = const_cast<poly::Face<3> *>((*i).second.first);
+            if (a && a->tag_once()) out_faces.push_back(a);
+            if (b && b->tag_once()) out_faces.push_back(b);
+          }
+        }
+
+        std::swap(faces, out_faces);
+      }
+    };
   }
 }
