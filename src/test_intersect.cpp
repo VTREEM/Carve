@@ -633,7 +633,7 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
     scene->draw_flags.push_back(group->createOption("Result wireframe", true));
     glNewList(currentList++, GL_COMPILE);
     if (g_result) {
-      drawPolyhedronWireframe(g_result, 0.4f, 0.6f, 0.9f);
+      drawPolyhedronWireframe(g_result);
     }
     glEndList();
   }
@@ -648,12 +648,12 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
       H = fmod((H + .37), 1.0);
       S = 0.5 + fmod((S - 0.37), 0.5);
       RGB colour = HSV2RGB(H, S, V);
-      RGB wireColour = HSV2RGB(H, S - 0.5, V);
+
       count++;
       sprintf(buf, "Input %d wireframe", count);
       scene->draw_flags.push_back(group->createOption(buf, false));
       glNewList(currentList++, GL_COMPILE);
-      if (it->poly) drawPolyhedronWireframe(it->poly, wireColour.r, wireColour.g, wireColour.b);
+      if (it->poly) drawPolyhedronWireframe(it->poly);
       glEndList();
 
       sprintf(buf, "Input %d solid", count);

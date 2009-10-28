@@ -122,10 +122,7 @@ int main(int argc, char **argv) {
   {
     int n = 0;
     for (std::list<carve::poly::Polyhedron *>::iterator i = a_sliced.begin(); i != a_sliced.end(); ++i) {
-      float r  = n & 1 ? .3 : .7;
-      float g  = n & 2 ? .3 : .7;
-      float b  = n & 4 ? .3 : .7;
-      drawPolyhedronWireframe((*i), r, g, b, 1.0);
+      drawPolyhedronWireframe((*i));
       ++n;
     }
   }
@@ -148,10 +145,7 @@ int main(int argc, char **argv) {
   {
     int n = 0;
     for (std::list<carve::poly::Polyhedron *>::iterator i = b_sliced.begin(); i != b_sliced.end(); ++i) {
-      float r  = n & 1 ? .3 : .7;
-      float g  = n & 2 ? .3 : .7;
-      float b  = n & 4 ? .3 : .7;
-      drawPolyhedronWireframe((*i), r, g, b, 1.0);
+      drawPolyhedronWireframe((*i));
       ++n;
     }
   }

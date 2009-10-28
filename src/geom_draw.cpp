@@ -329,8 +329,6 @@ void drawFaceWireframe(carve::poly::Face<3> *face, bool normal, float r, float g
   glDepthMask(GL_FALSE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glDisable(GL_CULL_FACE);
-  // glEnable(GL_POLYGON_OFFSET_LINE);
-  // glPolygonOffset(-1.0, -1.0);
 
   glColor4f(r, g, b ,1.0);
   glBegin(GL_POLYGON);
@@ -379,6 +377,29 @@ void drawFaceWireframe(carve::poly::Face<3> *face, bool normal, float r, float g
 
 void drawFaceWireframe(carve::poly::Face<3> *face, bool normal) {
   drawFaceWireframe(face, normal, 0,0,0);
+}
+
+void drawFaceNormal(carve::poly::Face<3> *face, float r, float g, float b) {
+  glDisable(GL_LIGHTING);
+  glDepthMask(GL_FALSE);
+
+  glLineWidth(1.0f);
+
+  glEnable(GL_DEPTH_TEST);
+
+  glBegin(GL_LINES);
+  glColor4f(1.0, 1.0, 0.0, 1.0);
+  glVertex(face->centroid());
+  glColor4f(1.0, 1.0, 0.0, 0.0);
+  glVertex(face->centroid() + 1 / g_scale * face->plane_eqn.N);
+  glEnd();
+
+  glDepthMask(GL_TRUE);
+  glEnable(GL_LIGHTING);
+}
+
+void drawFaceNormal(carve::poly::Face<3> *face) {
+  drawFaceNormal(face, 0,0,0);
 }
 
 void DebugHooks::drawFaceLoopWireframe(const std::vector<const carve::geom3d::Vector *> &face_loop,
@@ -544,22 +565,46 @@ void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, fl
   }
 }
 
-void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool offset, bool normal, int group) {
-  for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face<3> &f = poly->faces[i];
-    if (group == -1 || f.manifold_id == group) {
-      drawFaceWireframe(&f, normal);
+void drawEdges(carve::poly::Polyhedron *poly, double alpha, int group) {
+  glBegin(GL_LINES);
+  for (size_t i = 0, l = poly->edges.size(); i != l; ++i) {
+    if (group == -1 || poly->edgeOnManifold(&poly->edges[i], group)) {
+      const std::vector<const carve::poly::Polyhedron::face_t *> &ef = poly->connectivity.edge_to_face[i];
+      if (std::find(ef.begin(), ef.end(), (carve::poly::Polyhedron::face_t *)NULL) != ef.end()) {
+        glColor4f(1.0, 1.0, 0.0, alpha);
+      } else if (ef.size() > 2) {
+        glColor4f(0.0, 1.0, 1.0, alpha);
+      } else {
+        glColor4f(1.0, 0.0, 0.0, alpha);
+      }
+      glVertex(poly->edges[i].v1->v);
+      glVertex(poly->edges[i].v2->v);
     }
   }
+  glEnd();
 }
 
-void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, float r, float g, float b, bool offset, bool normal, int group) {
-  for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face<3> &f = poly->faces[i];
-    if (group == -1 || f.manifold_id == group) {
-      drawFaceWireframe(&f, normal, r, g, b);
+void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool normal, int group) {
+  if (normal) {
+    for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
+      carve::poly::Face<3> &f = poly->faces[i];
+      if (group == -1 || f.manifold_id == group) {
+        drawFaceNormal(&f);
+      }
     }
   }
+
+  glDisable(GL_LIGHTING);
+  glDepthMask(GL_FALSE);
+  glDisable(GL_DEPTH_TEST);
+
+  drawEdges(poly, 0.2, group);
+
+  glEnable(GL_DEPTH_TEST);
+
+  drawEdges(poly, 0.8, group);
+
+  glDepthMask(GL_TRUE);
 }
 
 void installDebugHooks() {

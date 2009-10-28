@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 
   glNewList(scene->draw_list_base + 2, GL_COMPILE);
   drawPolyhedron(c, .2, .2, .8, 1.0, true);
-  drawPolyhedronWireframe(c, .5, .5, .8, 1.0, false);
+  drawPolyhedronWireframe(c);
   glEndList();
 
   scene->run();

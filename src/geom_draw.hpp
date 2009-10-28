@@ -27,8 +27,7 @@
 
 #include "rgb.hpp"
 
-void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, float r, float g, float b, bool offset = false, bool normal = true, int group = -1);
-void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool offset = false, bool normal = true, int group = -1);
+void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool normal = true, int group = -1);
 void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, float a, bool offset = false, int group = -1);
 
 void drawFace(carve::poly::Face<3> *face, RGBA fc, bool offset);

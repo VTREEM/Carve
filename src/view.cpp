@@ -154,7 +154,7 @@ GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
         if (options.wireframe) {
           is_wireframe[list_num] = true;
           glNewList(dlist + list_num++, GL_COMPILE);
-          drawPolyhedronWireframe(poly, 0.5,  0.5, 1.0, false, options.normal, i);
+          drawPolyhedronWireframe(poly, options.normal, i);
           glEndList();
         }
       }
@@ -174,7 +174,7 @@ GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
         if (options.wireframe) {
           is_wireframe[list_num] = true;
           glNewList(dlist + list_num++, GL_COMPILE);
-          drawPolyhedronWireframe(poly, 1.0f, 0.3f, 0.0f, false, options.normal, i);
+          drawPolyhedronWireframe(poly, options.normal, i);
           glEndList();
         }
       }

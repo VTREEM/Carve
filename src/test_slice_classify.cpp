@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
       case carve::csg::FACE_ON_ORIENT_OUT:  r = 0.7; g = 0.7; b = 0.3; break;
       case carve::csg::FACE_ON_ORIENT_IN:   r = 0.3; g = 0.7; b = 0.7; break;
       }
-      drawPolyhedronWireframe((*i).second, r, g, b, 1.0);
+      drawPolyhedronWireframe((*i).second);
       ++n;
     }
   }
