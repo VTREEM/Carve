@@ -22,7 +22,7 @@ namespace carve {
 
     namespace detail {
       template<bool with_improvement>
-      class CarveTriangulator : public carve::csg::CSG::Hook {
+      class CarveTriangulator : public csg::CSG::Hook {
 
       public:
         CarveTriangulator() {
@@ -31,10 +31,10 @@ namespace carve {
         virtual ~CarveTriangulator() {
         }
 
-        virtual void processOutputFace(std::vector<carve::poly::Face<3> *> &faces,
-                                       const carve::poly::Face<3> *orig,
+        virtual void processOutputFace(std::vector<poly::Face<3> *> &faces,
+                                       const poly::Face<3> *orig,
                                        bool flipped) {
-          std::vector<carve::poly::Face<3> *> out_faces;
+          std::vector<poly::Face<3> *> out_faces;
 
           size_t n_tris = 0;
           for (size_t f = 0; f < faces.size(); ++f) {
@@ -45,21 +45,21 @@ namespace carve {
           out_faces.reserve(n_tris);
 
           for (size_t f = 0; f < faces.size(); ++f) {
-            carve::poly::Face<3> *face = faces[f];
+            poly::Face<3> *face = faces[f];
 
             if (face->vertices.size() == 3) {
               out_faces.push_back(face);
               continue;
             }
 
-            std::vector<carve::triangulate::tri_idx> result;
+            std::vector<triangulate::tri_idx> result;
 
-            carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(face->project), face->vertices, result);
+            triangulate::triangulate(poly::p2_adapt_project<3>(face->project), face->vertices, result);
             if (with_improvement) {
-              carve::triangulate::improve(carve::poly::p2_adapt_project<3>(face->project), face->vertices, result);
+              triangulate::improve(poly::p2_adapt_project<3>(face->project), face->vertices, result);
             }
 
-            std::vector<const carve::poly::Vertex<3> *> fv;
+            std::vector<const poly::Vertex<3> *> fv;
             fv.resize(3);
             for (size_t i = 0; i < result.size(); ++i) {
               fv[0] = face->vertices[result[i].a];
@@ -77,7 +77,7 @@ namespace carve {
     typedef detail::CarveTriangulator<false> CarveTriangulator;
     typedef detail::CarveTriangulator<true> CarveTriangulatorWithImprovement;
 
-    class CarveTriangulationImprover : public carve::csg::CSG::Hook {
+    class CarveTriangulationImprover : public csg::CSG::Hook {
     public:
       CarveTriangulationImprover() {
       }
@@ -85,28 +85,28 @@ namespace carve {
       virtual ~CarveTriangulationImprover() {
       }
 
-      virtual void processOutputFace(std::vector<carve::poly::Face<3> *> &faces,
-                                     const carve::poly::Face<3> *orig,
+      virtual void processOutputFace(std::vector<poly::Face<3> *> &faces,
+                                     const poly::Face<3> *orig,
                                      bool flipped) {
         // doing improvement as a separate hook is much messier than
         // just incorporating it into the triangulation hook.
 
-        typedef std::map<const carve::poly::Vertex<3> *, size_t> vert_map_t;
-        std::vector<carve::poly::Face<3> *> out_faces;
+        typedef std::map<const poly::Vertex<3> *, size_t> vert_map_t;
+        std::vector<poly::Face<3> *> out_faces;
         vert_map_t vert_map;
 
         out_faces.reserve(faces.size());
 
-        carve::poly::p2_adapt_project<3> projector(faces[0]->project);
+        poly::p2_adapt_project<3> projector(faces[0]->project);
 
-        std::vector<carve::triangulate::tri_idx> result;
+        std::vector<triangulate::tri_idx> result;
 
         for (size_t f = 0; f < faces.size(); ++f) {
-          carve::poly::Face<3> *face = faces[f];
+          poly::Face<3> *face = faces[f];
           if (face->vertices.size() != 3) {
             out_faces.push_back(face);
           } else {
-            carve::triangulate::tri_idx tri;
+            triangulate::tri_idx tri;
             for (size_t i = 0; i < 3; ++i) {
               size_t v = 0;
               vert_map_t::iterator j = vert_map.find(face->vertices[i]);
@@ -123,15 +123,15 @@ namespace carve {
           }
         }
 
-        std::vector<const carve::poly::Vertex<3> *> verts;
+        std::vector<const poly::Vertex<3> *> verts;
         verts.resize(vert_map.size());
         for (vert_map_t::iterator i = vert_map.begin(); i != vert_map.end(); ++i) {
           verts[(*i).second] = (*i).first;
         }
  
-        carve::triangulate::improve(projector, verts, result);
+        triangulate::improve(projector, verts, result);
 
-        std::vector<const carve::poly::Vertex<3> *> fv;
+        std::vector<const poly::Vertex<3> *> fv;
         fv.resize(3);
         for (size_t i = 0; i < result.size(); ++i) {
           fv[0] = verts[result[i].a];
