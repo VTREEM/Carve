@@ -33,8 +33,7 @@
 namespace carve {
   namespace poly {
 
-    class EdgeFaceMap;
-    class EdgeFaces;
+    class EdgeConnectivityInfo;
 
 
 
@@ -160,11 +159,11 @@ namespace carve {
 
       bool initSpatialIndex();
       void initVertexConnectivity();
-      bool initEdgeConnectivity(const std::vector<EdgeFaces> &ef);
-      void buildEdgeFaceMap(EdgeFaceMap &ef_map);
+      bool initEdgeConnectivity(const EdgeConnectivityInfo &);
+      void buildEdgeFaceMap(EdgeConnectivityInfo &);
       void setFaceAndVertexOwner();
 
-      bool buildEdges();
+      bool initConnectivity();
       bool markManifolds();
       bool calcManifoldEmbedding();
 
