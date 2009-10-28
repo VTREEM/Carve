@@ -88,6 +88,8 @@ namespace carve {
       virtual void processOutputFace(std::vector<poly::Face<3> *> &faces,
                                      const poly::Face<3> *orig,
                                      bool flipped) {
+        if (faces.size() == 1) return;
+
         // doing improvement as a separate hook is much messier than
         // just incorporating it into the triangulation hook.
 
