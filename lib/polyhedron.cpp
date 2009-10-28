@@ -898,11 +898,13 @@ namespace carve {
 
       std::vector<std::pair<const face_t *, carve::geom3d::Vector> > manifold_intersections;
 
-      while (1) {
-        double a1 = random() / double(RAND_MAX) * M_TWOPI;
-        double a2 = random() / double(RAND_MAX) * M_TWOPI;
+      boost::mt19937 rng;
+      boost::uniform_on_sphere<double> distrib(3);
+      boost::variate_generator<boost::mt19937 &, boost::uniform_on_sphere<double> > gen(rng, distrib);
 
-        carve::geom3d::Vector ray_dir = carve::geom::VECTOR(sin(a1) * sin(a2), cos(a1) * sin(a2), cos(a2));
+      while (1) {
+        carve::geom3d::Vector ray_dir;
+        ray_dir = gen();
 
         carve::geom3d::Vector v2 = v + ray_dir * ray_len;
 
