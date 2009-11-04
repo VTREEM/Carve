@@ -36,13 +36,19 @@ namespace djset {
       elem() {}
     };
     std::vector<elem> set;
+    size_t n_sets;
 
   public:
     djset(size_t N) {
+      n_sets = N;
       set.reserve(N);
       for (size_t i = 0; i < N; ++i) {
         set.push_back(elem(i,0));
       }
+    }
+
+    size_t count() const {
+      return n_sets;
     }
 
     size_t find_set_head(size_t a) {
@@ -62,6 +68,7 @@ namespace djset {
       a = find_set_head(a);
       b = find_set_head(b);
       if (a != b) {
+        n_sets--;
         if (set[a].rank < set[b].rank) {
           set[a].parent = b;
         } else if (set[b].rank < set[a].rank) {
