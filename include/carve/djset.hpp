@@ -79,6 +79,21 @@ namespace djset {
         }
       }
     }
+
+    template<typename in_iter_t, typename out_collection_t>
+    void collate(in_iter_t in, out_collection_t &out) {
+      std::vector<size_t> set_id(set.size(), n_sets);
+      out.clear();
+      out.resize(n_sets);
+      size_t c = 0;
+      for (size_t i = 0; i < set.size(); ++i) {
+        size_t s = find_set_head(i);
+        if (set_id[s] == n_sets) set_id[s] = c++;
+        s = set_id[s];
+        std::insert_iterator<typename out_collection_t::value_type> j(out[s], out[s].end());
+        *j = *in++;
+      }
+    }
   };
 
 
