@@ -155,20 +155,20 @@ namespace {
 
         edge_face_pairs.push_back(NULL);
         edge_face_pairs.push_back(fv2.face);
-        std::cerr << "face pair: " << NULL << " " << fv2.face << std::endl;
+        // std::cerr << "face pair: " << NULL << " " << fv2.face << std::endl;
       } else if (i == sorted_faces.size() - 1 || sorted_faces[i + 1].fwd) {
         const FV &fv1 = (*(sorted_faces[i++].fv));
 
         edge_face_pairs.push_back(fv1.face);
         edge_face_pairs.push_back(NULL);
-        std::cerr << "face pair: " << fv1.face << " " << NULL << std::endl;
+        // std::cerr << "face pair: " << fv1.face << " " << NULL << std::endl;
       } else {
         const FV &fv1 = (*(sorted_faces[i++].fv));
         const FV &fv2 = (*(sorted_faces[i++].fv));
 
         edge_face_pairs.push_back(fv1.face);
         edge_face_pairs.push_back(fv2.face);
-        std::cerr << "face pair: " << fv1.face << " " << fv2.face << std::endl;
+        // std::cerr << "face pair: " << fv1.face << " " << fv2.face << std::endl;
       }
     }
 
@@ -450,22 +450,6 @@ namespace carve {
             }
           }
 
-          std::vector<int> tag;
-          tag.reserve(ef_closed.fwd.size() + ef_closed.rev.size());
-          for (std::list<FV>::const_iterator j = ef_closed.fwd.begin(); j != ef_closed.fwd.end(); ++j) {
-            tag.push_back(+face_groups.find_set_head(faceToIndex_fast(j->face)) + 1);
-          }
-          for (std::list<FV>::const_iterator j = ef_closed.rev.begin(); j != ef_closed.rev.end(); ++j) {
-            tag.push_back(-face_groups.find_set_head(faceToIndex_fast(j->face)) - 1);
-          }
-          std::sort(tag.begin(), tag.end());
-          if (-tag.front() > tag.back()) {
-            std::reverse(tag.begin(), tag.end());
-            std::transform(tag.begin(), tag.end(), tag.begin(), std::negate<int>());
-          }
-
-          grouped_ef[tag].push_back(ef_closed);
-
           // make open edge connectivity entries for any open surface faces.
           for (std::list<FV>::const_iterator j = ef_open.fwd.begin(); j != ef_open.fwd.end(); ++j) {
             edge_face_pairs.push_back(j->face);
@@ -475,31 +459,79 @@ namespace carve {
             edge_face_pairs.push_back(NULL);
             edge_face_pairs.push_back(j->face);
           }
+          // group edges based upon the closed-face sets which are incident to them.
+          std::vector<int> tag;
+          tag.reserve(ef_closed.fwd.size() + ef_closed.rev.size());
+          for (std::list<FV>::const_iterator j = ef_closed.fwd.begin(); j != ef_closed.fwd.end(); ++j) {
+            tag.push_back(+face_groups.find_set_head(faceToIndex_fast(j->face)) + 1);
+          }
+          for (std::list<FV>::const_iterator j = ef_closed.rev.begin(); j != ef_closed.rev.end(); ++j) {
+            tag.push_back(-face_groups.find_set_head(faceToIndex_fast(j->face)) - 1);
+          }
+          std::sort(tag.begin(), tag.end());
+
+          // normalise tag to remove edge direction effects.
+          std::vector<int> revtag = tag;
+          std::reverse(revtag.begin(), revtag.end());
+          std::transform(revtag.begin(), revtag.end(), revtag.begin(), std::negate<int>());
+
+          if (!std::lexicographical_compare(tag.begin(), tag.end(), revtag.begin(), revtag.end())) {
+            std::swap(tag, revtag);
+          }
+
+          grouped_ef[tag].push_back(ef_closed);
         }
       }
 
 
-      std::cerr << "grouped ef tags:" << std::endl;
+      // std::cerr << "grouped ef tags:" << std::endl;
       for (std::map<std::vector<int>, std::list<EdgeFaces> > ::iterator i = grouped_ef.begin(); i != grouped_ef.end(); ++i) {
-        std::vector<EdgeFaces *> ef_chains;
-        ef_chains.reserve((*i).second.size());
+        const std::vector<int> &tag = (*i).first;
+
+        // std::cerr << "tag.size() == " << tag.size() << std::endl;
+        // for (size_t j = 0; j < tag.size(); ++j) {
+        //   std::cerr << "  " << tag[j];
+        // }
+        // std::cerr << std::endl;
+
+        std::vector<EdgeFaces *> efp;
+        efp.reserve((*i).second.size());
+        carve::djset::djset efp_group((*i).second.size());
+        std::map<const vertex_t *, std::vector<int> > vec_ef;
 
         for (std::list<EdgeFaces>::iterator j = (*i).second.begin(); j != (*i).second.end(); ++j) {
           EdgeFaces &ef = *j;
-          ef_chains.push_back(&ef);
+          vec_ef[ef.edge->v1].push_back(efp.size());
+          vec_ef[ef.edge->v2].push_back(efp.size());
+          efp.push_back(&ef);
         }
 
-        std::sort(ef_chains.begin(), ef_chains.end(), order_ef_first_vertex());
+        for (std::map<const vertex_t *, std::vector<int> >::iterator j = vec_ef.begin(); j != vec_ef.end(); ++j) {
+          std::cerr << "v: " << (*j).first;
+          for (size_t k = 0; k < (*j).second.size(); ++k) {
+            std::cerr << " " << (*j).second[k];
+          }
+          std::cerr << std::endl;
+          if ((*j).second.size() == 2) {
+            efp_group.merge_sets((*j).second[0], (*j).second[1]);
+          }
+        }
 
-        for (std::list<EdgeFaces>::iterator j = (*i).second.begin(); j != (*i).second.end(); ++j) {
-          EdgeFaces &ef = *j;
+        std::vector<std::vector<EdgeFaces *> > grouped;
+        efp_group.collate(efp.begin(), grouped);
 
-          edge_t *edge = ef.edge;
-          size_t edge_index = edgeToIndex_fast(edge);
-          std::vector<const face_t *> &edge_face_pairs = connectivity.edge_to_face[edge_index];
+        for (size_t j = 0; j < grouped.size(); ++j) {
+          std::vector<EdgeFaces *> grp = grouped[j];
+          for (size_t k = 0; k < grp.size(); ++k) {
+            EdgeFaces &ef = *grp[k];
 
-          if (!makeFacePairs(ef, edge, edge_face_pairs)) {
-            is_ok = false;
+            edge_t *edge = ef.edge;
+            size_t edge_index = edgeToIndex_fast(edge);
+            std::vector<const face_t *> &edge_face_pairs = connectivity.edge_to_face[edge_index];
+
+            if (!makeFacePairs(ef, edge, edge_face_pairs)) {
+              is_ok = false;
+            }
           }
         }
       }
