@@ -21,6 +21,7 @@
 
 #include <carve/math_constants.hpp>
 #include <carve/geom.hpp>
+#include <carve/geom3d.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -29,64 +30,6 @@
 
 namespace carve {
   namespace geom3d {
-
-    typedef carve::geom::vector<3> Vector;
-
-    static inline double tetrahedronVolume(const carve::geom3d::Vector &a,
-                                           const carve::geom3d::Vector &b,
-                                           const carve::geom3d::Vector &c,
-                                           const carve::geom3d::Vector &d) {
-      // Volume of a tetrahedron described by 4 points. Will be
-      // positive if the anticlockwise normal of a,b,c is oriented out
-      // of the tetrahedron.
-      //
-      // see: http://mathworld.wolfram.com/Tetrahedron.html
-      return dotcross((a - d), (b - d), (c - d)) / 6.0;
-    }
-
-
-
-    static inline double antiClockwiseAngle(const Vector &from, const Vector &to, const Vector &orient) {
-      double dp = dot(from, to);
-      Vector cp = cross(from, to);
-      if (cp.isZero()) {
-        if (dp < 0) {
-          return M_PI;
-        } else {
-          return 0.0;
-        }
-      } else {
-        if (dot(cp, orient) > 0.0) {
-          return acos(dp);
-        } else {
-          return M_TWOPI - acos(dp);
-        }
-      }
-    }
-
-
-
-    static inline double antiClockwiseOrdering(const Vector &from, const Vector &to, const Vector &orient) {
-      double dp = dot(from, to);
-      Vector cp = cross(from, to);
-      if (cp.isZero()) {
-        if (dp < 0) {
-          return 2.0;
-        } else {
-          return 0.0;
-        }
-      } else {
-        if (dot(cp, orient) > 0.0) {
-          // 1..-1 -> 0..2
-          return 1.0 - dp;
-        } else {
-          // -1..1 -> 2..4
-          return dp + 1.0;
-        }
-      }
-    }
-
-
 
     struct hash_vector_ptr {
       size_t operator()(const Vector * const &v) const {

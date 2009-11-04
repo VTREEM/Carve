@@ -18,10 +18,10 @@
 #pragma once
 
 #include <carve/carve.hpp>
+#include <carve/geom.hpp>
 
-#include <carve/geom2d.hpp>
-#include <carve/vector.hpp>
-#include <carve/matrix.hpp>
+#include <math.h>
+#include <carve/math_constants.hpp>
 
 #include <vector>
 #include <list>
@@ -33,6 +33,7 @@ namespace carve {
     typedef carve::geom::plane<3> Plane;
     typedef carve::geom::ray<3> Ray;
     typedef carve::geom::linesegment<3> LineSegment;
+    typedef carve::geom::vector<3> Vector;
 
     template<typename iter_t, typename adapt_t>
     bool fitPlane(iter_t begin, iter_t end, adapt_t adapt, Plane &plane) {
@@ -107,5 +108,78 @@ namespace carve {
                                             Vector &v2,
                                             double &mu1,
                                             double &mu2);
+
+
+
+    // test whether point d is above, below or on the plane formed by the triangle a,b,c.
+    // return: +ve = d is below a,b,c
+    //         -ve = d is above a,b,c
+    //           0 = d is on a,b,c
+    static inline double orient3d(const carve::geom3d::Vector &a,
+        const carve::geom3d::Vector &b,
+        const carve::geom3d::Vector &c,
+        const carve::geom3d::Vector &d) {
+      return dotcross((a - d), (b - d), (c - d));
+    }
+
+
+
+    // Volume of a tetrahedron described by 4 points. Will be
+    // positive if the anticlockwise normal of a,b,c is oriented out
+    // of the tetrahedron.
+    //
+    // see: http://mathworld.wolfram.com/Tetrahedron.html
+    static inline double tetrahedronVolume(const carve::geom3d::Vector &a,
+        const carve::geom3d::Vector &b,
+        const carve::geom3d::Vector &c,
+        const carve::geom3d::Vector &d) {
+      return dotcross((a - d), (b - d), (c - d)) / 6.0;
+    }
+
+
+
+    // The anticlockwise angle from vector "from" to vector "to", oriented around the vector "orient".
+    static inline double antiClockwiseAngle(const Vector &from, const Vector &to, const Vector &orient) {
+      double dp = dot(from, to);
+      Vector cp = cross(from, to);
+      if (cp.isZero()) {
+        if (dp < 0) {
+          return M_PI;
+        } else {
+          return 0.0;
+        }
+      } else {
+        if (dot(cp, orient) > 0.0) {
+          return acos(dp);
+        } else {
+          return M_TWOPI - acos(dp);
+        }
+      }
+    }
+
+
+
+    static inline double antiClockwiseOrdering(const Vector &from, const Vector &to, const Vector &orient) {
+      double dp = dot(from, to);
+      Vector cp = cross(from, to);
+      if (cp.isZero()) {
+        if (dp < 0) {
+          return 2.0;
+        } else {
+          return 0.0;
+        }
+      } else {
+        if (dot(cp, orient) > 0.0) {
+          // 1..-1 -> 0..2
+          return 1.0 - dp;
+        } else {
+          // -1..1 -> 2..4
+          return dp + 1.0;
+        }
+      }
+    }
+
+
+
   }
 }

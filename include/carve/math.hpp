@@ -19,7 +19,7 @@
 
 #include <carve/carve.hpp>
 
-#include <carve/vector.hpp>
+#include <carve/geom3d.hpp>
 #include <carve/math_constants.hpp>
 
 #include <math.h>

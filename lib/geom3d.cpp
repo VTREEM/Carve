@@ -19,6 +19,7 @@
 #  include <carve_config.h>
 #endif
 
+#include <carve/math.hpp>
 #include <carve/geom3d.hpp>
 
 #include <algorithm>
