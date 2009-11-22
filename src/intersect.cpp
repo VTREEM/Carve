@@ -24,7 +24,10 @@
 #include <carve/csg_triangulator.hpp>
 
 #include "geometry.hpp"
+
+#if !defined(DISABLE_GLU_TRIANGULATOR)
 #include "glu_triangulator.hpp"
+#endif
 
 #include "read_ply.hpp"
 #include "write_ply.hpp"
@@ -52,7 +55,9 @@ struct Options : public opt::Parser {
   bool canonicalize;
   bool from_file;
   bool triangulate;
+#if !defined(DISABLE_GLU_TRIANGULATOR)
   bool glu_triangulate;
+#endif
   bool improve;
   carve::csg::CSG::CLASSIFY_TYPE classifier;
 
@@ -77,7 +82,9 @@ struct Options : public opt::Parser {
     if (o == "--ascii"        || o == "-a") { ascii = true; return; }
     if (o == "--rescale"      || o == "-r") { rescale = true; return; }
     if (o == "--triangulate"  || o == "-t") { triangulate = true; return; }
+#if !defined(DISABLE_GLU_TRIANGULATOR)
     if (o == "--glu"          || o == "-g") { glu_triangulate = true; return; }
+#endif
     if (o == "--improve"      || o == "-i") { improve = true; return; }
     if (o == "--edge"         || o == "-e") { classifier = carve::csg::CSG::CLASSIFY_EDGE; return; }
     if (o == "--epsilon"      || o == "-E") { carve::setEpsilon(strtod(v.c_str(), NULL)); return; }
@@ -147,7 +154,9 @@ struct Options : public opt::Parser {
     vtk = false;
     rescale = false;
     triangulate = false;
+#if !defined(DISABLE_GLU_TRIANGULATOR)
     glu_triangulate = false;
+#endif
     improve = false;
     classifier = carve::csg::CSG::CLASSIFY_NORMAL;
 
@@ -158,7 +167,9 @@ struct Options : public opt::Parser {
     option("vtk",          'V', false, "Output in .vtk format.");
     option("rescale",      'r', false, "Rescale prior to CSG operations.");
     option("triangulate",  't', false, "Triangulate output.");
+#if !defined(DISABLE_GLU_TRIANGULATOR)
     option("glu",          'g', false, "Use GLU triangulator.");
+#endif
     option("improve",      'i', false, "Improve triangulation by minimising internal edge lengths.");
     option("edge",         'e', false, "Use edge classifier.");
     option("epsilon",      'E', true,  "Set epsilon used for calculations.");
@@ -501,18 +512,22 @@ int main(int argc, char **argv) {
     try {
       carve::csg::CSG csg;
       if (options.triangulate) {
+#if !defined(DISABLE_GLU_TRIANGULATOR)
         if (options.glu_triangulate) {
           csg.hooks.registerHook(new GLUTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
           if (options.improve) {
             csg.hooks.registerHook(new carve::csg::CarveTriangulationImprover, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
           }
         } else {
+#endif
           if (options.improve) {
             csg.hooks.registerHook(new carve::csg::CarveTriangulatorWithImprovement, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
           } else {
             csg.hooks.registerHook(new carve::csg::CarveTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
           }
+#if !defined(DISABLE_GLU_TRIANGULATOR)
         }
+#endif
       }
       result = p->eval(csg);
     } catch (carve::exception e) {
