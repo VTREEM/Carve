@@ -402,13 +402,6 @@ namespace {
 
 
 
-namespace {
-  // private code related to triangulation improvement.
-
-}
-
-
-
 double carve::triangulate::detail::vertex_info::triScore(const vertex_info *p, const vertex_info *v, const vertex_info *n) {
 
   // different scoring functions.
@@ -641,16 +634,9 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
   }
 
 #if defined(DEBUG)
-  std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
-#endif
+  if (remain >= 3) {
+    std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
 
-  if (remain < 3) {
-    return true;
-  }
-
-#if defined(DEBUG)
-  {
-    std::cerr << "remain = " << remain << std::endl;
     std::vector<carve::triangulate::tri_idx> dummy;
     std::vector<carve::geom2d::P2> dummy_p;
     vertex_info *v = begin;
@@ -660,26 +646,38 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     } while (v != begin);
     dumpPoly(dummy_p, dummy);
   }
-  std::cerr << "before removeDegeneracies: remain=" << remain << std::endl;
 #endif
+
+
+  bool ret;
 
   if (remain > 3) {
-    remain -= removeDegeneracies(begin, result);
-  }
-
 #if defined(DEBUG)
-  std::cerr << "after removeDegeneracies: remain=" << remain << std::endl;
+    std::cerr << "before removeDegeneracies: remain=" << remain << std::endl;
 #endif
-
-  if (remain == 3) {
-    result.push_back(carve::triangulate::tri_idx(begin->idx, begin->next->idx, begin->next->next->idx));
-    return true;
-  } else if (remain > 3) {
-    // must split the remainder and recurse.
-    if (splitAndResume(begin, result)) return true;
+    remain -= removeDegeneracies(begin, result);
+#if defined(DEBUG)
+    std::cerr << "after removeDegeneracies: remain=" << remain << std::endl;
+#endif
   }
 
-  return false;
+  if (remain > 3) {
+    ret = splitAndResume(begin, result);
+  } else if (remain == 3) {
+    result.push_back(carve::triangulate::tri_idx(begin->idx, begin->next->idx, begin->next->next->idx));
+    ret = true;
+  } else {
+    ret = true;
+  }
+
+  vertex_info *d = begin;
+  do {
+    vertex_info *n = d->next;
+    delete d;
+    d = n;
+  } while (d != begin);
+
+  return ret;
 }
 
 
