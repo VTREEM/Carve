@@ -135,6 +135,7 @@ int main(int argc, char **argv) {
   options.parse(argc, argv);
 
   carve::poly::Polyhedron *poly = readModel(options.file);
+  if (!poly) exit(1);
 
   std::vector<carve::poly::Vertex<3> > out_vertices = poly->vertices;
   std::vector<carve::poly::Face<3> > out_faces;
@@ -181,4 +182,7 @@ int main(int argc, char **argv) {
   } else {
     writePLY(std::cout, result, options.ascii);
   }
+
+  delete result;
+  delete poly;
 }
