@@ -60,8 +60,15 @@ triangulate_LDADD=libcarve_fileformats.la ../lib/libintersect.la
 cutgraph_SOURCES=cut.cpp
 cutgraph_LDADD=libcarve_misc.la ../lib/libintersect.la libcarve_fileformats.la
 
-intersect_SOURCES=intersect.cpp glu_triangulator.cpp
-intersect_LDADD=libcarve_fileformats.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@
+if enable_GLU_tri
+  intersect_SOURCES=intersect.cpp glu_triangulator.cpp
+  intersect_CPPFLAGS=
+  intersect_LDADD=libcarve_fileformats.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@
+else
+  intersect_SOURCES=intersect.cpp
+  intersect_CPPFLAGS=-DDISABLE_GLU_TRIANGULATOR
+  intersect_LDADD=libcarve_fileformats.la libcarve_misc.la ../lib/libintersect.la
+endif
 
 test_geom_SOURCES=test_geom.cpp
 test_geom_LDADD=../lib/libintersect.la

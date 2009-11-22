@@ -31,10 +31,24 @@ AC_LANG_CPLUSPLUS
 # AC_CHECK_FUNCS([floor getcwd getservbyname getaddrinfo gethostbyname gettimeofday memset select setlocale socket sqrt strerror strtoul inet_ntop inet_pton])
 AC_CHECK_FUNCS([isatty])
 
-AC_ARG_WITH(tr1-collections,   AC_HELP_STRING([--with-tr1-collections],   [use tr1 collections, where available]), with_TR1="$withval", with_TR1="yes")
-AC_ARG_WITH(boost-collections, AC_HELP_STRING([--with-boost-collections], [use boost collections]), with_BOOST="$withval", with_BOOST="no")
-AC_ARG_ENABLE(debug,           AC_HELP_STRING([--enable-debug],           [compile in debug hooks [default=no]]))
-AC_ARG_WITH(gui,               AC_HELP_STRING([--with-gui],               [compile gui code]), with_GUI="$withval", with_GUI="yes")
+AC_ARG_WITH(tr1-collections,
+              AC_HELP_STRING([--with-tr1-collections],              [use tr1 collections, where available]),
+              with_TR1="$withval",
+              with_TR1="yes")
+AC_ARG_WITH(boost-collections,
+              AC_HELP_STRING([--with-boost-collections],            [use boost collections]),
+              with_BOOST="$withval",
+              with_BOOST="no")
+AC_ARG_ENABLE(debug,
+              AC_HELP_STRING([--enable-debug],                      [compile in debug hooks [default=no]]))
+AC_ARG_ENABLE(intersect-glu-triangulator,
+              AC_HELP_STRING([--enable-intersect-glu-triangulator], [compile GLU-based triangulation code into intersect [default=yes]]),
+              enable_GLU_tri="$enableval",
+              enable_GLU_tri="yes")
+AC_ARG_WITH(gui,
+              AC_HELP_STRING([--with-gui],                          [compile gui code]),
+              with_GUI="$withval",
+              with_GUI="yes")
 
 
 AC_MSG_CHECKING([for std collections])
@@ -161,6 +175,7 @@ if test x"$have_GLU" = xyes; then
 ])
 fi
 
+AM_CONDITIONAL(enable_GLU_tri,  test "x$enable_GLU_tri" = "xyes")
 AM_CONDITIONAL(with_GUI, test "x$with_GUI" = "xyes")
 AM_CONDITIONAL(with_BOOST, test "x$with_BOOST" != "xno")
 
