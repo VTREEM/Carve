@@ -59,6 +59,7 @@ namespace carve {
       CSG_TransformNode(const carve::math::Matrix &_transform, CSG_TreeNode *_child) : transform(_transform), child(_child) {
       }
       virtual ~CSG_TransformNode() {
+        delete child;
       }
 
       virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
@@ -86,6 +87,9 @@ namespace carve {
         selected_groups.resize(g_id + 1, false);
         selected_groups[g_id] = true;
       }
+      virtual ~CSG_InvertNode() {
+        delete child;
+      }
 
       template<typename T>
       CSG_InvertNode(T start, T end, CSG_TreeNode *_child) : selected_groups(), child(_child) {
@@ -95,9 +99,6 @@ namespace carve {
           selected_groups[g_id] = true;
           ++start;
         }
-      }
-
-      virtual ~CSG_InvertNode() {
       }
 
       virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
@@ -143,6 +144,7 @@ namespace carve {
       }
 
       virtual ~CSG_SelectNode() {
+        delete child;
       }
 
       virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
@@ -195,6 +197,8 @@ namespace carve {
       }
 
       virtual ~CSG_OPNode() {
+        delete left;
+        delete right;
       }
 
       void minmax(double &min_x, double &min_y, double &min_z,
