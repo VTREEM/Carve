@@ -900,7 +900,8 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::FV2SMap &face_edges,
          ++j) {
       const poly_t::face_t *face_b = (*j);
       const carve::csg::FVSMap::mapped_type &face_b_intersections = (fmap[face_b]);
-      carve::csg::VSet vertices;
+      std::vector<const poly_t::vertex_t *> vertices;
+      vertices.reserve(std::min(face_a_intersections.size(), face_b_intersections.size()));
 
       // record the points of intersection between face_a and face_b
       for (carve::csg::FVSMap::mapped_type::const_iterator
@@ -909,7 +910,7 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::FV2SMap &face_edges,
            ++k) {
         const poly_t::vertex_t *v = *k;
         if (face_b_intersections.find(v) != face_b_intersections.end()) {
-          vertices.insert(v);
+          vertices.push_back(v);
         }
       }
 
@@ -929,9 +930,8 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::FV2SMap &face_edges,
 
       // if there are two points of intersection, then the added edge is simple to determine.
       if (vertices.size() == 2) {
-        VSet::const_iterator t = vertices.begin();
-        const poly_t::vertex_t *v1 = *t++;
-        const poly_t::vertex_t *v2 = *t++;
+        const poly_t::vertex_t *v1 = vertices[0];
+        const poly_t::vertex_t *v2 = vertices[1];
         carve::geom3d::Vector c = (v1->v + v2->v) / 2;
 
         // determine whether the midpoint of the implied edge is contained in face_a and face_b
