@@ -838,9 +838,9 @@ void carve::csg::CSG::divideIntersectedEdges(const carve::csg::EVSMap &data_emap
   static carve::TimingName FUNC_NAME("CSG::divideIntersectedEdges()");
   carve::TimingBlock block(FUNC_NAME);
 
-  for (carve::csg::EVSMap::const_iterator i = data_emap.begin(), ei != data_emap.end(); i != ei; ++i) {
+  for (carve::csg::EVSMap::const_iterator i = data_emap.begin(), ei = data_emap.end(); i != ei; ++i) {
     const poly_t::edge_t *edge = (*i).first;
-    const Data::EVSMap::mapped_type &vertices = (*i).second;
+    const carve::csg::EVSMap::mapped_type &vertices = (*i).second;
     std::vector<const poly_t::vertex_t *> &verts = data_divided_edges[edge];
     orderVertices(edge->v2->v - edge->v1->v, edge->v1->v,
                   vertices.begin(), vertices.end(),
