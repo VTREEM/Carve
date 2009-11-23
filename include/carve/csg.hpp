@@ -214,6 +214,10 @@ namespace carve {
                        const EVSMap &emap,
                        EVVMap &face_edges);
 
+      void divideIntersectedEdges(
+        const carve::csg::EVSMap &data_emap,
+        carve::csg::EVVMap &data_divided_edges);
+
       /** 
        * \brief From the intersection points of pairs of intersecting faces, compute intersection edges.
        * 
