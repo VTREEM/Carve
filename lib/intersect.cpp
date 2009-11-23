@@ -904,15 +904,11 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::FV2SMap &face_edges,
       vertices.reserve(std::min(face_a_intersections.size(), face_b_intersections.size()));
 
       // record the points of intersection between face_a and face_b
-      for (carve::csg::FVSMap::mapped_type::const_iterator
-             k = face_a_intersections.begin(), ke = face_a_intersections.end();
-           k != ke;
-           ++k) {
-        const poly_t::vertex_t *v = *k;
-        if (face_b_intersections.find(v) != face_b_intersections.end()) {
-          vertices.push_back(v);
-        }
-      }
+      std::set_intersection(face_a_intersections.begin(),
+                            face_a_intersections.end(),
+                            face_b_intersections.begin(),
+                            face_b_intersections.end(),
+                            std::back_inserter(vertices));
 
 #if defined(DEBUG)
       std::cerr << "face pair: "
