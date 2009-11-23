@@ -38,12 +38,12 @@ namespace carve {
 
     class VertexPool {
       const static unsigned blocksize = 1024;
-      typedef std::list<std::vector<carve::poly::Vertex<3> > > pool_t;
+      typedef std::list<std::vector<carve::poly::Polyhedron::vertex_t> > pool_t;
       pool_t pool;
     public:
       void reset();
-      carve::poly::Vertex<3> *get(const carve::geom3d::Vector &v = carve::geom3d::Vector::ZERO());
-      bool inPool(const carve::poly::Vertex<3> *v) const;
+      carve::poly::Polyhedron::vertex_t *get(const carve::geom3d::Vector &v = carve::geom3d::Vector::ZERO());
+      bool inPool(const carve::poly::Polyhedron::vertex_t *v) const;
 
       VertexPool();
       ~VertexPool();
@@ -64,15 +64,15 @@ namespace carve {
          * \brief Provides API access to intermediate steps in CSG calculation.
          * 
          */
-        virtual void intersectionVertex(const carve::poly::Vertex<3> *vertex,
+        virtual void intersectionVertex(const carve::poly::Polyhedron::vertex_t *vertex,
                                         const IObjPairSet &intersections) {
         }
-        virtual void processOutputFace(std::vector<carve::poly::Face<3> *> &faces,
-                                       const carve::poly::Face<3> *orig_face,
+        virtual void processOutputFace(std::vector<carve::poly::Polyhedron::face_t *> &faces,
+                                       const carve::poly::Polyhedron::face_t *orig_face,
                                        bool flipped) {
         }
-        virtual void resultFace(const carve::poly::Face<3> *new_face,
-                                const carve::poly::Face<3> *orig_face,
+        virtual void resultFace(const carve::poly::Polyhedron::face_t *new_face,
+                                const carve::poly::Polyhedron::face_t *orig_face,
                                 bool flipped) {
         }
 
@@ -102,15 +102,15 @@ namespace carve {
 
         bool hasHook(unsigned hook_num);
 
-        void intersectionVertex(const carve::poly::Vertex<3> *vertex,
+        void intersectionVertex(const carve::poly::Polyhedron::vertex_t *vertex,
                                 const IObjPairSet &intersections);
 
-        void processOutputFace(std::vector<carve::poly::Face<3> *> &faces,
-                               const carve::poly::Face<3> *orig_face,
+        void processOutputFace(std::vector<carve::poly::Polyhedron::face_t *> &faces,
+                               const carve::poly::Polyhedron::face_t *orig_face,
                                bool flipped);
 
-        void resultFace(const carve::poly::Face<3> *new_face,
-                        const carve::poly::Face<3> *orig_face,
+        void resultFace(const carve::poly::Polyhedron::face_t *new_face,
+                        const carve::poly::Polyhedron::face_t *orig_face,
                         bool flipped);
 
         void registerHook(Hook *hook, unsigned hook_bits);
@@ -158,8 +158,8 @@ namespace carve {
       void dumpIntersections();
       void makeVertexIntersections();
 
-      const carve::poly::Vertex<3> *chooseWeldPoint(const VSet &equivalent);
-      const carve::poly::Vertex<3> *weld(const VSet &equivalent);
+      const carve::poly::Polyhedron::vertex_t *chooseWeldPoint(const VSet &equivalent);
+      const carve::poly::Polyhedron::vertex_t *weld(const VSet &equivalent);
 
       void groupIntersections();
 
@@ -209,7 +209,7 @@ namespace carve {
        * @param[in] emap A mapping from edge pointer to intersections.
        * @param[out] face_edges A mapping from edge pointer to sets of ordered vertices.
        */
-      void divideEdges(const std::vector<carve::poly::Edge<3> > &edges,
+      void divideEdges(const std::vector<carve::poly::Polyhedron::edge_t> &edges,
                        const carve::poly::Polyhedron  *poly,
                        const EVSMap &emap,
                        EVVMap &face_edges);

@@ -29,9 +29,9 @@
 
 
 void carve::csg::Intersections::collect(const IObj &obj,
-                                        std::vector<const carve::poly::Vertex<3> *> *collect_v,
-                                        std::vector<const carve::poly::Edge<3> *> *collect_e,
-                                        std::vector<const carve::poly::Face<3> *> *collect_f) const {
+                                        std::vector<const carve::poly::Polyhedron::vertex_t *> *collect_v,
+                                        std::vector<const carve::poly::Polyhedron::edge_t *> *collect_e,
+                                        std::vector<const carve::poly::Polyhedron::face_t *> *collect_f) const {
   carve::csg::Intersections::const_iterator i = find(obj);
   if (i != end()) {
     Intersections::mapped_type::const_iterator a, b;
@@ -55,7 +55,7 @@ void carve::csg::Intersections::collect(const IObj &obj,
 
 
 
-bool carve::csg::Intersections::intersectsFace(const carve::poly::Vertex<3> *v, const carve::poly::Face<3> *f) const {
+bool carve::csg::Intersections::intersectsFace(const carve::poly::Polyhedron::vertex_t *v, const carve::poly::Polyhedron::face_t *f) const {
   const_iterator i = find(v);
   if (i != end()) {
     mapped_type::const_iterator a, b;

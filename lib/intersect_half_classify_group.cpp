@@ -59,10 +59,10 @@ namespace carve {
           // XXX: check all the cinfo elements for consistency.
           FaceClass fc = cinfo.front().classification;
 
-          std::vector<carve::poly::Face<3> > faces;
+          std::vector<carve::poly::Polyhedron::face_t > faces;
           faces.reserve(grp->face_loops.size());
           for (FaceLoop *loop = grp->face_loops.head; loop != NULL; loop = loop->next) {
-            faces.push_back(carve::poly::Face<3>());
+            faces.push_back(carve::poly::Polyhedron::face_t());
             faces.back().init(loop->orig_face, loop->vertices, false);
           }
 

@@ -43,7 +43,7 @@ namespace carve {
        * @param b The second intersecting object.
        * @param p The point of intersection.
        */
-      void record(const IObj &a, const IObj &b, const carve::poly::Vertex<3> *p) {
+      void record(const IObj &a, const IObj &b, const carve::poly::Polyhedron::vertex_t *p) {
         (*this)[a][b] = p;
         (*this)[b][a] = p;
       }
@@ -56,7 +56,7 @@ namespace carve {
        * 
        * @return true, if \a v intersects \a f.
        */
-      bool intersectsFace(const carve::poly::Vertex<3> *v, const carve::poly::Face<3> *f) const;
+      bool intersectsFace(const carve::poly::Polyhedron::vertex_t *v, const carve::poly::Polyhedron::face_t *f) const;
 
       /** 
        * \brief Collect sets of vertices, edges and faces that intersect \a obj
@@ -67,9 +67,9 @@ namespace carve {
        * @param[out] collect_f A vector of faces intersecting \a obj.
        */
       void collect(const IObj &obj,
-                   std::vector<const carve::poly::Vertex<3> *> *collect_v,
-                   std::vector<const carve::poly::Edge<3> *> *collect_e,
-                   std::vector<const carve::poly::Face<3> *> *collect_f) const;
+                   std::vector<const carve::poly::Polyhedron::vertex_t *> *collect_v,
+                   std::vector<const carve::poly::Polyhedron::edge_t *> *collect_e,
+                   std::vector<const carve::poly::Polyhedron::face_t *> *collect_f) const;
 
 
       /** 
@@ -80,7 +80,7 @@ namespace carve {
        * @param faces 
        */
       template<typename face_set_t>
-      void facesForVertex(const carve::poly::Vertex<3> *v, face_set_t &faces) const {
+      void facesForVertex(const carve::poly::Polyhedron::vertex_t *v, face_set_t &faces) const {
         static_cast<const carve::poly::Polyhedron *>(v->owner)->vertexToFaces(v, set_inserter(faces));
       }
 
@@ -92,7 +92,7 @@ namespace carve {
        * @param faces 
        */
       template<typename face_set_t>
-      void facesForEdge(const carve::poly::Edge<3> *e, face_set_t &faces) const {
+      void facesForEdge(const carve::poly::Polyhedron::edge_t *e, face_set_t &faces) const {
         static_cast<const carve::poly::Polyhedron *>(e->owner)->edgeToFaces(e, set_inserter(faces));
       }
 
@@ -104,14 +104,14 @@ namespace carve {
        * @param faces 
        */
       template<typename face_set_t>
-      void facesForFace(const carve::poly::Face<3> *f, face_set_t &faces) const {
+      void facesForFace(const carve::poly::Polyhedron::face_t *f, face_set_t &faces) const {
         faces.insert(f);
       }
 
       /** 
        * \brief Populate a collection with the faces adjoining an intersection object.
        * 
-       * @tparam face_set_t A collection type holding const carve::poly::Face<3> *.
+       * @tparam face_set_t A collection type holding const carve::poly::Polyhedron::face_t *.
        * @param obj The intersection object for which to collect adjoining faces.
        * @param faces 
        */
@@ -157,7 +157,7 @@ namespace carve {
        * 
        * @return true, if \a a and \a v intersect.
        */
-      bool intersects(const IObj &a, const carve::poly::Vertex<3> *v) {
+      bool intersects(const IObj &a, const carve::poly::Polyhedron::vertex_t *v) {
         Intersections::const_iterator i = find(a);
         if (i == end()) return false;
         if (i->second.find(v) != i->second.end()) return true;
@@ -173,7 +173,7 @@ namespace carve {
        * @return true, if \a a and \a e intersect (either on the edge,
        *         or at either endpoint).
        */
-      bool intersects(const IObj &a, const carve::poly::Edge<3> *e) {
+      bool intersects(const IObj &a, const carve::poly::Polyhedron::edge_t *e) {
         Intersections::const_iterator i = find(a);
         if (i == end()) return false;
         for (super::data_type::const_iterator j = i->second.begin(); j != i->second.end(); ++j) {
@@ -201,7 +201,7 @@ namespace carve {
        * @return true, if \a a and \a f intersect (either on the face,
        *         or at any associated edge or vertex).
        */
-      bool intersects(const IObj &a, const carve::poly::Face<3> *f) {
+      bool intersects(const IObj &a, const carve::poly::Polyhedron::face_t *f) {
         Intersections::const_iterator i = find(a);
         if (i == end()) return false;
         if (i->second.find(f) != i->second.end()) return true;
@@ -218,7 +218,7 @@ namespace carve {
        * 
        * @return true, if \a e and \a f intersect.
        */
-      bool intersects(const carve::poly::Edge<3> *e1, const carve::poly::Edge<3> *e2) {
+      bool intersects(const carve::poly::Polyhedron::edge_t *e1, const carve::poly::Polyhedron::edge_t *e2) {
         if (intersects(e1->v1, e2) || intersects(e1->v2, e2) || intersects(IObj(e1), e2)) return true;
         return false;
       }
@@ -231,7 +231,7 @@ namespace carve {
        * 
        * @return true, if \a e and \a f intersect.
        */
-      bool intersects(const carve::poly::Edge<3> *e, const carve::poly::Face<3> *f) {
+      bool intersects(const carve::poly::Polyhedron::edge_t *e, const carve::poly::Polyhedron::face_t *f) {
         if (intersects(e->v1, f) || intersects(e->v2, f) || intersects(IObj(e), f)) return true;
         return false;
       }
@@ -239,15 +239,15 @@ namespace carve {
       /** 
        * \brief Determine the faces intersected by an edge.
        * 
-       * @tparam face_set_t A collection type holding const carve::poly::Face<3> *
+       * @tparam face_set_t A collection type holding const carve::poly::Polyhedron::face_t *
        * @param[in] e The edge.
        * @param[out] f The resulting set of faces.
        */
       template<typename face_set_t>
-      void intersectedFaces(const carve::poly::Edge<3> *e, face_set_t &f) const {
-        std::vector<const carve::poly::Face<3> *> intersected_faces;
-        std::vector<const carve::poly::Edge<3> *> intersected_edges;
-        std::vector<const carve::poly::Vertex<3> *> intersected_vertices;
+      void intersectedFaces(const carve::poly::Polyhedron::edge_t *e, face_set_t &f) const {
+        std::vector<const carve::poly::Polyhedron::face_t *> intersected_faces;
+        std::vector<const carve::poly::Polyhedron::edge_t *> intersected_edges;
+        std::vector<const carve::poly::Polyhedron::vertex_t *> intersected_vertices;
 
         collect(e, &intersected_vertices, &intersected_edges, &intersected_faces);
 
@@ -263,15 +263,15 @@ namespace carve {
       /** 
        * \brief Determine the faces intersected by a vertex.
        * 
-       * @tparam face_set_t A collection type holding const carve::poly::Face<3> *
+       * @tparam face_set_t A collection type holding const carve::poly::Polyhedron::face_t *
        * @param[in] v The vertex.
        * @param[out] f The resulting set of faces.
        */
       template<typename face_set_t>
-      void intersectedFaces(const carve::poly::Vertex<3> *v, face_set_t &f) const {
-        std::vector<const carve::poly::Face<3> *> intersected_faces;
-        std::vector<const carve::poly::Edge<3> *> intersected_edges;
-        std::vector<const carve::poly::Vertex<3> *> intersected_vertices;
+      void intersectedFaces(const carve::poly::Polyhedron::vertex_t *v, face_set_t &f) const {
+        std::vector<const carve::poly::Polyhedron::face_t *> intersected_faces;
+        std::vector<const carve::poly::Polyhedron::edge_t *> intersected_edges;
+        std::vector<const carve::poly::Polyhedron::vertex_t *> intersected_vertices;
 
         collect(v, &intersected_vertices, &intersected_edges, &intersected_faces);
 
@@ -287,8 +287,8 @@ namespace carve {
       /** 
        * \brief Collect the set of faces that contain all vertices in \a verts.
        * 
-       * @tparam vertex_set_t A collection type holding const carve::poly::Vertex<3> *
-       * @tparam face_set_t A collection type holding const carve::poly::Face<3> *
+       * @tparam vertex_set_t A collection type holding const carve::poly::Polyhedron::vertex_t *
+       * @tparam face_set_t A collection type holding const carve::poly::Polyhedron::face_t *
        * @param[in] verts A set of vertices.
        * @param[out] result The resulting set of faces.
        */
@@ -296,7 +296,7 @@ namespace carve {
       void commonFaces(const vertex_set_t &verts,
                        face_set_t &result) {
 
-        std::set<const carve::poly::Face<3> *> ifaces, temp, out;
+        std::set<const carve::poly::Polyhedron::face_t *> ifaces, temp, out;
         typename vertex_set_t::const_iterator i = verts.begin();
         if (i == verts.end()) return;
         intersectedFaces((*i), ifaces);

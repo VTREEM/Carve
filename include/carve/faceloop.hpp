@@ -28,11 +28,11 @@ namespace carve {
 
     struct FaceLoop {
       FaceLoop *next, *prev;
-      const carve::poly::Face<3> *orig_face;
-      std::vector<const carve::poly::Vertex<3> *> vertices;
+      const carve::poly::Polyhedron::face_t *orig_face;
+      std::vector<const carve::poly::Polyhedron::vertex_t *> vertices;
       FaceLoopGroup *group;
 
-      FaceLoop(const carve::poly::Face<3> *f, const std::vector<const carve::poly::Vertex<3> *> &v) : next(NULL), prev(NULL), orig_face(f), vertices(v), group(NULL) {}
+      FaceLoop(const carve::poly::Polyhedron::face_t *f, const std::vector<const carve::poly::Polyhedron::vertex_t *> &v) : next(NULL), prev(NULL), orig_face(f), vertices(v), group(NULL) {}
     };
 
 
@@ -102,8 +102,8 @@ namespace carve {
 
     typedef std::list<FaceLoopGroup> FLGroupList;
 
-    typedef std::unordered_map<const carve::poly::Vertex<3> *, std::list<FaceLoop *>, carve::poly::hash_vertex_ptr> LoopLookup;
-    typedef std::unordered_map<const carve::poly::Vertex<3> *, std::list<FLGroupList::iterator>, carve::poly::hash_vertex_ptr> GroupLookup;
+    typedef std::unordered_map<const carve::poly::Polyhedron::vertex_t *, std::list<FaceLoop *>, carve::poly::hash_vertex_ptr> LoopLookup;
+    typedef std::unordered_map<const carve::poly::Polyhedron::vertex_t *, std::list<FLGroupList::iterator>, carve::poly::hash_vertex_ptr> GroupLookup;
 
   }
 }

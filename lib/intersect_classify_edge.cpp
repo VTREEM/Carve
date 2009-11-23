@@ -91,7 +91,7 @@ namespace carve {
       };
 
 
-      typedef std::pair<size_t, const carve::poly::Vertex<3> *> PerimKey;
+      typedef std::pair<size_t, const carve::poly::Polyhedron::vertex_t *> PerimKey;
 
       struct hash_perim_key {
         size_t operator()(const PerimKey &v) const {
@@ -99,7 +99,7 @@ namespace carve {
         }
       };
 
-      typedef std::unordered_map<std::pair<size_t, const carve::poly::Vertex<3> *>,
+      typedef std::unordered_map<std::pair<size_t, const carve::poly::Polyhedron::vertex_t *>,
                                  std::unordered_set<FaceLoopGroup *, hash_group_ptr>,
                                  hash_perim_key> PerimMap;
 
@@ -117,7 +117,7 @@ namespace carve {
 
 
 
-      static inline void remove(const carve::poly::Vertex<3> *a, const carve::poly::Vertex<3> *b, VVSMap &shared_edge_graph) {
+      static inline void remove(const carve::poly::Polyhedron::vertex_t *a, const carve::poly::Polyhedron::vertex_t *b, VVSMap &shared_edge_graph) {
         VVSMap::iterator i = shared_edge_graph.find(a);
         assert (i != shared_edge_graph.end());
         size_t n = (*i).second.erase(b);
@@ -430,8 +430,8 @@ namespace carve {
         std::list<V2> out;
         while (shared_edge_graph.size()) {
           VVSMap::iterator i = shared_edge_graph.begin();
-          const carve::poly::Vertex<3> *v1 = (*i).first;
-          const carve::poly::Vertex<3> *v2 = *((*i).second.begin());
+          const carve::poly::Polyhedron::vertex_t *v1 = (*i).first;
+          const carve::poly::Polyhedron::vertex_t *v2 = *((*i).second.begin());
           walkGraphSegment(shared_edge_graph, branch_points, V2(v1, v2), a_edge_map, b_edge_map, out);
         }
       }
@@ -441,7 +441,7 @@ namespace carve {
           size_t perim_size = (*i).perimeter.size();
           // can be the case for non intersecting groups. (and groups that intersect at a point?)
           if (!perim_size) continue;
-          const carve::poly::Vertex<3> *perim_min = std::min_element((*i).perimeter.begin(), (*i).perimeter.end())->first;
+          const carve::poly::Polyhedron::vertex_t *perim_min = std::min_element((*i).perimeter.begin(), (*i).perimeter.end())->first;
           perim_map[std::make_pair(perim_size, perim_min)].insert(&(*i));
         }
       }
@@ -748,7 +748,7 @@ namespace carve {
 #if defined(DEBUG)
           std::cerr << " non intersecting group (poly a): " << &(*i) << std::endl;
 #endif
-          const carve::poly::Vertex<3> *p = (*i).face_loops.head->vertices[0];
+          const carve::poly::Polyhedron::vertex_t *p = (*i).face_loops.head->vertices[0];
 
           switch (poly_b->containsVertex(p->v)) {
           case POINT_IN:
@@ -768,7 +768,7 @@ namespace carve {
 #if defined(DEBUG)
           std::cerr << " non intersecting group (poly b): " << &(*i) << std::endl;
 #endif
-          const carve::poly::Vertex<3> *p = (*i).face_loops.head->vertices[0];
+          const carve::poly::Polyhedron::vertex_t *p = (*i).face_loops.head->vertices[0];
 
           switch (poly_a->containsVertex(p->v)) {
           case POINT_IN:

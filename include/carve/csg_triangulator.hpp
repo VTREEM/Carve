@@ -32,10 +32,10 @@ namespace carve {
         virtual ~CarveTriangulator() {
         }
 
-        virtual void processOutputFace(std::vector<poly::Face<3> *> &faces,
-                                       const poly::Face<3> *orig,
+        virtual void processOutputFace(std::vector<poly::Polyhedron::face_t *> &faces,
+                                       const poly::Polyhedron::face_t *orig,
                                        bool flipped) {
-          std::vector<poly::Face<3> *> out_faces;
+          std::vector<poly::Polyhedron::face_t *> out_faces;
 
           size_t n_tris = 0;
           for (size_t f = 0; f < faces.size(); ++f) {
@@ -46,7 +46,7 @@ namespace carve {
           out_faces.reserve(n_tris);
 
           for (size_t f = 0; f < faces.size(); ++f) {
-            poly::Face<3> *face = faces[f];
+            poly::Polyhedron::face_t *face = faces[f];
 
             if (face->vertices.size() == 3) {
               out_faces.push_back(face);
@@ -60,7 +60,7 @@ namespace carve {
               triangulate::improve(poly::p2_adapt_project<3>(face->project), face->vertices, result);
             }
 
-            std::vector<const poly::Vertex<3> *> fv;
+            std::vector<const poly::Polyhedron::vertex_t *> fv;
             fv.resize(3);
             for (size_t i = 0; i < result.size(); ++i) {
               fv[0] = face->vertices[result[i].a];
@@ -86,16 +86,16 @@ namespace carve {
       virtual ~CarveTriangulationImprover() {
       }
 
-      virtual void processOutputFace(std::vector<poly::Face<3> *> &faces,
-                                     const poly::Face<3> *orig,
+      virtual void processOutputFace(std::vector<poly::Polyhedron::face_t *> &faces,
+                                     const poly::Polyhedron::face_t *orig,
                                      bool flipped) {
         if (faces.size() == 1) return;
 
         // doing improvement as a separate hook is much messier than
         // just incorporating it into the triangulation hook.
 
-        typedef std::map<const poly::Vertex<3> *, size_t> vert_map_t;
-        std::vector<poly::Face<3> *> out_faces;
+        typedef std::map<const poly::Polyhedron::vertex_t *, size_t> vert_map_t;
+        std::vector<poly::Polyhedron::face_t *> out_faces;
         vert_map_t vert_map;
 
         out_faces.reserve(faces.size());
@@ -105,7 +105,7 @@ namespace carve {
         std::vector<triangulate::tri_idx> result;
 
         for (size_t f = 0; f < faces.size(); ++f) {
-          poly::Face<3> *face = faces[f];
+          poly::Polyhedron::face_t *face = faces[f];
           if (face->vertices.size() != 3) {
             out_faces.push_back(face);
           } else {
@@ -126,7 +126,7 @@ namespace carve {
           }
         }
 
-        std::vector<const poly::Vertex<3> *> verts;
+        std::vector<const poly::Polyhedron::vertex_t *> verts;
         verts.resize(vert_map.size());
         for (vert_map_t::iterator i = vert_map.begin(); i != vert_map.end(); ++i) {
           verts[(*i).second] = (*i).first;
@@ -134,7 +134,7 @@ namespace carve {
  
         triangulate::improve(projector, verts, result);
 
-        std::vector<const poly::Vertex<3> *> fv;
+        std::vector<const poly::Polyhedron::vertex_t *> fv;
         fv.resize(3);
         for (size_t i = 0; i < result.size(); ++i) {
           fv[0] = verts[result[i].a];
@@ -161,12 +161,12 @@ namespace carve {
         if (!(*i).second.first || !(*i).second.second) return -1;
       }
 
-      poly::Face<3> *mergeQuad(edge_map_t::iterator i, edge_map_t &edge_map) {
+      poly::Polyhedron::face_t *mergeQuad(edge_map_t::iterator i, edge_map_t &edge_map) {
       }
 
-      void recordEdge(const poly::Vertex<3> *v1,
-                      const poly::Vertex<3> *v2,
-                      const poly::Face<3> *f,
+      void recordEdge(const poly::Polyhedron::vertex_t *v1,
+                      const poly::Polyhedron::vertex_t *v2,
+                      const poly::Polyhedron::face_t *f,
                       edge_map_t &edge_map) {
         if (v1 < v2) {
           edge_map[V2(v1, v2)].first = f;
@@ -175,12 +175,12 @@ namespace carve {
         }
       }
 
-      virtual void processOutputFace(std::vector<poly::Face<3> *> &faces,
-                                     const poly::Face<3> *orig,
+      virtual void processOutputFace(std::vector<poly::Polyhedron::face_t *> &faces,
+                                     const poly::Polyhedron::face_t *orig,
                                      bool flipped) {
         if (faces.size() == 1) return;
 
-        std::vector<poly::Face<3> *> out_faces;
+        std::vector<poly::Polyhedron::face_t *> out_faces;
         edge_map_t edge_map;
 
         out_faces.reserve(faces.size());
@@ -188,7 +188,7 @@ namespace carve {
         poly::p2_adapt_project<3> projector(faces[0]->project);
 
         for (size_t f = 0; f < faces.size(); ++f) {
-          poly::Face<3> *face = faces[f];
+          poly::Polyhedron::face_t *face = faces[f];
           if (face->vertices.size() != 3) {
             out_faces.push_back(face);
           } else {
@@ -221,8 +221,8 @@ namespace carve {
         if (edge_map.size()) {
           tagable::tag_begin();
           for (edge_map_t::iterator i = edge_map.begin(); i != edge_map.end(); ++i) {
-            poly::Face<3> *a = const_cast<poly::Face<3> *>((*i).second.first);
-            poly::Face<3> *b = const_cast<poly::Face<3> *>((*i).second.first);
+            poly::Polyhedron::face_t *a = const_cast<poly::Polyhedron::face_t *>((*i).second.first);
+            poly::Polyhedron::face_t *b = const_cast<poly::Polyhedron::face_t *>((*i).second.first);
             if (a && a->tag_once()) out_faces.push_back(a);
             if (b && b->tag_once()) out_faces.push_back(b);
           }
