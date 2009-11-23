@@ -1019,7 +1019,7 @@ namespace carve {
 
     void Polyhedron::collectFaceVertices(std::vector<face_t> &faces,
                                          std::vector<vertex_t> &vertices) {
-      carve::csg::VVMap vmap;
+      VVMap vmap;
       collectFaceVertices(faces, vertices, vmap);
     }
 

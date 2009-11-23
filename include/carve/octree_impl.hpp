@@ -20,9 +20,9 @@
 namespace carve {
   namespace csg {
     template<typename filter_t>
-    void Octree::doFindEdges(const carve::poly::Polyhedron::face_t &f,
+    void Octree::doFindEdges(const carve::poly::Geometry<3>::face_t &f,
                              Node *node,
-                             std::vector<const carve::poly::Polyhedron::edge_t *> &out,
+                             std::vector<const carve::poly::Geometry<3>::edge_t *> &out,
                              unsigned depth,
                              filter_t filter) const {
       if (node == NULL) {
@@ -43,7 +43,7 @@ namespace carve {
               return;
             }
           }
-          for (std::vector<const carve::poly::Polyhedron::edge_t*>::const_iterator it = node->edges.begin(), e = node->edges.end(); it != e; ++it) {
+          for (std::vector<const carve::poly::Geometry<3>::edge_t*>::const_iterator it = node->edges.begin(), e = node->edges.end(); it != e; ++it) {
             if ((*it)->tag_once()) {
               if (filter(*it)) {
                 out.push_back(*it);
@@ -55,7 +55,7 @@ namespace carve {
     }
 
     template<typename filter_t>
-    void Octree::findEdgesNear(const carve::poly::Polyhedron::face_t &f, std::vector<const carve::poly::Polyhedron::edge_t *> &out, filter_t filter) const {
+    void Octree::findEdgesNear(const carve::poly::Geometry<3>::face_t &f, std::vector<const carve::poly::Geometry<3>::edge_t *> &out, filter_t filter) const {
       tagable::tag_begin();
       doFindEdges(f, root, out, 0, filter);
     }
