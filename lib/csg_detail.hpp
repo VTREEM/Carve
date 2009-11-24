@@ -22,8 +22,9 @@
 #include <carve/polyhedron_base.hpp>
 
 namespace carve {
-  namespace detail {
-
+  namespace csg {
+    namespace detail {
+ 
     typedef std::unordered_set<
       const carve::poly::Geometry<3>::face_t *,
       carve::poly::hash_face_ptr> FSet;
@@ -60,16 +61,27 @@ namespace carve {
       std::vector<const carve::poly::Geometry<3>::vertex_t *>,
       carve::poly::hash_edge_ptr> EVVMap;
 
+
+
+     class LoopEdges : public std::unordered_map<V2, std::list<FaceLoop *>, carve::poly::hash_vertex_ptr> {
+        typedef std::unordered_map<V2, std::list<FaceLoop *>, carve::poly::hash_vertex_ptr> super;
+
+      public:
+        void addFaceLoop(FaceLoop *fl);
+        void sortFaceLoopLists();
+        void removeFaceLoop(FaceLoop *fl);
+      };
+
+    }
   }
 }
 
-static inline std::ostream &operator<<(std::ostream &o, const carve::detail::FSet &s) {
+
+
+static inline std::ostream &operator<<(std::ostream &o, const carve::csg::detail::FSet &s) {
   const char *sep="";
-  for (carve::detail::FSet::const_iterator i = s.begin(); i != s.end(); ++i) {
+  for (carve::csg::detail::FSet::const_iterator i = s.begin(); i != s.end(); ++i) {
     o << sep << *i; sep=",";
   }
   return o;
 }
-
-
-

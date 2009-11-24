@@ -53,6 +53,7 @@ namespace carve {
 
     namespace detail {
       struct Data;
+      class LoopEdges;
     }
 
     /** 
@@ -268,7 +269,7 @@ namespace carve {
       void makeEdgeMap(
         const FaceLoopList &loops,
         size_t edge_count,
-        LoopEdges &edge_map);
+        detail::LoopEdges &edge_map);
 
       /** 
        * \brief Divide a list of face loops into groups that are connected by at least one edge not present in \a no_cross.
@@ -280,7 +281,7 @@ namespace carve {
        */
       void groupFaceLoops(
         FaceLoopList &face_loops,
-        const LoopEdges &loop_edges,
+        const detail::LoopEdges &loop_edges,
         const V2Set &no_cross,
         FLGroupList &out_loops);
 
@@ -292,8 +293,8 @@ namespace carve {
        * @param[out] shared_edges The resulting set of common edges.
        */
       void findSharedEdges(
-        LoopEdges &edge_map_a,
-        LoopEdges &edge_map_b,
+        const detail::LoopEdges &edge_map_a,
+        const detail::LoopEdges &edge_map_b,
         V2Set &shared_edges);
 
 
@@ -317,10 +318,10 @@ namespace carve {
         VertexClassification &vclass,
         const carve::poly::Polyhedron *poly_a,
         FLGroupList &a_loops_grouped,
-        const LoopEdges &a_edge_map,
+        const detail::LoopEdges &a_edge_map,
         const carve::poly::Polyhedron *poly_b,
         FLGroupList &b_loops_grouped,
-        const LoopEdges &b_edge_map,
+        const detail::LoopEdges &b_edge_map,
         CSG::Collector &collector);
 
       // intersect_classify_group.cpp
@@ -343,10 +344,10 @@ namespace carve {
         VertexClassification &vclass,
         const carve::poly::Polyhedron  *poly_a, 
         FLGroupList &a_loops_grouped,
-        const LoopEdges &a_edge_map,
+        const detail::LoopEdges &a_edge_map,
         const carve::poly::Polyhedron  *poly_b,
         FLGroupList &b_loops_grouped,
-        const LoopEdges &b_edge_map,
+        const detail::LoopEdges &b_edge_map,
         CSG::Collector &collector);
 
       // intersect_half_classify_group.cpp
@@ -370,10 +371,10 @@ namespace carve {
         VertexClassification &vclass,
         const carve::poly::Polyhedron  *poly_a, 
         FLGroupList &a_loops_grouped,
-        const LoopEdges &a_edge_map,
+        const detail::LoopEdges &a_edge_map,
         const carve::poly::Polyhedron  *poly_b,
         FLGroupList &b_loops_grouped,
-        const LoopEdges &b_edge_map,
+        const detail::LoopEdges &b_edge_map,
         std::list<std::pair<FaceClass, carve::poly::Polyhedron  *> > &b_out);
 
       // intersect.cpp

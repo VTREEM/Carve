@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <assert.h>
 
-#include "internal_collection_types.hpp"
+#include "csg_detail.hpp"
 
 #include "intersect_common.hpp"
 #include "intersect_classify_common.hpp"
@@ -121,8 +121,8 @@ namespace carve {
 
       static inline void remove(const carve::poly::Polyhedron::vertex_t *a,
                                 const carve::poly::Polyhedron::vertex_t *b,
-                                carve::detail::VVSMap &shared_edge_graph) {
-        carve::detail::VVSMap::iterator i = shared_edge_graph.find(a);
+                                carve::csg::detail::VVSMap &shared_edge_graph) {
+        carve::csg::detail::VVSMap::iterator i = shared_edge_graph.find(a);
         assert (i != shared_edge_graph.end());
         size_t n = (*i).second.erase(b);
         assert (n == 1);
@@ -132,7 +132,7 @@ namespace carve {
 
 
       static inline void remove(V2 edge,
-                                carve::detail::VVSMap &shared_edge_graph) {
+                                carve::csg::detail::VVSMap &shared_edge_graph) {
         remove(edge.first, edge.second, shared_edge_graph);
         remove(edge.second, edge.first, shared_edge_graph);
       }
@@ -163,11 +163,11 @@ namespace carve {
 
 
 
-      static void walkGraphSegment(carve::detail::VVSMap &shared_edge_graph,
+      static void walkGraphSegment(carve::csg::detail::VVSMap &shared_edge_graph,
                                    const VSet &branch_points,
                                    V2 initial,
-                                   const LoopEdges &a_edge_map,
-                                   const LoopEdges &b_edge_map,
+                                   const carve::csg::detail::LoopEdges &a_edge_map,
+                                   const carve::csg::detail::LoopEdges &b_edge_map,
                                    std::list<V2> &out) {
         V2 curr;
         curr = initial;
@@ -181,7 +181,7 @@ namespace carve {
 
           if (curr.second == initial.first) { closed = true; break; }
           if (branch_points.find(curr.second) != branch_points.end()) break;
-          carve::detail::VVSMap::const_iterator o = shared_edge_graph.find(curr.second);
+          carve::csg::detail::VVSMap::const_iterator o = shared_edge_graph.find(curr.second);
           if (o == shared_edge_graph.end()) break;
           assert((*o).second.size() == 1);
           curr.first = curr.second;
@@ -194,7 +194,7 @@ namespace carve {
           curr = initial;
           while (1) {
             if (branch_points.find(curr.first) != branch_points.end()) break;
-            carve::detail::VVSMap::const_iterator o = shared_edge_graph.find(curr.first);
+            carve::csg::detail::VVSMap::const_iterator o = shared_edge_graph.find(curr.first);
             if (o == shared_edge_graph.end()) break;
             curr.second = curr.first;
             curr.first = *((*o).second.begin());
@@ -378,8 +378,8 @@ namespace carve {
 
 
       static void processOneEdge(const V2 &edge,
-                                 const LoopEdges &a_edge_map,
-                                 const LoopEdges &b_edge_map,
+                                 const carve::csg::detail::LoopEdges &a_edge_map,
+                                 const carve::csg::detail::LoopEdges &b_edge_map,
                                  Classification &a_classification,
                                  Classification &b_classification) {
         GrpEdgeSurfMap a_edge_surfaces;
@@ -388,12 +388,12 @@ namespace carve {
         carve::geom3d::Vector edge_vector = (edge.second->v - edge.first->v).normalized();
         carve::geom3d::Vector base_vector = perpendicular(edge_vector);
 
-        LoopEdges::const_iterator ae_f = a_edge_map.find(edge);
-        LoopEdges::const_iterator ae_r = a_edge_map.find(flip(edge));
+        carve::csg::detail::LoopEdges::const_iterator ae_f = a_edge_map.find(edge);
+        carve::csg::detail::LoopEdges::const_iterator ae_r = a_edge_map.find(flip(edge));
         assert(ae_f != a_edge_map.end() || ae_r != a_edge_map.end());
 
-        LoopEdges::const_iterator be_f = b_edge_map.find(edge);
-        LoopEdges::const_iterator be_r = b_edge_map.find(flip(edge));
+        carve::csg::detail::LoopEdges::const_iterator be_f = b_edge_map.find(edge);
+        carve::csg::detail::LoopEdges::const_iterator be_r = b_edge_map.find(flip(edge));
         assert(be_f != b_edge_map.end() || be_r != b_edge_map.end());
 
         if (ae_f != a_edge_map.end() && !processForwardEdgeSurfaces(a_edge_surfaces, (*ae_f).second, edge_vector, base_vector)) return;
@@ -410,16 +410,16 @@ namespace carve {
       static void traceIntersectionGraph(const V2Set &shared_edges,
                                          const FLGroupList &a_loops_grouped,
                                          const FLGroupList &b_loops_grouped,
-                                         const LoopEdges &a_edge_map,
-                                         const LoopEdges &b_edge_map) {
+                                         const carve::csg::detail::LoopEdges &a_edge_map,
+                                         const carve::csg::detail::LoopEdges &b_edge_map) {
 
-        carve::detail::VVSMap shared_edge_graph;
+        carve::csg::detail::VVSMap shared_edge_graph;
         VSet branch_points;
 
         // first, make the intersection graph.
         for (V2Set::const_iterator i = shared_edges.begin(); i != shared_edges.end(); ++i) {
           const V2Set::key_type &edge = (*i);
-          carve::detail::VVSMap::mapped_type &out = (shared_edge_graph[edge.first]);
+          carve::csg::detail::VVSMap::mapped_type &out = (shared_edge_graph[edge.first]);
           out.insert(edge.second);
           if (out.size() == 3) branch_points.insert(edge.first);
 
@@ -434,7 +434,7 @@ namespace carve {
 
         std::list<V2> out;
         while (shared_edge_graph.size()) {
-          carve::detail::VVSMap::iterator i = shared_edge_graph.begin();
+          carve::csg::detail::VVSMap::iterator i = shared_edge_graph.begin();
           const carve::poly::Polyhedron::vertex_t *v1 = (*i).first;
           const carve::poly::Polyhedron::vertex_t *v2 = *((*i).second.begin());
           walkGraphSegment(shared_edge_graph, branch_points, V2(v1, v2), a_edge_map, b_edge_map, out);
@@ -556,10 +556,10 @@ namespace carve {
                                      VertexClassification &vclass,
                                      const carve::poly::Polyhedron *poly_a,
                                      FLGroupList &a_loops_grouped,
-                                     const LoopEdges &a_edge_map,
+                                     const detail::LoopEdges &a_edge_map,
                                      const carve::poly::Polyhedron *poly_b,
                                      FLGroupList &b_loops_grouped,
-                                     const LoopEdges &b_edge_map,
+                                     const detail::LoopEdges &b_edge_map,
                                      CSG::Collector &collector) {
       Classification a_classification;
       Classification b_classification;

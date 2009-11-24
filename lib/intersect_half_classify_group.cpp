@@ -167,10 +167,10 @@ namespace carve {
                                      VertexClassification &vclass,
                                      const carve::poly::Polyhedron *poly_a,                           
                                      FLGroupList &a_loops_grouped,
-                                     const LoopEdges &a_edge_map,
+                                     const detail::LoopEdges &a_edge_map,
                                      const carve::poly::Polyhedron *poly_b,
                                      FLGroupList &b_loops_grouped,
-                                     const LoopEdges &b_edge_map,
+                                     const detail::LoopEdges &b_edge_map,
                                      std::list<std::pair<FaceClass, carve::poly::Polyhedron *> > &b_out) {
       HalfClassifyFaceGroups classifier(b_out, hooks);
       GroupPoly group_poly(poly_b, b_out);

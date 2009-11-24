@@ -182,10 +182,10 @@ namespace carve {
                                  VertexClassification &vclass,
                                  const carve::poly::Polyhedron *poly_a,                           
                                  FLGroupList &a_loops_grouped,
-                                 const LoopEdges &a_edge_map,
+                                 const detail::LoopEdges &a_edge_map,
                                  const carve::poly::Polyhedron *poly_b,
                                  FLGroupList &b_loops_grouped,
-                                 const LoopEdges &b_edge_map,
+                                 const detail::LoopEdges &b_edge_map,
                                  CSG::Collector &collector) {
       ClassifyFaceGroups classifier(collector, hooks);
 #if defined(DEBUG)

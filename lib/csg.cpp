@@ -20,7 +20,7 @@
 #endif
 
 #include <carve/csg.hpp>
-
+#include "csg_detail.hpp"
 
 
 const char *carve::csg::ENUM(carve::csg::FaceClass f) {
@@ -45,7 +45,7 @@ const char *carve::csg::ENUM(carve::PointClass p) {
 
 
 
-void carve::csg::LoopEdges::addFaceLoop(FaceLoop *fl) {
+void carve::csg::detail::LoopEdges::addFaceLoop(FaceLoop *fl) {
   const carve::poly::Polyhedron::vertex_t *v1, *v2;
   v1 = fl->vertices[fl->vertices.size() - 1];
   for (unsigned j = 0; j < fl->vertices.size(); ++j) {
@@ -57,7 +57,7 @@ void carve::csg::LoopEdges::addFaceLoop(FaceLoop *fl) {
 
 
 
-void carve::csg::LoopEdges::sortFaceLoopLists() {
+void carve::csg::detail::LoopEdges::sortFaceLoopLists() {
   for (super::iterator i = begin(), e = end(); i != e; ++i) {
     (*i).second.sort();
   }
@@ -65,7 +65,7 @@ void carve::csg::LoopEdges::sortFaceLoopLists() {
 
 
 
-void carve::csg::LoopEdges::removeFaceLoop(FaceLoop *fl) {
+void carve::csg::detail::LoopEdges::removeFaceLoop(FaceLoop *fl) {
   const carve::poly::Polyhedron::vertex_t *v1, *v2;
   v1 = fl->vertices[fl->vertices.size() - 1];
   for (unsigned j = 0; j < fl->vertices.size(); ++j) {

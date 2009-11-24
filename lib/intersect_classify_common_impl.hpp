@@ -19,6 +19,11 @@
 
 namespace carve {
   namespace csg {
+    typedef std::unordered_map<
+      const carve::poly::Polyhedron::vertex_t *,
+      std::list<FLGroupList::iterator>,
+      carve::poly::hash_vertex_ptr> GroupLookup;
+
 
     inline bool isSameFwd(const V2Set &a, const V2Set &b) {
       if (a.size() != b.size()) return false;

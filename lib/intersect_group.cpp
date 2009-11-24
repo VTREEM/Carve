@@ -22,13 +22,14 @@
 #include <carve/csg.hpp>
 #include <carve/timing.hpp>
 
+#include "csg_detail.hpp"
 #include "intersect_common.hpp"
 
 
 
 void carve::csg::CSG::makeEdgeMap(const carve::csg::FaceLoopList &loops,
                                   size_t edge_count,
-                                  carve::csg::LoopEdges &edge_map) {
+                                  detail::LoopEdges &edge_map) {
 #if defined(UNORDERED_COLLECTIONS_SUPPORT_RESIZE)
   edge_map.resize(edge_count);
 #endif
@@ -41,29 +42,29 @@ void carve::csg::CSG::makeEdgeMap(const carve::csg::FaceLoopList &loops,
 
 #include <carve/polyline.hpp>
 
-void carve::csg::CSG::findSharedEdges(carve::csg::LoopEdges &edge_map_a,
-                                      carve::csg::LoopEdges &edge_map_b,
-                                      carve::csg::V2Set &shared_edges) {
-  for (carve::csg::LoopEdges::const_iterator
+void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
+                                      const detail::LoopEdges &edge_map_b,
+                                      V2Set &shared_edges) {
+  for (detail::LoopEdges::const_iterator
          i = edge_map_a.begin(), e = edge_map_a.end();
        i != e;
        ++i) {
-    carve::csg::LoopEdges::const_iterator j = edge_map_b.find((*i).first);
+    detail::LoopEdges::const_iterator j = edge_map_b.find((*i).first);
     if (j != edge_map_b.end()) {
       shared_edges.insert((*i).first);
     }
   }
 
 #if defined(DEBUG)
-  carve::csg::VVSMap edge_graph;
+  detail::VVSMap edge_graph;
 
-  for (carve::csg::V2Set::const_iterator i = shared_edges.begin(); i != shared_edges.end(); ++i) {
+  for (V2Set::const_iterator i = shared_edges.begin(); i != shared_edges.end(); ++i) {
     edge_graph[(*i).first].insert((*i).second);
     edge_graph[(*i).second].insert((*i).first);
   }
 
   std::cerr << "*** testing consistency of edge graph" << std::endl;
-  for (carve::csg::VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
+  for (detail::VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
     if ((*i).second.size() > 2) {
       std::cerr << "branch at: " << (*i).first << std::endl;
     }
@@ -79,19 +80,19 @@ void carve::csg::CSG::findSharedEdges(carve::csg::LoopEdges &edge_map_a,
     std::map<const carve::poly::Polyhedron::vertex_t *, size_t> vmap;
 
     size_t j = 0;
-    for (carve::csg::VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
+    for (detail::VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
       intersection_graph.vertices[j].v = (*i).first->v;
       vmap[(*i).first] = j++;
     }
 
     while (edge_graph.size()) {
-      carve::csg::VVSMap::iterator prior_i = edge_graph.begin();
+      detail::VVSMap::iterator prior_i = edge_graph.begin();
       const carve::poly::Polyhedron::vertex_t *prior = (*prior_i).first;
       std::vector<size_t> connected;
       connected.push_back(vmap[prior]);
       while (prior_i != edge_graph.end() && (*prior_i).second.size()) {
         const carve::poly::Polyhedron::vertex_t *next = *(*prior_i).second.begin();
-        carve::csg::VVSMap::iterator next_i = edge_graph.find(next);
+        detail::VVSMap::iterator next_i = edge_graph.find(next);
         assert(next_i != edge_graph.end());
         connected.push_back(vmap[next]);
         (*prior_i).second.erase(next);
@@ -140,7 +141,7 @@ static carve::poly::Polyhedron *groupToPolyhedron(const carve::csg::FaceLoopGrou
 
 
 void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
-                                     const carve::csg::LoopEdges &loop_edges,
+                                     const carve::csg::detail::LoopEdges &loop_edges,
                                      const carve::csg::V2Set &no_cross,
                                      carve::csg::FLGroupList &out_loops) {
   static carve::TimingName GROUP_FACE_LOOPS("groupFaceLoops()");
@@ -170,7 +171,7 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
 
         carve::csg::V2Set::const_iterator nc = no_cross.find(std::make_pair(v1, v2));
         if (nc == no_cross.end()) {
-          carve::csg::LoopEdges::const_iterator j;
+          carve::csg::detail::LoopEdges::const_iterator j;
 
           j = loop_edges.find(std::make_pair(v1, v2));
           if (j != loop_edges.end()) {

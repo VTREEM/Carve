@@ -79,17 +79,6 @@ namespace carve {
       }
     };
 
-    class LoopEdges : public std::unordered_map<V2, std::list<FaceLoop *>, carve::poly::hash_vertex_ptr> {
-      typedef std::unordered_map<V2, std::list<FaceLoop *>, carve::poly::hash_vertex_ptr> super;
-
-    public:
-      void addFaceLoop(FaceLoop *fl);
-      void sortFaceLoopLists();
-      void removeFaceLoop(FaceLoop *fl);
-    };
-
-
-
     struct FaceLoopGroup {
       FaceLoopList face_loops;
       V2Set perimeter;
@@ -101,9 +90,6 @@ namespace carve {
 
 
     typedef std::list<FaceLoopGroup> FLGroupList;
-
-    typedef std::unordered_map<const carve::poly::Polyhedron::vertex_t *, std::list<FaceLoop *>, carve::poly::hash_vertex_ptr> LoopLookup;
-    typedef std::unordered_map<const carve::poly::Polyhedron::vertex_t *, std::list<FLGroupList::iterator>, carve::poly::hash_vertex_ptr> GroupLookup;
 
   }
 }

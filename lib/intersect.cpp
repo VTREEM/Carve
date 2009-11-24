@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <assert.h>
 
-#include "internal_collection_types.hpp"
+#include "csg_detail.hpp"
 #include "csg_data.hpp"
 
 #include "intersect_debug.hpp"
@@ -434,7 +434,7 @@ void carve::csg::CSG::groupIntersections() {
   carve::TimingBlock block(GROUP_INTERSECTONS);
   
   std::vector<const poly_t::vertex_t *> vertices;
-  carve::detail::VVSMap graph;
+  detail::VVSMap graph;
 #if 1 || defined(DEBUG)
   std::cerr << "groupIntersections()" << ": vertex_intersections.size()==" << vertex_intersections.size() << std::endl;
 #endif
@@ -476,7 +476,7 @@ void carve::csg::CSG::groupIntersections() {
   while (graph.size()) {
     visited.clear();
     open.clear();
-    carve::detail::VVSMap::iterator i = graph.begin();
+    detail::VVSMap::iterator i = graph.begin();
     open.insert((*i).first);
     while (open.size()) {
       VSet::iterator t = open.begin();
@@ -485,7 +485,7 @@ void carve::csg::CSG::groupIntersections() {
       i = graph.find(o);
       ASSERT(i != graph.end());
       visited.insert(o);
-      for (carve::detail::VVSMap::mapped_type::const_iterator
+      for (detail::VVSMap::mapped_type::const_iterator
              j = (*i).second.begin(),
              je = (*i).second.end();
            j != je;
@@ -513,7 +513,7 @@ void carve::csg::CSG::intersectingFacePairs(detail::Data &data) {
        i != ie;
        ++i) {
     const poly_t::vertex_t *i_pt = ((*i).first);
-    carve::detail::VFSMap::mapped_type &face_set = (data.fmap_rev[i_pt]);
+    detail::VFSMap::mapped_type &face_set = (data.fmap_rev[i_pt]);
 
     // for all pairs of intersecting objects at this point
     for (carve::csg::VertexIntersections::mapped_type::const_iterator
@@ -538,7 +538,7 @@ void carve::csg::CSG::intersectingFacePairs(detail::Data &data) {
     }
 
     // record the intersection with respect to each face.
-    for (carve::detail::VFSMap::mapped_type::const_iterator k = face_set.begin(), ke = face_set.end(); k != ke; ++k) {
+    for (detail::VFSMap::mapped_type::const_iterator k = face_set.begin(), ke = face_set.end(); k != ke; ++k) {
       const poly_t::face_t *f = (*k);
       data.fmap[f].insert(i_pt);
     }
@@ -682,7 +682,7 @@ void carve::csg::CSG::generateEdgeFaceIntersections(const poly_t *a, const poly_
   static carve::TimingName FUNC_NAME("CSG::generateEdgeFaceIntersections()");
   carve::TimingBlock block(FUNC_NAME);
 
-  carve::detail::FSet if_e;
+  detail::FSet if_e;
 
   std::vector<const poly_t::edge_t *> edges_in_b;
 
@@ -845,9 +845,9 @@ void carve::csg::CSG::divideIntersectedEdges(detail::Data &data) {
   static carve::TimingName FUNC_NAME("CSG::divideIntersectedEdges()");
   carve::TimingBlock block(FUNC_NAME);
 
-  for (carve::detail::EVSMap::const_iterator i = data.emap.begin(), ei = data.emap.end(); i != ei; ++i) {
+  for (detail::EVSMap::const_iterator i = data.emap.begin(), ei = data.emap.end(); i != ei; ++i) {
     const poly_t::edge_t *edge = (*i).first;
-    const carve::detail::EVSMap::mapped_type &vertices = (*i).second;
+    const detail::EVSMap::mapped_type &vertices = (*i).second;
     std::vector<const poly_t::vertex_t *> &verts = data.divided_edges[edge];
     orderVertices(edge->v2->v - edge->v1->v, edge->v1->v,
                   vertices.begin(), vertices.end(),
@@ -873,9 +873,9 @@ void carve::csg::CSG::divideEdges(const std::vector<poly_t::edge_t > &edges,
        i != e;
        ++i) {
     const poly_t::edge_t *edge = (&(*i));
-    carve::detail::EVSMap::const_iterator ei = data.emap.find(edge);
+    detail::EVSMap::const_iterator ei = data.emap.find(edge);
     if (ei != data.emap.end()) {
-      const carve::detail::EVSMap::mapped_type &vertices = ((*ei).second);
+      const detail::EVSMap::mapped_type &vertices = ((*ei).second);
       std::vector<const poly_t::vertex_t *> &verts = (data.divided_edges[edge]);
       orderVertices(edge->v2->v - edge->v1->v, edge->v1->v,
                     vertices.begin(), vertices.end(),
@@ -888,22 +888,22 @@ void carve::csg::CSG::divideEdges(const std::vector<poly_t::edge_t > &edges,
 
 void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
                                     detail::Data &data) {
-  carve::detail::FSet face_b_set;
-  for (carve::detail::FVSMap::const_iterator
+  detail::FSet face_b_set;
+  for (detail::FVSMap::const_iterator
          i = data.fmap.begin(), ie = data.fmap.end();
        i != ie;
        ++i) {
     const poly_t::face_t *face_a = (*i).first;
-    const carve::detail::FVSMap::mapped_type &face_a_intersections = ((*i).second);
+    const detail::FVSMap::mapped_type &face_a_intersections = ((*i).second);
 
     face_b_set.clear();
 
     // work out the set of faces from the opposing polyhedron that intersect face_a.
-    for (carve::detail::FVSMap::mapped_type::const_iterator
+    for (detail::FVSMap::mapped_type::const_iterator
            j = face_a_intersections.begin(), je = face_a_intersections.end();
          j != je;
          ++j) {
-      for (carve::detail::VFSMap::mapped_type::const_iterator
+      for (detail::VFSMap::mapped_type::const_iterator
              k = data.fmap_rev[*j].begin(), ke = data.fmap_rev[*j].end();
            k != ke;
            ++k) {
@@ -915,12 +915,12 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
     }
 
     // run through each intersecting face.
-    for (carve::detail::FSet::const_iterator
+    for (detail::FSet::const_iterator
            j = face_b_set.begin(), je = face_b_set.end();
          j != je;
          ++j) {
       const poly_t::face_t *face_b = (*j);
-      const carve::detail::FVSMap::mapped_type &face_b_intersections = (data.fmap[face_b]);
+      const detail::FVSMap::mapped_type &face_b_intersections = (data.fmap[face_b]);
 
       std::vector<const poly_t::vertex_t *> vertices;
       vertices.reserve(std::min(face_a_intersections.size(), face_b_intersections.size()));
@@ -1242,8 +1242,8 @@ poly_t *carve::csg::CSG::compute(const poly_t *a,
     calc(a, b, vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
   }
 
-  LoopEdges a_edge_map;
-  LoopEdges b_edge_map;
+  detail::LoopEdges a_edge_map;
+  detail::LoopEdges b_edge_map;
 
   {
     static carve::TimingName FUNC_NAME("CSG::compute - makeEdgeMap()");
@@ -1399,8 +1399,8 @@ bool carve::csg::CSG::sliceAndClassify(const poly_t *closed,
 
   calc(closed, open, vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
 
-  carve::csg::LoopEdges a_edge_map;
-  carve::csg::LoopEdges b_edge_map;
+  detail::LoopEdges a_edge_map;
+  detail::LoopEdges b_edge_map;
 
   makeEdgeMap(a_face_loops, a_edge_count, a_edge_map);
   makeEdgeMap(b_face_loops, b_edge_count, b_edge_map);
@@ -1463,8 +1463,8 @@ void carve::csg::CSG::slice(const poly_t *a,
 
   calc(a, b, vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
 
-  carve::csg::LoopEdges a_edge_map;
-  carve::csg::LoopEdges b_edge_map;
+  detail::LoopEdges a_edge_map;
+  detail::LoopEdges b_edge_map;
       
   makeEdgeMap(a_face_loops, a_edge_count, a_edge_map);
   makeEdgeMap(b_face_loops, b_edge_count, b_edge_map);
