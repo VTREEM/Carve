@@ -32,6 +32,9 @@
 #include <algorithm>
 #include <assert.h>
 
+#include "internal_collection_types.hpp"
+#include "csg_data.hpp"
+
 #include "intersect_common.hpp"
 
 typedef carve::poly::Polyhedron poly_t;
@@ -728,21 +731,19 @@ namespace {
    * @param[out] base_loop A vector of the vertices of the base loop.
    */
   static void assembleBaseLoop(const poly_t::face_t *face,
-                               const carve::csg::VVMap &vmap,
-                               const carve::csg::FV2SMap &face_split_edges,
-                               const carve::csg::EVVMap &divided_edges,
+                               const carve::csg::detail::Data &data,
                                std::vector<const poly_t::vertex_t *> &base_loop) {
     base_loop.clear();
 
     // XXX: assumes that face->edges is in the same order as
     // face->vertices. (Which it is)
     for (size_t j = 0, je = face->vertices.size(); j < je; ++j) {
-      base_loop.push_back(carve::csg::map_vertex(vmap, face->vertices[j]));
+      base_loop.push_back(carve::csg::map_vertex(data.vmap, face->vertices[j]));
 
       const poly_t::edge_t *e = face->edges[j];
-      carve::csg::EVVMap::const_iterator ev = divided_edges.find(e);
+      carve::detail::EVVMap::const_iterator ev = data.divided_edges.find(e);
 
-      if (ev != divided_edges.end()) {
+      if (ev != data.divided_edges.end()) {
         const std::vector<const poly_t::vertex_t *> &ev_vec = ((*ev).second);
 
         if (e->v1 == face->vertices[j]) {
@@ -774,9 +775,7 @@ namespace {
  * @return The number of edges generated.
  */
 size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
-                                          const VVMap &vmap,
-                                          const FV2SMap &face_split_edges,
-                                          const EVVMap &divided_edges,
+                                          const detail::Data &data,
                                           FaceLoopList &face_loops_out) {
   static carve::TimingName FUNC_NAME("CSG::generateFaceLoops()");
   carve::TimingBlock block(FUNC_NAME);
@@ -790,10 +789,10 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
        ++i) {
     const poly_t::face_t *face = &(*i);
 
-    assembleBaseLoop(face, vmap, face_split_edges, divided_edges, base_loop);
+    assembleBaseLoop(face, data, base_loop);
 
-    FV2SMap::const_iterator fse_iter = face_split_edges.find(face);
-    if (fse_iter != face_split_edges.end()) {
+    carve::detail::FV2SMap::const_iterator fse_iter = data.face_split_edges.find(face);
+    if (fse_iter != data.face_split_edges.end()) {
       // complex case: input face is split into multiple output faces.
       carve::csg::V2Set face_edges;
 
@@ -812,10 +811,10 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
       face_edges.insert(std::make_pair(base_loop[base_loop.size() - 1], base_loop[0]));
 
       // collect the split edges (as long as they're not on the perimeter)
-      const FV2SMap::mapped_type &fse = ((*fse_iter).second);
+      const carve::detail::FV2SMap::mapped_type &fse = ((*fse_iter).second);
       bool actually_split = false;
       size_t added_edges = 0;
-      for (FV2SMap::mapped_type::const_iterator
+      for (carve::detail::FV2SMap::mapped_type::const_iterator
              j = fse.begin(), je =  fse.end();
            j != je;
            ++j) {

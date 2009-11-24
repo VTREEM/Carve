@@ -21,14 +21,6 @@
 
 #include <carve/csg.hpp>
 
-std::ostream &carve::csg::operator<<(std::ostream &o, const carve::csg::FSet &s) {
-  const char *sep="";
-  for (carve::csg::FSet::const_iterator i = s.begin(); i != s.end(); ++i) {
-    o << sep << *i; sep=",";
-  }
-  return o;
-}
-
 
 
 const char *carve::csg::ENUM(carve::csg::FaceClass f) {
@@ -38,6 +30,8 @@ const char *carve::csg::ENUM(carve::csg::FaceClass f) {
   if (f == FACE_ON_ORIENT_IN) return "FACE_ON_ORIENT_IN";
   return "???";
 }
+
+
 
 const char *carve::csg::ENUM(carve::PointClass p) {
   if (p == POINT_UNK) return "POINT_UNK";
@@ -50,6 +44,7 @@ const char *carve::csg::ENUM(carve::PointClass p) {
 }
 
 
+
 void carve::csg::LoopEdges::addFaceLoop(FaceLoop *fl) {
   const carve::poly::Polyhedron::vertex_t *v1, *v2;
   v1 = fl->vertices[fl->vertices.size() - 1];
@@ -60,11 +55,15 @@ void carve::csg::LoopEdges::addFaceLoop(FaceLoop *fl) {
   }
 }
 
+
+
 void carve::csg::LoopEdges::sortFaceLoopLists() {
   for (super::iterator i = begin(), e = end(); i != e; ++i) {
     (*i).second.sort();
   }
 }
+
+
 
 void carve::csg::LoopEdges::removeFaceLoop(FaceLoop *fl) {
   const carve::poly::Polyhedron::vertex_t *v1, *v2;
@@ -81,6 +80,8 @@ void carve::csg::LoopEdges::removeFaceLoop(FaceLoop *fl) {
     v1 = v2;
   }
 }
+
+
 
 carve::csg::FaceClass carve::csg::FaceLoopGroup::classificationAgainst(const carve::poly::Polyhedron *poly, int m_id) const {
   for (std::list<ClassificationInfo>::const_iterator i = classification.begin(); i != classification.end(); ++i) {

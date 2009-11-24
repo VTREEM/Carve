@@ -134,14 +134,19 @@ int main(int argc, char **argv) {
   std::cerr << "      : " << b_sliced.size() << " connected components from b" << std::endl;
   std::cerr << "      : " << shared_edges.size() << " edges in the line of intersection" << std::endl;
 
-  carve::csg::VVSMap edge_graph;
+  typedef std::unordered_map<
+  const carve::poly::Geometry<3>::vertex_t *,
+    std::set<const carve::poly::Geometry<3>::vertex_t *>,
+    carve::poly::hash_vertex_ptr> VVSMap;
+
+  VVSMap edge_graph;
 
   for (carve::csg::V2Set::const_iterator i = shared_edges.begin(); i != shared_edges.end(); ++i) {
     edge_graph[(*i).first].insert((*i).second);
     edge_graph[(*i).second].insert((*i).first);
   }
 
-  for (carve::csg::VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
+  for (VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
     if ((*i).second.size() > 2) {
       std::cerr << "branch at: " << (*i).first << std::endl;
     }
@@ -157,19 +162,19 @@ int main(int argc, char **argv) {
     std::map<const carve::poly::Vertex<3> *, size_t> vmap;
 
     size_t j = 0;
-    for (carve::csg::VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
+    for (VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
       intersection_graph.vertices[j].v = (*i).first->v;
       vmap[(*i).first] = j++;
     }
 
     while (edge_graph.size()) {
-      carve::csg::VVSMap::iterator prior_i = edge_graph.begin();
+      VVSMap::iterator prior_i = edge_graph.begin();
       const carve::poly::Vertex<3> *prior = (*prior_i).first;
       std::vector<size_t> connected;
       connected.push_back(vmap[prior]);
       while (prior_i != edge_graph.end() && (*prior_i).second.size()) {
         const carve::poly::Vertex<3> *next = *(*prior_i).second.begin();
-        carve::csg::VVSMap::iterator next_i = edge_graph.find(next);
+        VVSMap::iterator next_i = edge_graph.find(next);
         assert(next_i != edge_graph.end());
         connected.push_back(vmap[next]);
         (*prior_i).second.erase(next);
