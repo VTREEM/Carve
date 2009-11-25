@@ -24,7 +24,10 @@
 namespace carve {
   namespace csg {
     namespace detail {
- 
+
+    typedef std::unordered_set<
+      const carve::poly::Geometry<3>::vertex_t *,
+      carve::poly::hash_vertex_ptr> VSet;
     typedef std::unordered_set<
       const carve::poly::Geometry<3>::face_t *,
       carve::poly::hash_face_ptr> FSet;

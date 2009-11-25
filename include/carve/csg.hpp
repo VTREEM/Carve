@@ -165,12 +165,6 @@ namespace carve {
       void dumpIntersections();
       void makeVertexIntersections();
 
-      const carve::poly::Polyhedron::vertex_t *chooseWeldPoint(
-        const VSet &equivalent);
-
-      const carve::poly::Polyhedron::vertex_t *weld(
-        const VSet &equivalent);
-
       void groupIntersections();
 
       void determinePotentiallyInteractingOctreeNodes(

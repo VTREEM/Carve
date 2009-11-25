@@ -374,11 +374,13 @@ void carve::csg::CSG::makeVertexIntersections() {
 
 
 
-const poly_t::vertex_t *carve::csg::CSG::chooseWeldPoint(const carve::csg::VSet &equivalent) {
+static const poly_t::vertex_t *chooseWeldPoint(
+    const carve::csg::detail::VSet &equivalent,
+    carve::csg::VertexPool &vertex_pool) {
   // XXX: choose a better weld point.
   if (!equivalent.size()) return NULL;
 
-  for (carve::csg::VSet::const_iterator
+  for (carve::csg::detail::VSet::const_iterator
          i = equivalent.begin(), e = equivalent.end();
        i != e;
        ++i) {
@@ -389,12 +391,15 @@ const poly_t::vertex_t *carve::csg::CSG::chooseWeldPoint(const carve::csg::VSet 
 
 
 
-const poly_t::vertex_t *carve::csg::CSG::weld(const carve::csg::VSet &equivalent) {
-  const poly_t::vertex_t *weld_point = chooseWeldPoint(equivalent);
+static const poly_t::vertex_t *weld(
+    const carve::csg::detail::VSet &equivalent,
+    carve::csg::VertexIntersections &vertex_intersections,
+    carve::csg::VertexPool &vertex_pool) {
+  const poly_t::vertex_t *weld_point = chooseWeldPoint(equivalent, vertex_pool);
 
 #if defined(DEBUG)
   std::cerr << "weld: " << equivalent.size() << " vertices ( ";
-  for (carve::csg::VSet::const_iterator
+  for (detail::VSet::const_iterator
          i = equivalent.begin(), e = equivalent.end();
        i != e;
        ++i) {
@@ -408,7 +413,7 @@ const poly_t::vertex_t *carve::csg::CSG::weld(const carve::csg::VSet &equivalent
 
   carve::csg::VertexIntersections::mapped_type &weld_tgt = (vertex_intersections[weld_point]);
 
-  for (carve::csg::VSet::const_iterator
+  for (carve::csg::detail::VSet::const_iterator
          i = equivalent.begin(), e = equivalent.end();
        i != e;
        ++i) {
@@ -472,14 +477,14 @@ void carve::csg::CSG::groupIntersections() {
     }
   }
 
-  VSet visited, open;
+  detail::VSet visited, open;
   while (graph.size()) {
     visited.clear();
     open.clear();
     detail::VVSMap::iterator i = graph.begin();
     open.insert((*i).first);
     while (open.size()) {
-      VSet::iterator t = open.begin();
+      detail::VSet::iterator t = open.begin();
       const poly_t::vertex_t *o = (*t);
       open.erase(t);
       i = graph.find(o);
@@ -496,7 +501,7 @@ void carve::csg::CSG::groupIntersections() {
       }
       graph.erase(i);
     }
-    weld(visited);
+    weld(visited, vertex_intersections, vertex_pool);
   }
 }
 

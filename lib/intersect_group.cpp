@@ -144,6 +144,10 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
                                      const carve::csg::detail::LoopEdges &loop_edges,
                                      const carve::csg::V2Set &no_cross,
                                      carve::csg::FLGroupList &out_loops) {
+  // Find all the groups of face loops that are connected by edges
+  // that are not part of no_cross.
+  // this could potentially be done with a disjoint set data-structure.
+
   static carve::TimingName GROUP_FACE_LOOPS("groupFaceLoops()");
 
   carve::TimingBlock block(GROUP_FACE_LOOPS);

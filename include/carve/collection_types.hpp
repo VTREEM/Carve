@@ -43,11 +43,6 @@ namespace carve {
       return V2(v.second, v.first);
     }
 
-    // include/carve/csg.hpp lib/intersect.cpp lib/intersect_classify_edge.cpp
-    typedef std::unordered_set<
-      const carve::poly::Geometry<3>::vertex_t *,
-      carve::poly::hash_vertex_ptr> VSet;
-
     // include/carve/csg.hpp include/carve/faceloop.hpp
     // lib/intersect.cpp lib/intersect_classify_common_impl.hpp
     // lib/intersect_classify_edge.cpp

@@ -164,7 +164,7 @@ namespace carve {
 
 
       static void walkGraphSegment(carve::csg::detail::VVSMap &shared_edge_graph,
-                                   const VSet &branch_points,
+                                   const carve::csg::detail::VSet &branch_points,
                                    V2 initial,
                                    const carve::csg::detail::LoopEdges &a_edge_map,
                                    const carve::csg::detail::LoopEdges &b_edge_map,
@@ -414,7 +414,7 @@ namespace carve {
                                          const carve::csg::detail::LoopEdges &b_edge_map) {
 
         carve::csg::detail::VVSMap shared_edge_graph;
-        VSet branch_points;
+        carve::csg::detail::VSet branch_points;
 
         // first, make the intersection graph.
         for (V2Set::const_iterator i = shared_edges.begin(); i != shared_edges.end(); ++i) {
