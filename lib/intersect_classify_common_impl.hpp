@@ -324,6 +324,13 @@ namespace carve {
           continue;
 
         face_pair: {
+            V2Set::iterator it_end = (*j).perimeter.end();
+            V2Set::iterator it_begin = (*j).perimeter.begin();
+
+            if(it_begin != it_end) {
+              a_map[std::min_element(it_begin, it_end)->first].remove(j);
+            }
+
             (*i).classification.push_back(ClassificationInfo(poly_b, -1, fc));
             (*j).classification.push_back(ClassificationInfo(poly_a, -1, fc));
 
