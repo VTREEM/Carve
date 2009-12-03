@@ -279,8 +279,12 @@ namespace carve {
 
           findSharedEdge(ai, bi);
 
-          ASSERT(carve::geom2d::signedArea(project(poly[a->v[0]]), project(poly[a->v[1]]), project(poly[a->v[2]])) <= 0.0);
-          ASSERT(carve::geom2d::signedArea(project(poly[b->v[0]]), project(poly[b->v[1]]), project(poly[b->v[2]])) <= 0.0);
+#if defined(DEBUG)
+          if (carve::geom2d::signedArea(project(poly[a->v[0]]), project(poly[a->v[1]]), project(poly[a->v[2]])) > 0.0 ||
+              carve::geom2d::signedArea(project(poly[b->v[0]]), project(poly[b->v[1]]), project(poly[b->v[2]])) > 0.0) {
+            std::cerr << "warning: triangle pair " << this << " contains triangles with incorrect orientation" << std::endl;
+          }
+#endif
 
           cross_ai = P(ai);
           cross_bi = P(bi);
@@ -655,6 +659,19 @@ namespace carve {
                  std::vector<tri_idx> &result) {
       detail::tri_pairs_t tri_pairs;
 
+#if defined(DEBUG)
+      bool warn = false;
+      for (size_t i = 0; i < result.size(); ++i) {
+        tri_idx &t = result[i];
+        if (carve::geom2d::signedArea(project(poly[t.a]), project(poly[t.b]), project(poly[t.c])) > 0) {
+          warn = true;
+        }
+      } 
+      if (warn) {
+        std::cerr << "carve::triangulate::improve(): Some triangles are incorrectly oriented. Results may be incorrect." << std::endl;
+      }
+#endif
+
       for (size_t i = 0; i < result.size(); ++i) {
         tri_idx &t = result[i];
         tri_pairs.insert(t.a, t.b, &t);
@@ -679,6 +696,15 @@ namespace carve {
       while (n) {
         tri_pairs.flip(project, poly, edges, n);
       }
+
+#if defined(DEBUG)
+      if (!warn) {
+        for (size_t i = 0; i < result.size(); ++i) {
+          tri_idx &t = result[i];
+          ASSERT (carve::geom2d::signedArea(project(poly[t.a]), project(poly[t.b]), project(poly[t.c])) <= 0.0);
+        } 
+      }
+#endif
     }
 
   }
