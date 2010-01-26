@@ -21,6 +21,7 @@
 
 #include <carve/geom2d.hpp>
 #include <carve/triangulator.hpp>
+#include "triangulator_glu.hpp"
 
 #include "coords.h"
 #include "geom_draw.hpp"
@@ -103,8 +104,8 @@ int main(int argc, char **argv) {
 
   try {
     result.clear();
-    carve::triangulate::triangulate(poly, result);
-    carve::triangulate::improve(poly, result);
+    carve::triangulate::triangulate_GLU(poly, result);
+    // carve::triangulate::improve(poly, result);
   } catch (carve::exception exc) {
     std::cerr << "FAIL: " << exc.str() << std::endl;
   }

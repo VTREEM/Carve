@@ -149,25 +149,17 @@ int main(int argc, char **argv) {
 
   for (size_t i = 0; i < poly->faces.size(); ++i) {
     carve::poly::Face<3> &f = poly->faces[i];
-    if (f.vertices.size() == 3) {
+    std::vector<carve::triangulate::tri_idx> result;
+
+    carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
+    carve::triangulate::improve(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
+
+    for (size_t j = 0; j < result.size(); ++j) {
       out_faces.push_back(carve::poly::Face<3>(
-            &out_vertices[poly->vertexToIndex_fast(f.vertices[0])],
-            &out_vertices[poly->vertexToIndex_fast(f.vertices[1])],
-            &out_vertices[poly->vertexToIndex_fast(f.vertices[2])]
+            &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].a])],
+            &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].b])],
+            &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].c])]
             ));
-    } else {
-      std::vector<carve::triangulate::tri_idx> result;
-
-      carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
-      carve::triangulate::improve(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
-
-      for (size_t j = 0; j < result.size(); ++j) {
-        out_faces.push_back(carve::poly::Face<3>(
-              &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].a])],
-              &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].b])],
-              &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].c])]
-              ));
-      }
     }
   }
 
