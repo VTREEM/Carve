@@ -131,8 +131,8 @@ namespace carve {
 
       // *** manifold queries
 
-      inline bool Polyhedron::vertexOnManifold(const vertex_t *v, int m_id) const;
-      inline bool Polyhedron::edgeOnManifold(const edge_t *e, int m_id) const;
+      inline bool vertexOnManifold(const vertex_t *v, int m_id) const;
+      inline bool edgeOnManifold(const edge_t *e, int m_id) const;
 
       template<typename T>
       int vertexManifolds(const vertex_t *v, T result) const;
