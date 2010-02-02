@@ -44,35 +44,36 @@ namespace carve {
       carve::TimingBlock block(FUNC_NAME);
 
       std::vector<vertex_t *> vptr;
-      std::map<const vertex_t *, const vertex_t *> vmap;
+      std::vector<vertex_t *> vmap;
       std::vector<vertex_t> vout;
-      const size_t l = vertices.size();
+      const size_t N = vertices.size();
 
-      vptr.reserve(vertices.size());
-      vout.reserve(vertices.size());
+      vptr.reserve(N);
+      vout.reserve(N);
+      vmap.resize(N);
 
-      for (size_t i = 0; i != l; ++i) {
+      for (size_t i = 0; i != N; ++i) {
         vptr.push_back(&vertices[i]);
       }
       std::sort(vptr.begin(), vptr.end(), VPtrSort<order_t>(order));
 
-      for (size_t i = 0; i != l; ++i) {
+      for (size_t i = 0; i != N; ++i) {
         vout.push_back(*vptr[i]);
-        vmap[vptr[i]] = &vout.back();
+        vmap[vertexToIndex_fast(vptr[i])] = &vout[i];
       }
-
-      vout.swap(vertices);
 
       for (size_t i = 0; i < faces.size(); ++i) {
         face_t &f = faces[i];
         for (size_t j = 0; j < f.vertices.size(); ++j) {
-          f.vertices[j] = vmap[f.vertices[j]];
+          f.vertices[j] = vmap[vertexToIndex_fast(f.vertices[j])];
         }
       }
       for (size_t i = 0; i < edges.size(); ++i) {
-        edges[i].v1 = vmap[edges[i].v1];
-        edges[i].v2 = vmap[edges[i].v2];
+        edges[i].v1 = vmap[vertexToIndex_fast(edges[i].v1)];
+        edges[i].v2 = vmap[vertexToIndex_fast(edges[i].v2)];
       }
+
+      vout.swap(vertices);
 
       return true;
     }
