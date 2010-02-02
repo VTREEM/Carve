@@ -42,7 +42,7 @@ test_aabb_LDADD=../lib/libintersect.la
 test_aabb_tri_SOURCES=test_aabb_tri.cpp
 test_aabb_tri_LDADD=../lib/libintersect.la
 
-test_triangulate_SOURCES=test_triangulate.cpp triangulator_glu.cpp
+test_triangulate_SOURCES=test_triangulate.cpp
 test_triangulate_LDADD=libcarve_ui.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
 
 test_hole_incorporate_SOURCES=test_hole_incorporate.cpp
@@ -54,7 +54,7 @@ custom_collector_LDADD=libcarve_fileformats.la libcarve_ui.la libcarve_misc.la .
 test_intersect_SOURCES=test_intersect.cpp
 test_intersect_LDADD=libcarve_fileformats.la libcarve_ui.la libcarve_misc.la ../lib/libintersect.la @GL_LIBS@ @GLUT_LIBS@
 
-triangulate_SOURCES=triangulate.cpp triangulator_glu.cpp
+triangulate_SOURCES=triangulate.cpp
 triangulate_LDADD=libcarve_fileformats.la ../lib/libintersect.la @GL_LIBS@
 
 cutgraph_SOURCES=cut.cpp

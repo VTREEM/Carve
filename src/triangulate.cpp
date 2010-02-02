@@ -22,6 +22,7 @@
 #include <carve/csg.hpp>
 #include <carve/tree.hpp>
 #include <carve/csg_triangulator.hpp>
+#include "triangulator_glu.hpp"
 
 #include "read_ply.hpp"
 #include "write_ply.hpp"
