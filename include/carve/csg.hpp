@@ -162,7 +162,6 @@ namespace carve {
 
       void init();
 
-      void dumpIntersections();
       void makeVertexIntersections();
 
       void groupIntersections();

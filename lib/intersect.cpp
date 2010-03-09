@@ -766,11 +766,6 @@ void carve::csg::CSG::generateIntersections(const poly_t *a, const poly_t *b) {
 #endif
   generateEdgeEdgeIntersections(a, b);
 
-#if defined(DEBUG)
-  std::cerr << std::endl << "after edge-edge" << std::endl;
-  dumpIntersections();
-  std::cerr << std::endl;
-#endif
 
 #if defined(DEBUG)
   std::cerr << "generateEdgeFaceIntersections" << std::endl;
@@ -778,11 +773,6 @@ void carve::csg::CSG::generateIntersections(const poly_t *a, const poly_t *b) {
   generateEdgeFaceIntersections(a, b);
   generateEdgeFaceIntersections(b, a);
 
-#if defined(DEBUG)
-  std::cerr << std::endl << "after edge-face" << std::endl;
-  dumpIntersections();
-  std::cerr << std::endl;
-#endif
  
 #if defined(DEBUG)
   std::cerr << "makeVertexIntersections" << std::endl;
