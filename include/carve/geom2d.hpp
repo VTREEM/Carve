@@ -25,7 +25,6 @@
 #include <carve/geom.hpp>
 
 #include <vector>
-#include <iostream>
 
 #include <math.h>
 

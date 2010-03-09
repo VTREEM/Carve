@@ -26,7 +26,7 @@
 #include <iomanip>
 
 template<typename MAP>
-void map_histogram(const MAP &map) {
+void map_histogram(std::ostream &out, const MAP &map) {
   std::vector<int> hist;
   for (typename MAP::const_iterator i = map.begin(); i != map.end(); ++i) {
     size_t n = (*i).second.size();
@@ -39,7 +39,7 @@ void map_histogram(const MAP &map) {
   std::string bar(50, '*');
   for (size_t i = 0; i < hist.size(); i++) {
     if (hist[i] > 0) {
-      std::cerr << std::setw(5) << i << " : " << std::setw(5) << hist[i] << " " << bar.substr(50 - hist[i] * 50 / total) << std::endl;
+      out << std::setw(5) << i << " : " << std::setw(5) << hist[i] << " " << bar.substr(50 - hist[i] * 50 / total) << std::endl;
     }
   }
 }

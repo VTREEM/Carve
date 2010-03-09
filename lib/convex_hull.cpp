@@ -87,8 +87,8 @@ namespace carve {
       result.push_back(ordered[0]);
   
       if (!grahamScan(points, max_v, ordered[0], ordered, 1, result)) {
-        std::cerr << "convex hull failed!" << std::endl;
         result.clear();
+        throw carve::exception("convex hull failed!");
       }
 
       return result;

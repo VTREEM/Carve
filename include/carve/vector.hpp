@@ -23,7 +23,6 @@
 #include <carve/geom.hpp>
 #include <carve/geom3d.hpp>
 
-#include <iostream>
 #include <sstream>
 
 #include <math.h>

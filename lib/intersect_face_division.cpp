@@ -118,24 +118,24 @@ namespace {
       }
     }
 
-    void print(const carve::csg::VertexIntersections *vi) const {
+    void print(std::ostream &out, const carve::csg::VertexIntersections *vi) const {
       for (graph_t::const_iterator i = graph.begin(), e =  graph.end(); i != e; ++i) {
-        std::cerr << (*i).first << (*i).first->v << '(' << projection((*i).first).x << ',' << projection((*i).first).y << ") :";
+        out << (*i).first << (*i).first->v << '(' << projection((*i).first).x << ',' << projection((*i).first).y << ") :";
         for (const GraphEdge *e = (*i).second.edges; e; e = e->next) {
-          std::cerr << ' ' << e->tgt << e->tgt->v << '(' << projection(e->tgt).x << ',' << projection(e->tgt).y << ')';
+          out << ' ' << e->tgt << e->tgt->v << '(' << projection(e->tgt).x << ',' << projection(e->tgt).y << ')';
         }
-        std::cerr << std::endl;
+        out << std::endl;
         if (vi) {
           carve::csg::VertexIntersections::const_iterator j = vi->find((*i).first);
           if (j != vi->end()) {
-            std::cerr << "   (int) ";
+            out << "   (int) ";
             for (carve::csg::IObjPairSet::const_iterator
                    k = (*j).second.begin(), ke = (*j).second.end(); k != ke; ++k) {
               if ((*k).first < (*k).second) {
-                std::cerr << (*k).first << ".." << (*k).second << "; ";
+                out << (*k).first << ".." << (*k).second << "; ";
               }
             }
-            std::cerr << std::endl;
+            out << std::endl;
           }
         }
       }

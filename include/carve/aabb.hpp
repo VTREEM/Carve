@@ -24,7 +24,6 @@
 #include <carve/geom.hpp>
 
 #include <vector>
-#include <iostream>
 
 namespace carve {
   namespace geom {

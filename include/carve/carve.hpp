@@ -40,6 +40,7 @@
 #include <vector>
 #include <list>
 #include <sstream>
+#include <iomanip>
 
 #include <carve/collection.hpp>
 #include <carve/util.hpp>

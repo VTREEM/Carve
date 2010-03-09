@@ -66,8 +66,6 @@ namespace carve {
 
 
 
-    std::ostream &operator<<(std::ostream &o, const carve::csg::IObj &a);
-
     static inline bool operator==(const carve::csg::IObj &a, const carve::csg::IObj &b) {
       return a.obtype == b.obtype && a.val == b.val;
     }
@@ -91,6 +89,17 @@ namespace carve {
     static inline bool operator>=(const carve::csg::IObj &a, const carve::csg::IObj &b) {
       return a.obtype > b.obtype || (a.obtype == b.obtype && a.val >= b.val);
     }
+
+    static inline std::ostream &operator<<(std::ostream &o, const carve::csg::IObj &a) {
+      switch (a.obtype) {
+        case carve::csg::IObj::OBTYPE_NONE:   o << "NONE{}"; break;
+        case carve::csg::IObj::OBTYPE_VERTEX: o << "VERT{" << a.vertex << "}"; break;
+        case carve::csg::IObj::OBTYPE_EDGE:   o << "EDGE{" << a.edge << "}"; break;
+        case carve::csg::IObj::OBTYPE_FACE:   o << "FACE{" << a.face << "}"; break;
+      }
+      return o;
+    }
+
   }
 }
 

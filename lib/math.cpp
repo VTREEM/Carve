@@ -320,7 +320,6 @@ namespace carve {
         -(m._11 * m._23 - m._13 * m._21) * m._32
         +(m._12 * m._23 - m._13 * m._22) * m._31;
 
-      std::cerr << c3 << "l^3 + " << c2 << "l^2 + " << c1 << "l + " << c0 << std::endl;
       cubic_roots(c3, c2, c1, c0, roots);
 
       for (size_t i = 0; i < roots.size(); i++) {

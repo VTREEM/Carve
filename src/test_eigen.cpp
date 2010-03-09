@@ -22,6 +22,8 @@
 #include <carve/matrix.hpp>
 #include <carve/math.hpp>
 
+#include <iostream>
+
 #define D(x) strtod(x, NULL)
 
 int main(int argc, char **argv) {

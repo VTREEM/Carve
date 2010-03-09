@@ -20,8 +20,6 @@
 #include <carve/carve.hpp>
 
 #include <vector>
-#include <iostream>
-#include <iomanip>
 
 namespace carve {
   namespace geom {
@@ -375,12 +373,6 @@ namespace carve {
       return out.str();
     }
 
-    template<unsigned ndim>
-    std::ostream &operator<<(std::ostream &o, const vector<ndim> &v) {
-      o << v.asStr();
-      return o;
-    }
-
     template<unsigned ndim, typename iter_t, typename adapt_t>
     void centroid(iter_t begin, iter_t end, adapt_t adapt, vector<ndim> &c) {
       c.setZero();
@@ -557,12 +549,6 @@ namespace carve {
       return v - p.N * (p.d + dot(p.N, v)) / dot(p.N, p.N);
     }
 
-    template<unsigned ndim>
-    std::ostream &operator<<(std::ostream &o, const plane<ndim> &p) {
-      o << p.N << ";" << p.d;
-      return o;
-    }
-
 
 
     // ========================================================================
@@ -588,12 +574,6 @@ namespace carve {
       return (point - sphere.C).normalized() * sphere.r;
     }
 
-    template<unsigned ndim>
-    std::ostream &operator<<(std::ostream &o, const sphere<ndim> &sphere) {
-      o << "{sphere " << sphere.C << ";" << sphere.r << "}";
-      return o;
-    }
-
 
     // ========================================================================
     template<unsigned ndim>
@@ -611,10 +591,30 @@ namespace carve {
     };
 
     template<unsigned ndim>
-    std::ostream &operator<<(std::ostream &o, const tri<ndim> &tri) {
+    inline std::ostream &operator<<(std::ostream &o, const vector<ndim> &v) {
+      o << v.asStr();
+      return o;
+    }
+
+    template<unsigned ndim>
+    inline std::ostream &operator<<(std::ostream &o, const carve::geom::plane<ndim> &p) {
+      o << p.N << ";" << p.d;
+      return o;
+    }
+    
+    template<unsigned ndim>
+    std::ostream &operator<<(std::ostream &o, const carve::geom::sphere<ndim> &sphere) {
+      o << "{sphere " << sphere.C << ";" << sphere.r << "}";
+      return o;
+    }
+    
+    template<unsigned ndim>
+    std::ostream &operator<<(std::ostream &o, const carve::geom::tri<ndim> &tri) {
       o << "{tri " << tri.v[0] << ";" << tri.v[1] << ";" << tri.v[2] << "}";
       return o;
     }
 
   }
 }
+
+

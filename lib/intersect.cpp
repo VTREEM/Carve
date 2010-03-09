@@ -181,103 +181,112 @@ namespace {
 }
 
 
-
-#if defined(DEBUG)
-std::ostream &carve::csg::operator<<(std::ostream &o, const carve::csg::IObj &a) {
-  switch (a.obtype) {
-  case carve::csg::IObj::OBTYPE_NONE:   o << "NONE{}"; break;
-  case carve::csg::IObj::OBTYPE_VERTEX: o << "VERT{" << a.vertex << "}"; break;
-  case carve::csg::IObj::OBTYPE_EDGE:   o << "EDGE{" << a.edge << "}"; break;
-  case carve::csg::IObj::OBTYPE_FACE:   o << "FACE{" << a.face << "}"; break;
-  }
-  return o;
-}
-
-
-
-struct dump_data {
-  const poly_t::vertex_t *i_pt;
-  carve::csg::IObj i_src;
-  carve::csg::IObj i_tgt;
-  dump_data(const poly_t::vertex_t *_i_pt,
-            carve::csg::IObj _i_src,
-            carve::csg::IObj _i_tgt) : i_pt(_i_pt), i_src(_i_src), i_tgt(_i_tgt) {
-  }
-};
-
-
-
-struct dump_sort {
-  bool operator()(const dump_data &a, const dump_data &b) const {
-    if (a.i_pt->v.x < b.i_pt->v.x) return true;
-    if (a.i_pt->v.x > b.i_pt->v.x) return false;
-    if (a.i_pt->v.y < b.i_pt->v.y) return true;
-    if (a.i_pt->v.y > b.i_pt->v.y) return false;
-    if (a.i_pt->v.z < b.i_pt->v.z) return true;
-    if (a.i_pt->v.z > b.i_pt->v.z) return false;
-    return false;
-  }
-};
-#endif
-
-
-
-void carve::csg::CSG::dumpIntersections() {
-#if defined(DEBUG)
-  std::vector<dump_data> temp;
-
-  for (Intersections::const_iterator
-         i = intersections.begin(),
-         ie = intersections.end();
-       i != ie;
-       ++i) {
-    const IObj &i_src = ((*i).first);
-
-    for (Intersections::mapped_type::const_iterator
-           j = (*i).second.begin(),
-           je = (*i).second.end();
-         j != je;
-         ++j) {
-      const IObj &i_tgt = ((*j).first);
-      const poly_t::vertex_t *i_pt = ((*j).second);
-      temp.push_back(dump_data(i_pt, i_src, i_tgt));
+  void dump_octree_stats(std::ostream &out, carve::csg::Octree::Node *node, size_t depth, std::string indent = "") {
+    if (node->is_leaf) {
+      out
+        << indent
+        << node << "." << depth << " "
+        << node->faces.size() << " faces "
+        << node->edges.size() << " edges "
+        << node->vertices.size() << " vertices"
+        << std::endl;
+    } else {
+      out
+        << indent
+        << node << "." << depth
+        << std::endl;
+      for (size_t i = 0; i < 8; ++i) {
+        dump_octree_stats(out, node->children[i], depth+1, indent + "  ");
+      }
     }
   }
 
-  std::sort(temp.begin(), temp.end(), dump_sort());
 
-  for (size_t i = 0; i < temp.size(); ++i) {
-    const IObj &i_src = temp[i].i_src;
-    const IObj &i_tgt = temp[i].i_tgt;
-    std::cerr << "INTERSECTION: " << temp[i].i_pt << " (" << temp[i].i_pt->v << ") is ";
-    std::cerr << i_src << ".." << i_tgt << std::endl;
-  }
 
-  std::vector<carve::geom3d::Vector> vertices;
-  for (Intersections::const_iterator
-         i = intersections.begin(),
-         ie = intersections.end();
-       i != ie;
-       ++i) {
-    const IObj &i_src = ((*i).first);
-
-    for (Intersections::mapped_type::const_iterator
-           j = (*i).second.begin(),
-           je = (*i).second.end();
-         j != je;
-         ++j) {
-      const poly_t::vertex_t *i_pt = ((*j).second);
-      vertices.push_back(i_pt->v);
+  struct dump_data {
+    const poly_t::vertex_t *i_pt;
+    carve::csg::IObj i_src;
+    carve::csg::IObj i_tgt;
+    dump_data(const poly_t::vertex_t *_i_pt,
+        carve::csg::IObj _i_src,
+        carve::csg::IObj _i_tgt) : i_pt(_i_pt), i_src(_i_src), i_tgt(_i_tgt) {
     }
-  }
-  carve::point::PointSet points(vertices);
+  };
 
-#if defined(DEBUG_WRITE_PLY_DATA)
-  void writePLY(std::string &out_file, const carve::point::PointSet *points, bool ascii);
-  std::string out("/tmp/intersection-points.ply");
-  writePLY(out, &points, true);
+
+
+  struct dump_sort {
+    bool operator()(const dump_data &a, const dump_data &b) const {
+      if (a.i_pt->v.x < b.i_pt->v.x) return true;
+      if (a.i_pt->v.x > b.i_pt->v.x) return false;
+      if (a.i_pt->v.y < b.i_pt->v.y) return true;
+      if (a.i_pt->v.y > b.i_pt->v.y) return false;
+      if (a.i_pt->v.z < b.i_pt->v.z) return true;
+      if (a.i_pt->v.z > b.i_pt->v.z) return false;
+      return false;
+    }
+  };
+
+
+
+  void dump_intersections(std::ostream &out, carve::csg::Intersections &csg_intersections) {
+    std::vector<dump_data> temp;
+
+    for (carve::csg::Intersections::const_iterator
+        i = csg_intersections.begin(),
+        ie = csg_intersections.end();
+        i != ie;
+        ++i) {
+      const carve::csg::IObj &i_src = ((*i).first);
+
+      for (carve::csg::Intersections::mapped_type::const_iterator
+          j = (*i).second.begin(),
+          je = (*i).second.end();
+          j != je;
+          ++j) {
+        const carve::csg::IObj &i_tgt = ((*j).first);
+        const poly_t::vertex_t *i_pt = ((*j).second);
+        temp.push_back(dump_data(i_pt, i_src, i_tgt));
+      }
+    }
+
+    std::sort(temp.begin(), temp.end(), dump_sort());
+
+    for (size_t i = 0; i < temp.size(); ++i) {
+      const carve::csg::IObj &i_src = temp[i].i_src;
+      const carve::csg::IObj &i_tgt = temp[i].i_tgt;
+      out
+        << "INTERSECTION: " << temp[i].i_pt << " (" << temp[i].i_pt->v << ") "
+        << "is " << i_src << ".." << i_tgt << std::endl;
+    }
+
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+    std::vector<carve::geom3d::Vector> vertices;
+
+    for (carve::csg::Intersections::const_iterator
+        i = csg_intersections.begin(),
+        ie = csg_intersections.end();
+        i != ie;
+        ++i) {
+      const carve::csg::IObj &i_src = ((*i).first);
+
+      for (carve::csg::Intersections::mapped_type::const_iterator
+          j = (*i).second.begin(),
+          je = (*i).second.end();
+          j != je;
+          ++j) {
+        const poly_t::vertex_t *i_pt = ((*j).second);
+        vertices.push_back(i_pt->v);
+      }
+    }
+
+    carve::point::PointSet points(vertices);
+
+    void writePLY(std::string &out_file, const carve::point::PointSet *points, bool ascii);
+    std::string out("/tmp/intersection-points.ply");
+    writePLY(out, &points, true);
 #endif
-#endif
+  }
 }
 
 
@@ -745,21 +754,6 @@ void carve::csg::CSG::generateEdgeFaceIntersections(const poly_t *a, const poly_
     }
   }
 }
-
-static void dump_octree_stats(carve::csg::Octree::Node *node, size_t depth, std::string indent = "") {
-  if (node->is_leaf) {
-    std::cerr << indent << node << "." << depth << " " << node->faces.size() << " faces " << node->edges.size() << " edges " << node->vertices.size() << " vertices" << std::endl;
-  } else {
-    std::cerr << indent << node << "." << depth << std::endl;
-    for (size_t i = 0; i < 8; ++i) {
-      dump_octree_stats(node->children[i], depth+1, indent + "  ");
-    }
-  }
-}
-
-struct hash_node {
-  size_t operator()(const carve::csg::Octree::Node * const &node) const { return size_t(node); }
-};
 
 void carve::csg::CSG::determinePotentiallyInteractingOctreeNodes(const poly_t *a, const poly_t *b) {
 }

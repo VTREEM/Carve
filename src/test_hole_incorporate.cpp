@@ -39,6 +39,8 @@
 #include <GL/glut.h>
 #endif
 
+#include <iostream>
+
 #if defined(__GNUC__)
 #define __stdcall
 #endif

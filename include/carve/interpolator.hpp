@@ -86,7 +86,6 @@ namespace carve {
       for (size_t i = 0; i < SZ; ++i) {
         test = test + result[i] * s[i];
       }
-      // std::cerr << "test = " << test << std::endl;
 
       return result;
     }

@@ -22,6 +22,8 @@
 #include <vector>
 #include <iomanip>
 
+#include <iostream>
+
 #include "stringfuncs.hpp"
 
 namespace opt {

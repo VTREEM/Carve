@@ -36,6 +36,8 @@
 #include <GL/glut.h>
 #endif
 
+#include <iostream>
+
 struct TestScene : public Scene {
   GLuint d_list;
 
