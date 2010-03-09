@@ -22,6 +22,7 @@
 #include <carve/math.hpp>
 #include <carve/matrix.hpp>
 
+#include <iostream>
 #include <limits>
 
 #include <stdio.h>

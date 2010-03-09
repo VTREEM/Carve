@@ -20,6 +20,7 @@
 #endif
 
 #include <carve/csg.hpp>
+#include <iostream>
 #include "intersect_debug.hpp"
 
 typedef carve::poly::Polyhedron poly_t;
