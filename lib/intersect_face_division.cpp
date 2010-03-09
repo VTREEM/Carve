@@ -30,7 +30,6 @@
 #include <iostream>
 
 #include <algorithm>
-#include <assert.h>
 
 #include "csg_detail.hpp"
 #include "csg_data.hpp"
@@ -103,7 +102,7 @@ namespace {
 
     const carve::geom2d::P2 &projection(const poly_t::vertex_t *v) const {
       graph_t::const_iterator i = graph.find(v);
-      ASSERT(i != graph.end());
+      CARVE_ASSERT(i != graph.end());
       return (*i).second.proj;
     }
 
@@ -252,7 +251,7 @@ namespace {
           }
         }
 
-        ASSERT(out != NULL);
+        CARVE_ASSERT(out != NULL);
 
         edge->loop_next = out;
 
@@ -512,7 +511,7 @@ namespace {
             // common. Degenerate hole?
 
             // XXX: come up with a test case for this.
-            ASSERT(!!!"implement me");
+            CARVE_FAIL("implement me");
           }
         }
 
@@ -545,7 +544,7 @@ namespace {
       }
 #endif
 
-      // ASSERT(containing_faces[i].size() >= 1);
+      // CARVE_ASSERT(containing_faces[i].size() >= 1);
     }
   }
 

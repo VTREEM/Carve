@@ -39,7 +39,7 @@ namespace carve {
 
           size_t n_tris = 0;
           for (size_t f = 0; f < faces.size(); ++f) {
-            ASSERT(faces[f]->vertices.size() >= 3);
+            CARVE_ASSERT(faces[f]->vertices.size() >= 3);
             n_tris += faces[f]->vertices.size() - 2;
           }
 

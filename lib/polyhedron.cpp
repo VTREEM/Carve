@@ -684,7 +684,7 @@ namespace carve {
       std::cerr << "could not find test points!!!" << std::endl;
       return true;
 
-      ASSERT(!!!"could not find test points");
+      CARVE_FAIL("could not find test points");
 
     done:;
       for (std::map<int, std::set<int> >::iterator i = embedding.begin(); i != embedding.end(); ++i) {
@@ -722,7 +722,7 @@ namespace carve {
           for (std::set<int>::const_iterator j = parents.begin(); j != parents.end(); ++j) {
             n += (*i).second.erase((*j));
           }
-          ASSERT(n != 0);
+          CARVE_ASSERT(n != 0);
         }
         parents.swap(new_parents);
       }
@@ -927,8 +927,8 @@ namespace carve {
         v.clear();
     
         while (vertexCount--) {
-          ASSERT(*iter >= 0);
-          ASSERT((unsigned)*iter < vertices.size());
+          CARVE_ASSERT(*iter >= 0);
+          CARVE_ASSERT((unsigned)*iter < vertices.size());
           v.push_back(&vertices[*iter++]);
         }
         faces.push_back(face_t(v));

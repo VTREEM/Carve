@@ -163,7 +163,7 @@ namespace carve {
         for (size_t i = 0; i < n_verts; i++) {
           const vertex_t *v1 = vertices[i];
           const vertex_t *v2 = vertices[(i+1) % n_verts];
-          ASSERT((edges[i]->v1 == v1 && edges[i]->v2 == v2) || (edges[i]->v1 == v2 && edges[i]->v2 == v1));
+          CARVE_ASSERT((edges[i]->v1 == v1 && edges[i]->v2 == v2) || (edges[i]->v1 == v2 && edges[i]->v2 == v1));
         }
       }
     }

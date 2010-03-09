@@ -263,7 +263,7 @@ namespace carve {
           if (a->v[2] == b->v[0]) { ai = 2; bi = 2; return; }
           if (a->v[2] == b->v[1]) { ai = 2; bi = 0; return; }
           if (a->v[2] == b->v[2]) { ai = 2; bi = 1; return; }
-          ASSERT(0 && "should not be reached");
+          CARVE_FAIL("should not be reached");
         }
 
         void flip(vert_edge_t &old_edge,
@@ -378,7 +378,7 @@ namespace carve {
           std::cerr << "old_e: " << old_e.first << "," << old_e.second << " -> new_e: " << new_e.first << "," << new_e.second << std::endl;
 #endif
 
-          ASSERT(storage.find(old_e) != storage.end());
+          CARVE_ASSERT(storage.find(old_e) != storage.end());
           storage.erase(old_e);
           storage[new_e] = tp;
 
@@ -392,7 +392,7 @@ namespace carve {
           }
 
           if (tp2 = get(perim[1])) {
-            ASSERT(tp2->a == tp->b || tp2->b == tp->b);
+            CARVE_ASSERT(tp2->a == tp->b || tp2->b == tp->b);
             if (tp2->a == tp->b) { tp2->a = tp->a; } else { tp2->b = tp->a; }
             updateEdge(tp2, project, poly, edges, n);
           }
@@ -402,7 +402,7 @@ namespace carve {
           }
 
           if (tp2 = get(perim[3])) {
-            ASSERT(tp2->a == tp->a || tp2->b == tp->a);
+            CARVE_ASSERT(tp2->a == tp->a || tp2->b == tp->a);
             if (tp2->a == tp->a) { tp2->a = tp->b; } else { tp2->b = tp->b; }
             updateEdge(tp2, project, poly, edges, n);
           }
@@ -444,7 +444,7 @@ namespace carve {
             }
           }
 
-          ASSERT(fwd == rev);
+          CARVE_ASSERT(fwd == rev);
 
           return fwd;
         }
@@ -598,7 +598,7 @@ namespace carve {
 
         intersection:;
         }
-        ASSERT(!!!"didn't manage to link up hole!");
+        CARVE_FAIL("didn't manage to link up hole!");
 
       merged:;
       }

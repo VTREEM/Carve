@@ -235,7 +235,7 @@ namespace carve {
         }
         carve::geom2d::P2 pv;
         if (!carve::geom2d::pickContainedPoint(proj, pv)) {
-          ASSERT(!!!"Failed");
+          CARVE_FAIL("Failed");
         }
         carve::geom3d::Vector v = carve::poly::face::unproject(f, pv);
 
@@ -251,7 +251,8 @@ namespace carve {
 #endif
           fc = d < 0 ? FACE_IN : FACE_OUT;
         }
-	default: ASSERT("unhandled switch case -- should not happen");
+	default:
+          CARVE_FAIL("unhandled switch case -- should not happen");
         }
 #if defined(DEBUG)
         std::cerr << "CLASS: " << (fc == FACE_IN ? "FACE_IN" : "FACE_OUT" ) << std::endl;

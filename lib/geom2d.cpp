@@ -25,8 +25,6 @@
 #include <algorithm>
 #include <iostream>
 
-#include <assert.h>
-
 namespace carve {
   namespace geom2d {
 

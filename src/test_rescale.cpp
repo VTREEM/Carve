@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     temp = fwd(in);
     out = rev(temp);
     std::cout << in << " -> " << temp << " -> " << out << std::endl;
-    ASSERT(fabs(temp.x) < 1.0 && fabs(temp.y) < 1.0 && fabs(temp.z) < 1.0);
-    ASSERT(out.x == in.x && out.y == in.y && out.z == in.z);
+    CARVE_ASSERT(fabs(temp.x) < 1.0 && fabs(temp.y) < 1.0 && fabs(temp.z) < 1.0);
+    CARVE_ASSERT(out.x == in.x && out.y == in.y && out.z == in.z);
   }
 }

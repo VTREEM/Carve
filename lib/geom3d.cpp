@@ -24,8 +24,6 @@
 
 #include <algorithm>
 
-#include <assert.h>
-
 namespace carve {
   namespace geom3d {
 

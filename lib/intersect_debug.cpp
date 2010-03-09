@@ -26,7 +26,6 @@
 #include <iostream>
 
 #include <algorithm>
-#include <assert.h>
 
 #include "intersect_debug.hpp"
 

@@ -112,7 +112,7 @@ namespace {
 
     void checkheap() {
 #ifdef __GNUC__
-      ASSERT(std::__is_heap(queue.begin(), queue.end(), vertex_info_ordering()));
+      CARVE_ASSERT(std::__is_heap(queue.begin(), queue.end(), vertex_info_ordering()));
 #endif
     }
 
@@ -146,15 +146,15 @@ namespace {
 #if defined(DEBUG)
       checkheap();
 #endif
-      ASSERT(std::find(queue.begin(), queue.end(), v) != queue.end());
+      CARVE_ASSERT(std::find(queue.begin(), queue.end(), v) != queue.end());
       double score = v->score;
       if (v != queue[0]) {
         v->score = queue[0]->score + 1;
         std::make_heap(queue.begin(), queue.end(), vertex_info_ordering());
       }
-      ASSERT(v == queue[0]);
+      CARVE_ASSERT(v == queue[0]);
       std::pop_heap(queue.begin(), queue.end(), vertex_info_ordering());
-      ASSERT(queue.back() == v);
+      CARVE_ASSERT(queue.back() == v);
       queue.pop_back();
       v->score = score;
     }
@@ -163,7 +163,7 @@ namespace {
 #if defined(DEBUG)
       checkheap();
 #endif
-      ASSERT(std::find(queue.begin(), queue.end(), v) != queue.end());
+      CARVE_ASSERT(std::find(queue.begin(), queue.end(), v) != queue.end());
       if (v->score != score) {
         v->score = score;
         std::make_heap(queue.begin(), queue.end(), vertex_info_ordering());
@@ -832,7 +832,7 @@ carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<ca
 
 intersection:;
     }
-    ASSERT(!!!"didn't manage to link up hole!");
+    CARVE_FAIL("didn't manage to link up hole!");
 
 merged:;
   }

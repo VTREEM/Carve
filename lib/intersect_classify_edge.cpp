@@ -31,7 +31,6 @@
 #include <iostream>
 
 #include <algorithm>
-#include <assert.h>
 
 #include "csg_detail.hpp"
 
@@ -123,9 +122,9 @@ namespace carve {
                                 const carve::poly::Polyhedron::vertex_t *b,
                                 carve::csg::detail::VVSMap &shared_edge_graph) {
         carve::csg::detail::VVSMap::iterator i = shared_edge_graph.find(a);
-        assert (i != shared_edge_graph.end());
+        CARVE_ASSERT(i != shared_edge_graph.end());
         size_t n = (*i).second.erase(b);
-        assert (n == 1);
+        CARVE_ASSERT(n == 1);
         if ((*i).second.size() == 0) shared_edge_graph.erase(i);
       }
 
@@ -183,7 +182,7 @@ namespace carve {
           if (branch_points.find(curr.second) != branch_points.end()) break;
           carve::csg::detail::VVSMap::const_iterator o = shared_edge_graph.find(curr.second);
           if (o == shared_edge_graph.end()) break;
-          assert((*o).second.size() == 1);
+          CARVE_ASSERT((*o).second.size() == 1);
           curr.first = curr.second;
           curr.second = *((*o).second.begin());
           // test here that the set of incident groups hasn't changed.
@@ -390,11 +389,11 @@ namespace carve {
 
         carve::csg::detail::LoopEdges::const_iterator ae_f = a_edge_map.find(edge);
         carve::csg::detail::LoopEdges::const_iterator ae_r = a_edge_map.find(flip(edge));
-        assert(ae_f != a_edge_map.end() || ae_r != a_edge_map.end());
+        CARVE_ASSERT(ae_f != a_edge_map.end() || ae_r != a_edge_map.end());
 
         carve::csg::detail::LoopEdges::const_iterator be_f = b_edge_map.find(edge);
         carve::csg::detail::LoopEdges::const_iterator be_r = b_edge_map.find(flip(edge));
-        assert(be_f != b_edge_map.end() || be_r != b_edge_map.end());
+        CARVE_ASSERT(be_f != b_edge_map.end() || be_r != b_edge_map.end());
 
         if (ae_f != a_edge_map.end() && !processForwardEdgeSurfaces(a_edge_surfaces, (*ae_f).second, edge_vector, base_vector)) return;
         if (ae_r != a_edge_map.end() && !processReverseEdgeSurfaces(a_edge_surfaces, (*ae_r).second, edge_vector, base_vector)) return;

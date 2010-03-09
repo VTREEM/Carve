@@ -261,7 +261,7 @@ struct TestScene : public Scene {
     } else {
       t = strchr(l, k);
       if (t != NULL) {
-        ASSERT(t >= l);
+        CARVE_ASSERT(t >= l);
         unsigned layer = t - l;
         if (layer < draw_flags.size()) {
           draw_flags[layer] = !draw_flags[layer];

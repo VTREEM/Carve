@@ -27,7 +27,6 @@
 #include <iostream>
 
 #include <algorithm>
-#include <assert.h>
 
 #include "intersect_common.hpp"
 #include "intersect_classify_common.hpp"

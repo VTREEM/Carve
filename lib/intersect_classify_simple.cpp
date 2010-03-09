@@ -26,7 +26,6 @@
 #include <iostream>
 
 #include <algorithm>
-#include <assert.h>
 
 #include "intersect_common.hpp"
 #include "intersect_classify_common.hpp"
@@ -215,9 +214,7 @@ static FaceClass faceClassificationBasedOnEdges(const V2Set &edges,
   classifyEdges(edges, poly, n_in, n_on, n_out);
 
   std::cerr << ">>> classification: n_in: " << n_in << " n_on: " << n_on << " n_out: " << n_out << std::endl;
-  ASSERT(n_in  == (int)edges.size() ||
-         n_out == (int)edges.size() ||
-         n_on  == (int)edges.size());
+  CARVE_ASSERT(n_in  == (int)edges.size() || n_out == (int)edges.size() || n_on  == (int)edges.size());
 
   if (n_in) return FACE_IN;
   if (n_out) return FACE_OUT;
@@ -244,7 +241,7 @@ static void classifySimpleOnFaces(FaceLoopList &a_face_loops,
              u = (*t).second.begin(), ue = (*t).second.end(); u != ue; ++u) {
         FaceLoop *j(*u);
         int k = is_same(i->vertices, j->vertices);
-        assert (k != -1);
+        CARVE_ASSERT(k != -1);
         if (k == +1) {
           collector.collect(i->orig_face,
                             i->vertices,
@@ -269,7 +266,7 @@ static void classifySimpleOnFaces(FaceLoopList &a_face_loops,
              u = (*t).second.begin(), ue = (*t).second.end(); u != ue; ++u) {
         FaceLoop *j(*u);
         int k = is_same(i->vertices, j->vertices);
-        assert (k != +1);
+        CARVE_ASSERT(k != +1);
         if (k == -1) {
           collector.collect(i->orig_face,
                             i->vertices,
@@ -546,7 +543,7 @@ void classifyEasyFaces(FaceLoopList &face_loops,
           HOOK(drawPoint(f_loop[test], 1, 1, 1, 1, 8.0););
         }
 #endif
-        ASSERT(pc == POINT_OUT || pc == POINT_IN);
+        CARVE_ASSERT(pc == POINT_OUT || pc == POINT_IN);
       }
 
       for (j = 0; j < f_loop.size(); j++) {
@@ -554,8 +551,7 @@ void classifyEasyFaces(FaceLoopList &face_loops,
         if (pc2.cls[other_poly_num] == POINT_UNK) {
           pc2.cls[other_poly_num] = pc;
         } else {
-          ASSERT(pc2.cls[other_poly_num] == POINT_ON ||
-                 pc2.cls[other_poly_num] == pc);
+          CARVE_ASSERT(pc2.cls[other_poly_num] == POINT_ON || pc2.cls[other_poly_num] == pc);
         }
       }
 
@@ -670,7 +666,7 @@ void carve::csg::CSG::classifyFaceGroupsSimple(const V2Set &shared_edges,
     }
     P2 pv;
     if (!pickContainedPoint(proj, pv)) {
-      ASSERT(!!!"Failed");
+      CARVE_FAIL("pickContainedPoint failed");
     }
     Vector v = (f->*(f->unproject))(pv);
 
@@ -693,10 +689,10 @@ void carve::csg::CSG::classifyFaceGroupsSimple(const V2Set &shared_edges,
       break;
     }
     default:
-      ASSERT("should not happen");
+      CARVE_FAIL("should not happen");
     }
 
-    // ASSERT(pc == POINT_IN || pc == POINT_OUT);
+    // CARVE_ASSERT(pc == POINT_IN || pc == POINT_OUT);
 #if defined(DEBUG)
     {
       float r,g,b,a;
@@ -726,7 +722,7 @@ void carve::csg::CSG::classifyFaceGroupsSimple(const V2Set &shared_edges,
     }
     P2 pv;
     if (!pickContainedPoint(proj, pv)) {
-      ASSERT(!!!"Failed");
+      CARVE_FAIL("pickContainedPoint failed");
     }
     Vector v = (f->*(f->unproject))(pv);
 
@@ -749,10 +745,10 @@ void carve::csg::CSG::classifyFaceGroupsSimple(const V2Set &shared_edges,
       break;
     }
     default:
-      ASSERT("should not happen");
+      CARVE_FAIL("should not happen");
     }
 
-    // ASSERT(pc == POINT_IN || pc == POINT_OUT);
+    // CARVE_ASSERT(pc == POINT_IN || pc == POINT_OUT);
 #if defined(DEBUG)
     {
       float r,g,b,a;

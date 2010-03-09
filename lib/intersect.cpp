@@ -27,7 +27,6 @@
 #include <iostream>
 
 #include <algorithm>
-#include <assert.h>
 
 #include "csg_detail.hpp"
 #include "csg_data.hpp"
@@ -497,7 +496,7 @@ void carve::csg::CSG::groupIntersections() {
       const poly_t::vertex_t *o = (*t);
       open.erase(t);
       i = graph.find(o);
-      ASSERT(i != graph.end());
+      CARVE_ASSERT(i != graph.end());
       visited.insert(o);
       for (detail::VVSMap::mapped_type::const_iterator
              j = (*i).second.begin(),
@@ -1196,7 +1195,7 @@ void returnSharedEdges(carve::csg::V2Set &shared_edges,
        it != shared_edges.end(); it++) {
     remap_type::iterator first_it = remap.find(((*it).first)->v);
     remap_type::iterator second_it = remap.find(((*it).second)->v);
-    assert(first_it != remap.end() && second_it != remap.end());
+    CARVE_ASSERT(first_it != remap.end() && second_it != remap.end());
     shared_edge_ptr->insert(std::make_pair(first_it->second, second_it->second));
   }
 }
