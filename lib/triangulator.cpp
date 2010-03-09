@@ -42,7 +42,7 @@ namespace {
 
     bool operator()(const std::pair<size_t, size_t> &a,
         const std::pair<size_t, size_t> &b) const {
-      return poly[a.first][a.second].v[axis] < poly[b.first][b.second].v[axis];
+      return carve::triangulate::detail::axisOrdering(poly[a.first][a.second], poly[b.first][b.second], axis);
     }
   };
 
@@ -50,15 +50,22 @@ namespace {
     const std::vector<std::vector<carve::geom2d::P2> > &poly;
     const std::vector<std::pair<size_t, size_t> > &loop;
     const carve::geom2d::P2 p;
+    int axis;
 
     public:
+
     heap_ordering_2d(const std::vector<std::vector<carve::geom2d::P2> > &_poly,
         const std::vector<std::pair<size_t, size_t> > &_loop,
-        const carve::geom2d::P2 _p) : poly(_poly), loop(_loop), p(_p) {
+        const carve::geom2d::P2 _p,
+        int _axis) : poly(_poly), loop(_loop), p(_p), axis(_axis) {
     }
 
     bool operator()(size_t a, size_t b) const {
-      return carve::geom::distance2(p, poly[loop[a].first][loop[a].second]) > carve::geom::distance2(p, poly[loop[b].first][loop[b].second]);
+      double da = carve::geom::distance2(p, poly[loop[a].first][loop[a].second]);
+      double db = carve::geom::distance2(p, poly[loop[b].first][loop[b].second]);
+      if (da > db) return true;
+      if (da < db) return false;
+      return carve::triangulate::detail::axisOrdering(poly[loop[a].first][loop[a].second], poly[loop[b].first][loop[b].second], axis);
     }
   };
 
@@ -749,7 +756,7 @@ carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<ca
     size_t best, curr;
     best = 0;
     for (curr = 1; curr != hole.size(); ++curr) {
-      if (hole[curr].v[axis] < hole[best].v[axis]) {
+      if (detail::axisOrdering(hole[curr], hole[best], axis)) {
         best = curr;
       }
     }
@@ -770,7 +777,7 @@ carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<ca
     f_loop_heap.clear();
     // we order polygon loop vertices that may be able to be connected
     // to the hole vertex by their distance to the hole vertex
-    heap_ordering_2d _heap_ordering(poly, current_f_loop, hole_min);
+    heap_ordering_2d _heap_ordering(poly, current_f_loop, hole_min, axis);
 
     for (size_t j = 0; j < current_f_loop.size(); ++j) {
       // it is guaranteed that there exists a polygon vertex with

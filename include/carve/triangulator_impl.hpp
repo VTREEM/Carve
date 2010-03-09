@@ -23,6 +23,12 @@ namespace carve {
   namespace triangulate {
     namespace detail {
 
+      static inline bool axisOrdering(const carve::geom2d::P2 &a,
+                                      const carve::geom2d::P2 &b,
+                                      int axis) {
+          return a.v[axis] < b.v[axis] || (a.v[axis] == b.v[axis] && a.v[1-axis] < b.v[1-axis]);
+      }
+
       /**
        * \class order_h_loops
        * \brief Provides an ordering of hole loops based upon a single
@@ -48,7 +54,7 @@ namespace carve {
 
         bool operator()(const std::pair<const std::vector<vert_t> *, typename std::vector<vert_t>::const_iterator> &a,
                         const std::pair<const std::vector<vert_t> *, typename std::vector<vert_t>::const_iterator> &b) const {
-          return project(*(a.second)).v[axis] < project(*(b.second)).v[axis];
+          return axisOrdering(project(*(a.second)), project(*(b.second)));
         }
       };
 
@@ -68,6 +74,7 @@ namespace carve {
         const project_t &project;
         const std::vector<vert_t> &loop;
         const carve::geom2d::P2 p;
+        int axis;
 
       public:
         /** 
@@ -78,10 +85,24 @@ namespace carve {
          * @param _vert The vertex from which distance is measured.
          * 
          */
-        heap_ordering(const project_t &_project, const std::vector<vert_t> &_loop, vert_t _vert) : project(_project), loop(_loop), p(_project(_vert)) { }
+        heap_ordering(const project_t &_project,
+                      const std::vector<vert_t> &_loop,
+                      vert_t _vert,
+                      int _axis) :
+            project(_project),
+            loop(_loop),
+            p(_project(_vert)),
+            axis(_axis) {
+        }
 
         bool operator()(size_t a, size_t b) const {
-          return carve::geom::distance2(p, project(loop[a])) > carve::geom::distance2(p, project(loop[b]));
+          carve::geom2d::P2 pa = project(loop[a]);
+          carve::geom2d::P2 pb = project(loop[b]);
+          double da = carve::geom::distance2(p, pa);
+          double db = carve::geom::distance2(p, pb);
+          if (da > db) return true;
+          if (da < db) return false;
+          return axisOrdering(pa, pb, axis);
         }
       };
 
@@ -523,17 +544,7 @@ namespace carve {
       // for each hole, find the minimum vertex in the chosen axis.
       for (hole_iter i = h_loops.begin(); i != h_loops.end(); ++i) {
         const hole_t &hole = *i;
-        carve::geom2d::P2 best, curr;
-        vert_iter best_i, curr_i;
-        best_i = curr_i = hole.begin();
-        best = project(*best_i);
-        for (++curr_i; curr_i != hole.end(); ++curr_i) {
-          curr = project(*curr_i);
-          if (curr.v[axis] < best.v[axis]) {
-            best = curr;
-            best_i = curr_i;
-          }
-        }
+        vert_iter best_i = std::min_element(hole.begin(), hole.end(), detail::order_h_loops<project_t, vert_t>(project, axis));
         h_loop_min_vertex.push_back(std::make_pair(&hole, best_i));
       }
 
