@@ -93,12 +93,12 @@ void makeEdgePlanes(const carve::poly::Polyhedron *poly, EPMap &edge_planes) {
   for (size_t i = 0; i < poly->edges.size(); ++i) {
     EdgePlane &ep(edge_planes[&poly->edges[i]]);
 
-    ASSERT(poly->edges[i].faces.size() == 2);
+    CARVE_ASSERT(poly->edges[i].faces.size() == 2);
 
     const carve::poly::Face *f1 = poly->edges[i].faces[0];
     const carve::poly::Face *f2 = poly->edges[i].faces[1];
 
-    ASSERT(f1 && f2);
+    CARVE_ASSERT(f1 && f2);
 
     ep.base = poly->edges[i].v2->v - poly->edges[i].v1->v;
     ep.base.normalize();

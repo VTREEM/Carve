@@ -701,7 +701,7 @@ namespace carve {
       if (!warn) {
         for (size_t i = 0; i < result.size(); ++i) {
           tri_idx &t = result[i];
-          ASSERT (carve::geom2d::signedArea(project(poly[t.a]), project(poly[t.b]), project(poly[t.c])) <= 0.0);
+          CARVE_ASSERT (carve::geom2d::signedArea(project(poly[t.a]), project(poly[t.b]), project(poly[t.c])) <= 0.0);
         } 
       }
 #endif

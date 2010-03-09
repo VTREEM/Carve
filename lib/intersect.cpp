@@ -939,8 +939,8 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
                   << carve::geom::distance(face_a->plane_eqn, (*i)->v) << ","
                   << carve::geom::distance(face_b->plane_eqn, (*i)->v) << ")"
                   << std::endl;
-        //ASSERT(carve::geom3d::distance(face_a->plane_eqn, *(*i)) < EPSILON);
-        //ASSERT(carve::geom3d::distance(face_b->plane_eqn, *(*i)) < EPSILON);
+        //CARVE_ASSERT(carve::geom3d::distance(face_a->plane_eqn, *(*i)) < EPSILON);
+        //CARVE_ASSERT(carve::geom3d::distance(face_b->plane_eqn, *(*i)) < EPSILON);
       }
 #endif
 
