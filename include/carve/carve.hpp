@@ -140,4 +140,10 @@ namespace carve {
 }
 
 
-#define ASSERT(x) do { if (!(x)) throw carve::exception() << __FILE__ << ":" << __LINE__ << "  " << #x; } while(0)
+#if !defined(CARVE_NODEBUG)
+#  define CARVE_ASSERT(x) do { if (!(x)) throw carve::exception() << __FILE__ << ":" << __LINE__ << "  " << #x; } while(0)
+#else
+#  define CARVE_ASSERT(X)
+#endif
+
+#define CARVE_FAIL(x) do { throw carve::exception() << __FILE__ << ":" << __LINE__ << "  " << #x; } while(0)
