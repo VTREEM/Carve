@@ -179,7 +179,7 @@ namespace {
 
 }
 
-
+namespace {
   void dump_octree_stats(std::ostream &out, carve::csg::Octree::Node *node, size_t depth, std::string indent = "") {
     if (node->is_leaf) {
       out
