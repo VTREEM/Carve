@@ -22,10 +22,6 @@
 #  include <carve/config.h>
 #endif
 
-#if defined(_DEBUG) && !defined(DEBUG)
-#define DEBUG
-#endif
-
 #if defined(WIN32)
 #  include <carve/win32.h>
 #elif defined(__GNUC__)
