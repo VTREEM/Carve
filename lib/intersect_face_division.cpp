@@ -285,10 +285,10 @@ namespace {
       std::cerr << "===============================================" << std::endl;
       graph.print(&vi);
 #endif
-      ASSERT(edge == start);
 #if defined(DEBUG)
       std::cerr << "signed area of loop: " << carve::geom2d::signedArea(projected) << std::endl;
 #endif
+      CARVE_ASSERT(edge == start);
       if (carve::geom2d::signedArea(projected) < 0) {
 #if defined(DEBUG)
         std::cerr << "output face loop size: " << loop.size() << " : ";
