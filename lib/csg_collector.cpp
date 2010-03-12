@@ -115,6 +115,7 @@ namespace carve {
           }
           
           FaceClass fc = FACE_UNCLASSIFIED;
+          unsigned fc_bits = 0;
 
           for (std::list<ClassificationInfo>::const_iterator i = grp->classification.begin(), e = grp->classification.end(); i != e; ++i) {
             if ((*i).intersected_manifold < 0) {
@@ -125,17 +126,25 @@ namespace carve {
 
             if ((*i).intersectedManifoldIsClosed()) {
               if ((*i).classification == FACE_UNCLASSIFIED) continue;
-              if (fc == FACE_UNCLASSIFIED) {
-                fc = (*i).classification;
-              } else if (fc != (*i).classification) {
-                std::cerr << "WARNING! group " << grp << " is classified inconsistently!" << std::endl;
-                fc = FACE_UNCLASSIFIED;
-                goto out;
-              }
+              fc_bits |= class_to_class_bit((*i).classification);
             }
           }
+
+          fc = class_bit_to_class(fc_bits);
+
+          // handle the complex cases where a group is classified differently with respect to two or more closed manifolds.
           if (fc == FACE_UNCLASSIFIED) {
-            std::cerr << "WARNING! group " << grp << " is unclassified!" << std::endl;
+            unsigned inout_bits = fc_bits & FACE_NOT_ON_BIT;
+            unsigned on_bits = fc_bits & FACE_ON_BIT;
+
+            // both in and out. indicates an invalid manifold embedding.
+            if (inout_bits == (FACE_IN_BIT | FACE_OUT_BIT)) goto out;
+
+            // on, both orientations. could be caused by two manifolds touching at a face.
+            if (on_bits == (FACE_ON_ORIENT_IN_BIT | FACE_ON_ORIENT_OUT_BIT)) goto out;
+
+            // in or out, but also on (with orientation). the on classification takes precedence.
+            fc = class_bit_to_class(on_bits);
           }
 
         out:
