@@ -120,7 +120,7 @@ namespace carve {
           for (std::list<ClassificationInfo>::const_iterator i = grp->classification.begin(), e = grp->classification.end(); i != e; ++i) {
             if ((*i).intersected_manifold < 0) {
               // classifier only returns global info
-              fc = (*i).classification;
+              fc_bits = class_to_class_bit((*i).classification);
               break;
             }
 
