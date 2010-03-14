@@ -113,7 +113,7 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
       intersection_graph.addPolyline(closed, connected.begin(), connected.end());
     }
 
-#if defined(DEBUG_WRITE_PLY_DATA)
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
     std::string out("/tmp/intersection.ply");
     ::writePLY(out, &intersection_graph, true);
 #endif
@@ -211,7 +211,7 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
     }
     tag_num++;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
     {
       carve::poly::Polyhedron *poly = groupToPolyhedron(group);
       char buf[128];

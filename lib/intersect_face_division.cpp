@@ -762,6 +762,10 @@ namespace {
 
 }
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
+#endif
+
 /** 
  * \brief Build a set of face loops for all (split) faces of a Polyhedron.
  * 
@@ -855,7 +859,7 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
                     << std::endl;
 #endif
 
-#if defined(DEBUG_WRITE_PLY_DATA)
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
           {
             std::map<const poly_t::vertex_t *, size_t> v_included;
 
@@ -906,9 +910,8 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
               }
             }
 
-            void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
             std::string out("/tmp/hole_merge.ply");
-            writePLY(out, &fh, true);
+            ::writePLY(out, &fh, true);
           }
 #endif
 
