@@ -25,6 +25,11 @@
 
 typedef carve::poly::Polyhedron poly_t;
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+void writePLY(std::string &out_file, const carve::poly::Polyhedron *poly, bool ascii);
+#endif
+
+
 namespace carve {
   namespace csg {
     namespace {
@@ -151,6 +156,33 @@ namespace carve {
 
           if (fc == FACE_UNCLASSIFIED) {
             std::cerr << "group " << grp << " is unclassified!" << std::endl;
+
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+            static int uc_count = 0;
+
+            std::vector<poly_t::face_t> faces;
+
+            for (FaceLoop *f = grp->face_loops.head; f; f = f->next) {
+              poly_t::face_t *temp = f->orig_face->create(f->vertices, false);
+              faces.push_back(*temp);
+              delete temp;
+            }
+
+            std::vector<poly_t::vertex_t> vertices;
+            carve::csg::VVMap vmap;
+
+            poly_t::collectFaceVertices(faces, vertices, vmap);
+
+            poly_t *p = new poly_t(faces, vertices);
+
+            std::ostringstream filename;
+            filename << "classifier_fail_" << ++uc_count << ".ply";
+            std::string out(filename.str().c_str());
+            ::writePLY(out, p, false);
+
+            delete p;
+#endif
+
             return;
           }
 
