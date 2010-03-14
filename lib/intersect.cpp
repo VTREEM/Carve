@@ -39,6 +39,10 @@
 
 #include <carve/timing.hpp>
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+void writePLY(std::string &out_file, const carve::point::PointSet *points, bool ascii);
+#endif
+
 typedef carve::poly::Polyhedron poly_t;
 
 carve::csg::VertexPool::VertexPool() {
@@ -281,9 +285,8 @@ namespace {
 
     carve::point::PointSet points(vertices);
 
-    void writePLY(std::string &out_file, const carve::point::PointSet *points, bool ascii);
-    std::string out("/tmp/intersection-points.ply");
-    writePLY(out, &points, true);
+    std::string outf("/tmp/intersection-points.ply");
+    ::writePLY(outf, &points, true);
 #endif
   }
 }
