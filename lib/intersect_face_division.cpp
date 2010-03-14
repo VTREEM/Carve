@@ -794,11 +794,10 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
 
     assembleBaseLoop(face, data, base_loop);
 
-    carve::csg::detail::FV2SMap::const_iterator fse_iter = data.face_split_edges.find(face);
+    detail::FV2SMap::const_iterator fse_iter = data.face_split_edges.find(face);
     if (fse_iter != data.face_split_edges.end()) {
       // complex case: input face is split into multiple output faces.
-      carve::csg::V2Set face_edges;
-
+      V2Set face_edges;
       // collect the perimeter edges
 #if defined(DEBUG)
       std::cerr << "base loop is:";
@@ -811,13 +810,14 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
       for (size_t j = 0, je = base_loop.size() - 1; j < je; ++j) {
         face_edges.insert(std::make_pair(base_loop[j], base_loop[j + 1]));
       }
-      face_edges.insert(std::make_pair(base_loop[base_loop.size() - 1], base_loop[0]));
+      face_edges.insert(std::make_pair(base_loop.back(), base_loop[0]));
 
       // collect the split edges (as long as they're not on the perimeter)
-      const carve::csg::detail::FV2SMap::mapped_type &fse = ((*fse_iter).second);
-      bool actually_split = false;
-      size_t added_edges = 0;
-      for (carve::csg::detail::FV2SMap::mapped_type::const_iterator
+      const detail::FV2SMap::mapped_type &fse = ((*fse_iter).second);
+
+      V2Set split_edges;
+
+      for (detail::FV2SMap::mapped_type::const_iterator
              j = fse.begin(), je =  fse.end();
            j != je;
            ++j) {
@@ -831,21 +831,63 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
 #if defined(DEBUG)
           std::cerr << "  adding edge: " << v1 << " - " << v2 << std::endl;
 #endif
-          actually_split = true;
-          added_edges++;
-          face_edges.insert(std::make_pair(v1, v2));
-          face_edges.insert(std::make_pair(v2, v1));
+          split_edges.insert(ordered_edge(v1, v2));
+        }
+      }
+
+      if (split_edges.size() == 1) {
+        const poly_t::vertex_t *v1 = split_edges.begin()->first;
+        const poly_t::vertex_t *v2 = split_edges.begin()->second;
+
+        std::vector<const poly_t::vertex_t *>::iterator vi1 = std::find(base_loop.begin(), base_loop.end(), v1);
+        std::vector<const poly_t::vertex_t *>::iterator vi2 = std::find(base_loop.begin(), base_loop.end(), v2);
+
+        if (vi1 != base_loop.end() && vi2 != base_loop.end()) {
+          // this is an inserted edge that connects two points on the base loop. nice and simple.
+          if (vi2 < vi1) std::swap(vi1, vi2);
+
+          size_t loop1_size = vi2 - vi1 + 1;
+          size_t loop2_size = base_loop.size() + 2 - loop1_size;
+
+          std::vector<const poly_t::vertex_t *> l1;
+          std::vector<const poly_t::vertex_t *> l2;
+
+          l1.reserve(loop1_size);
+          l2.reserve(loop2_size);
+
+          std::copy(vi1, vi2+1, std::back_inserter(l1));
+          std::copy(vi2, base_loop.end(), std::back_inserter(l2));
+          std::copy(base_loop.begin(), vi1+1, std::back_inserter(l2));
+
+          CARVE_ASSERT(l1.size() == loop1_size);
+          CARVE_ASSERT(l2.size() == loop2_size);
+
+          face_loops.clear();
+          face_loops.push_back(l1);
+          face_loops.push_back(l2);
+
+#if defined(DEBUG)
+          std::cerr << "  short circuited face loop creation." << std::endl;
+#endif
+
+          // skip the complex edge incorporation code. a bit hacky for the moment. this function needs refactoring.
+          goto record;
         }
       }
 
       // if there's at least one non-perimeter edge, then the face is split.
-      if (actually_split) {
+      if (split_edges.size()) {
         hole_loops.clear();
         face_loops.clear();
 
 #if defined(DEBUG)
         std::cerr << std::endl << "splitting face " << face << " (" << added_edges << " added edges)" << std::endl;
 #endif
+
+        for (V2Set::const_iterator j = split_edges.begin(); j != split_edges.end(); ++j) {
+          face_edges.insert(std::make_pair((*j).first, (*j).second));
+          face_edges.insert(std::make_pair((*j).second, (*j).first));
+        }
 
         // trace the edge graph to segregate edges into face and hole loops.
         splitFace(face, face_edges, face_loops, hole_loops, vertex_intersections);
@@ -937,6 +979,7 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
       face_loops.clear();
       face_loops.push_back(base_loop);
     }
+record:
 
     // now record all the resulting face loops.
     for (std::list<std::vector<const poly_t::vertex_t *> >::const_iterator
