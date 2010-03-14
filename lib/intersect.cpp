@@ -21,6 +21,7 @@
 
 #include <carve/csg.hpp>
 #include <carve/pointset.hpp>
+#include <carve/polyline.hpp>
 
 #include <list>
 #include <set>
@@ -72,6 +73,11 @@ bool carve::csg::VertexPool::inPool(const poly_t::vertex_t *v) const {
 }
 
 
+
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+void writePLY(std::string &out_file, const carve::point::PointSet *points, bool ascii);
+void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
+#endif
 
 namespace {
   static inline void HSV2RGB(float H, float S, float V, float &r, float &g, float &b) {
@@ -1011,6 +1017,42 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
       }
     }
   }
+
+
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+  {
+    V2Set edges;
+    for (detail::FV2SMap::const_iterator i = data.face_split_edges.begin(); i != data.face_split_edges.end(); ++i) {
+      edges.insert((*i).second.begin(), (*i).second.end());
+    }
+
+    detail::VSet vertices;
+    for (V2Set::const_iterator i = edges.begin(); i != edges.end(); ++i) {
+      vertices.insert((*i).first);
+      vertices.insert((*i).second);
+    }
+
+    carve::line::PolylineSet intersection_graph;
+    intersection_graph.vertices.resize(vertices.size());
+    std::map<const poly_t::vertex_t *, size_t> vmap;
+
+    size_t j = 0;
+    for (detail::VSet::const_iterator i = vertices.begin(); i != vertices.end(); ++i) {
+      intersection_graph.vertices[j].v = (*i)->v;
+      vmap[(*i)] = j++;
+    }
+
+    for (V2Set::const_iterator i = edges.begin(); i != edges.end(); ++i) {
+      size_t line[2];
+      line[0] = vmap[(*i).first];
+      line[1] = vmap[(*i).second];
+      intersection_graph.addPolyline(false, line, line + 2);
+    }
+
+    std::string out("/tmp/intersection-edges.ply");
+    ::writePLY(out, &intersection_graph, true);
+  }
+#endif
 }
 
 
