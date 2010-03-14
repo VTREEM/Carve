@@ -125,7 +125,7 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
 
 
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
 static carve::poly::Polyhedron *groupToPolyhedron(const carve::csg::FaceLoopGroup &grp) {
   const carve::csg::FaceLoopList &fl = grp.face_loops;
   std::vector<carve::poly::Polyhedron::face_t > faces;
