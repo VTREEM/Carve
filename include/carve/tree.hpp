@@ -225,11 +225,22 @@ namespace carve {
         if (!r_temp) { r = new carve::poly::Polyhedron(*r); }
 
         carve::geom3d::Vector min, max;
+        carve::geom3d::Vector min_l, max_l;
+        carve::geom3d::Vector min_r, max_r;
+
         carve::geom::bounds<3>(l->vertices.begin(),
                                l->vertices.end(),
                                carve::poly::vec_adapt_vertex_ref(),
-                               min,
-                               max);
+                               min_l,
+                               max_l);
+        carve::geom::bounds<3>(r->vertices.begin(),
+                               r->vertices.end(),
+                               carve::poly::vec_adapt_vertex_ref(),
+                               min_r,
+                               max_r);
+
+        carve::geom::assign_op(min, min_l, min_r, carve::util::min_functor());
+        carve::geom::assign_op(max, max_l, max_r, carve::util::max_functor());
 
         carve::rescale::rescale scaler(min.x, min.y, min.z, max.x, max.y, max.z);
 
