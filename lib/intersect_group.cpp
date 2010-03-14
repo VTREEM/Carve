@@ -26,7 +26,6 @@
 #include "intersect_common.hpp"
 
 
-
 void carve::csg::CSG::makeEdgeMap(const carve::csg::FaceLoopList &loops,
                                   size_t edge_count,
                                   detail::LoopEdges &edge_map) {
@@ -41,6 +40,9 @@ void carve::csg::CSG::makeEdgeMap(const carve::csg::FaceLoopList &loops,
 }
 
 #include <carve/polyline.hpp>
+
+void writePLY(std::string &out_file, const carve::poly::Polyhedron *poly, bool ascii);
+void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
 
 void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
                                       const detail::LoopEdges &edge_map_b,
@@ -111,9 +113,8 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
     }
 
 #if defined(DEBUG_WRITE_PLY_DATA)
-    void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
     std::string out("/tmp/intersection.ply");
-    writePLY(out, &intersection_graph, true);
+    ::writePLY(out, &intersection_graph, true);
 #endif
   }
 
@@ -215,8 +216,7 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
       char buf[128];
       sprintf(buf, "/tmp/group-%p.ply", &curr);
       std::string out(buf);
-      void writePLY(std::string &out_file, const carve::poly::Polyhedron *poly, bool ascii);
-      writePLY(out, poly, false);
+      ::writePLY(out, poly, false);
       delete poly;
     }
 #endif
