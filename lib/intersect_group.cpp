@@ -25,7 +25,6 @@
 #include "csg_detail.hpp"
 #include "intersect_common.hpp"
 
-
 void carve::csg::CSG::makeEdgeMap(const carve::csg::FaceLoopList &loops,
                                   size_t edge_count,
                                   detail::LoopEdges &edge_map) {
@@ -41,8 +40,10 @@ void carve::csg::CSG::makeEdgeMap(const carve::csg::FaceLoopList &loops,
 
 #include <carve/polyline.hpp>
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
 void writePLY(std::string &out_file, const carve::poly::Polyhedron *poly, bool ascii);
 void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
+#endif
 
 void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
                                       const detail::LoopEdges &edge_map_b,
