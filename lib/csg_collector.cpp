@@ -149,6 +149,11 @@ namespace carve {
 
         out:
 
+          if (fc == FACE_UNCLASSIFIED) {
+            std::cerr << "group " << grp << " is unclassified!" << std::endl;
+            return;
+          }
+
           bool is_poly_a = cinfo.front().intersected_poly == src_b;
 
 #if defined(DEBUG)
