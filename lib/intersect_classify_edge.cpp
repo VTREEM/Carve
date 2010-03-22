@@ -752,16 +752,25 @@ namespace carve {
 #if defined(DEBUG)
           std::cerr << " non intersecting group (poly a): " << &(*i) << std::endl;
 #endif
-          const carve::poly::Polyhedron::vertex_t *p = (*i).face_loops.head->vertices[0];
-
-          switch (poly_b->containsVertex(p->v)) {
-          case POINT_IN:
-            (*i).classification.push_back(ClassificationInfo(poly_b, -1, FACE_IN));
-            break;
-          case POINT_OUT:
-            (*i).classification.push_back(ClassificationInfo(poly_b, -1, FACE_OUT));
-            break;
-          default:
+          bool classified = false;
+          for (FaceLoop *fl = (*i).face_loops.head; !classified && fl != NULL; fl = fl->next) {
+            for (size_t fli = 0; !classified && fli < fl->vertices.size(); ++fli) {
+              if (vclass[fl->vertices[fli]].cls[1] == POINT_UNK) { 
+                vclass[fl->vertices[fli]].cls[1] = poly_b->containsVertex(fl->vertices[fli]->v);
+              }
+              switch (vclass[fl->vertices[fli]].cls[1]) {
+                case POINT_IN:
+                  (*i).classification.push_back(ClassificationInfo(poly_b, -1, FACE_IN));
+                  classified = true;
+                  break;
+                case POINT_OUT:
+                  (*i).classification.push_back(ClassificationInfo(poly_b, -1, FACE_OUT));
+                  classified = true;
+                  break;
+              }
+            }
+          }
+          if (!classified) {
             throw carve::exception("non intersecting group is not IN or OUT! (poly_a)");
           }
         }
@@ -772,16 +781,25 @@ namespace carve {
 #if defined(DEBUG)
           std::cerr << " non intersecting group (poly b): " << &(*i) << std::endl;
 #endif
-          const carve::poly::Polyhedron::vertex_t *p = (*i).face_loops.head->vertices[0];
-
-          switch (poly_a->containsVertex(p->v)) {
-          case POINT_IN:
-            (*i).classification.push_back(ClassificationInfo(poly_a, -1, FACE_IN));
-            break;
-          case POINT_OUT:
-            (*i).classification.push_back(ClassificationInfo(poly_a, -1, FACE_OUT));
-            break;
-          default:
+          bool classified = false;
+          for (FaceLoop *fl = (*i).face_loops.head; !classified && fl != NULL; fl = fl->next) {
+            for (size_t fli = 0; !classified && fli < fl->vertices.size(); ++fli) {
+              if (vclass[fl->vertices[fli]].cls[0] == POINT_UNK) { 
+                vclass[fl->vertices[fli]].cls[0] = poly_a->containsVertex(fl->vertices[fli]->v);
+              }
+              switch (vclass[fl->vertices[fli]].cls[0]) {
+                case POINT_IN:
+                  (*i).classification.push_back(ClassificationInfo(poly_a, -1, FACE_IN));
+                  classified = true;
+                  break;
+                case POINT_OUT:
+                  (*i).classification.push_back(ClassificationInfo(poly_a, -1, FACE_OUT));
+                  classified = true;
+                  break;
+              }
+            }
+          }
+          if (!classified) {
             throw carve::exception("non intersecting group is not IN or OUT! (poly_b)");
           }
         }
