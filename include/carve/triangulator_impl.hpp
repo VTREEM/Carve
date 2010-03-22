@@ -327,6 +327,14 @@ namespace carve {
           }
           return score;
         }
+
+        template<typename project_t, typename vert_t>
+        double edgeLen(const project_t &project,
+                       const std::vector<vert_t> &poly) const {
+          unsigned ai, bi;
+          findSharedEdge(ai, bi);
+          return distance(poly[a->v[ai]], poly[b->v[bi]]);
+        }
       };
 
       struct max_score {
@@ -440,10 +448,10 @@ namespace carve {
             if (tp->a && tp->b) {
               tp->calc(project, poly);
               count++;
-              ++i;
 #if defined(DEBUG)
               std::cerr << "internal edge: " << (*i).first.first << "," << (*i).first.second << " -> " << tp << " " << tp->score << std::endl;
 #endif
+              ++i;
             } else {
               delete (*i).second;
               storage.erase(i++);
@@ -704,9 +712,25 @@ namespace carve {
       //   for each q in the up-to-four adjoining tri pairs:
       //     update q's tri ptr, if changed, and its score.
 
+#if defined(DEBUG)
+      double initial_score = 0;
+      for (size_t i = 0; i < edges.size(); ++i) {
+        initial_score += edges[i]->edgeLen(project, poly);
+      }
+      std::cerr << "initial score: " << initial_score << std::endl;
+#endif
+
       while (n) {
         tri_pairs.flip(project, poly, edges, n);
       }
+
+#if defined(DEBUG)
+      double final_score = 0;
+      for (size_t i = 0; i < edges.size(); ++i) {
+        final_score += edges[i]->edgeLen(project, poly);
+      }
+      std::cerr << "final score: " << final_score << std::endl;
+#endif
 
 #if defined(DEBUG)
       if (!warn) {

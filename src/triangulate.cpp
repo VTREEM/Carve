@@ -42,6 +42,7 @@ typedef std::vector<std::string>::iterator TOK;
 
 
 struct Options : public opt::Parser {
+  bool improve;
   bool ascii;
   bool obj;
   bool vtk;
@@ -56,6 +57,7 @@ struct Options : public opt::Parser {
     if (o == "--vtk"          || o == "-V") { vtk = true; return; }
     if (o == "--ascii"        || o == "-a") { ascii = true; return; }
     if (o == "--help"         || o == "-h") { help(std::cout); exit(0); }
+    if (o == "--improve"      || o == "-i") { improve = true; return; }
   }
 
   virtual std::string usageStr() {
@@ -71,6 +73,7 @@ struct Options : public opt::Parser {
   }
 
   Options() {
+    improve = false;
     ascii = true;
     obj = false;
     vtk = false;
@@ -82,6 +85,7 @@ struct Options : public opt::Parser {
     option("ascii",        'a', false, "ASCII output (default).");
     option("obj",          'O', false, "Output in .obj format.");
     option("vtk",          'V', false, "Output in .vtk format.");
+    option("improve",      'i', false, "Improve triangulation by minimising internal edge lengths.");
     option("help",         'h', false, "This help message.");
   }
 };
@@ -152,7 +156,9 @@ int main(int argc, char **argv) {
     std::vector<carve::triangulate::tri_idx> result;
 
     carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
-    carve::triangulate::improve(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
+    if (options.improve) {
+      carve::triangulate::improve(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
+    }
 
     for (size_t j = 0; j < result.size(); ++j) {
       out_faces.push_back(carve::poly::Face<3>(

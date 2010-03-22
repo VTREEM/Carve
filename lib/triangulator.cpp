@@ -234,7 +234,6 @@ namespace {
     bool reflex = (a < c) ?
       carve::geom2d::orient2d(a->p, b->p, c->p) <= 0.0 :
       carve::geom2d::orient2d(c->p, b->p, a->p) <= 0.0;
-    
     if (reflex) {
       return
         carve::geom2d::orient2d(a->p, b->p, p) >= 0.0 ||
@@ -346,7 +345,7 @@ namespace {
 
 
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
   void dumpPoly(const std::vector<carve::geom2d::P2> &points,
       const std::vector<carve::triangulate::tri_idx> &result) {
     static int step = 0;
@@ -371,11 +370,9 @@ namespace {
     double height = maxy - miny + 10;
 
     out << "\
-      <?xml version=\"1.0\"?>\n\
-      <!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n\
-      <svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"" << width << 
-      "\" height=\"" << height << "\">\n \
-      ";
+<?xml version=\"1.0\"?>\n\
+<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n\
+<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"" << width << "\" height=\"" << height << "\">\n";
 
     out << "<polygon fill=\"rgb(0,0,0)\" stroke=\"blue\" stroke-width=\"0.1\" points=\"";
     for (size_t i = 0; i < points.size(); ++i) {
@@ -456,10 +453,8 @@ double carve::triangulate::detail::vertex_info::calcScore() const {
   double this_tri = triScore(prev, this, next);
   double next_tri = triScore(prev, next, next->next);
   double prev_tri = triScore(prev->prev, prev, next);
-  double next_delta = next_tri - next->score;
-  double prev_delta = prev_tri - prev->score;
 
-  return this_tri + std::max(next_tri, prev_tri) * .5;
+  return this_tri + std::max(next_tri, prev_tri) * .2;
 #endif
 
 #if 0
@@ -483,11 +478,24 @@ double carve::triangulate::detail::vertex_info::calcScore() const {
 
 bool carve::triangulate::detail::vertex_info::isClipable() const {
   for (const vertex_info *v_test = next->next; v_test != prev; v_test = v_test->next) {
-    if (v_test->convex ||
-        v_test->p == prev->p ||
-        v_test->p == next->p ||
-        (v_test->p == p && (v_test->next->p == prev->p || v_test->prev->p == next->p))) {
+    if (v_test->convex) {
       continue;
+    }
+
+    if (v_test->p == prev->p ||
+        v_test->p == next->p) {
+      continue;
+    }
+
+    if (v_test->p == p) {
+      if (v_test->next->p == prev->p &&
+          v_test->prev->p == next->p) {
+        return false;
+      }
+      if (v_test->next->p == prev->p ||
+          v_test->prev->p == next->p) {
+        continue;
+      }
     }
 
     if (pointInTriangle(prev, this, next, v_test)) {
@@ -568,6 +576,21 @@ bool carve::triangulate::detail::splitAndResume(vertex_info *begin, std::vector<
 
 
 bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<carve::triangulate::tri_idx> &result) {
+#if defined(DEBUG)
+  std::cerr << "entering doTriangulate" << std::endl;
+#endif
+
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+    std::vector<carve::triangulate::tri_idx> dummy;
+    std::vector<carve::geom2d::P2> dummy_p;
+    vertex_info *v = begin;
+    do {
+      dummy_p.push_back(v->p);
+      v = v->next;
+    } while (v != begin);
+    dumpPoly(dummy_p, dummy);
+#endif
+
   EarQueue vq;
 
   vertex_info *v = begin;
@@ -577,6 +600,10 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     v = v->next;
     remain++;
   } while (v != begin);
+
+#if defined(DEBUG)
+  std::cerr << "remain = " << remain << std::endl;
+#endif
 
   while (vq.size()) {
     vertex_info *v = vq.pop();
@@ -597,9 +624,10 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
       temp.push_back(v->prev->p);
       temp.push_back(v->p);
       temp.push_back(v->next->p);
-      std::cerr << "clip " << v << " " << v->idx << " area = " << carve::geom2d::signedArea(temp) << std::endl;
+      std::cerr << "clip " << v << " idx = " << v->idx << " score = " << v->score << " area = " << carve::geom2d::signedArea(temp) << " " << temp[0] << " " << temp[1] << " " << temp[2] << std::endl;
     }
 #endif
+
     v->remove();
     remain--;
     if (v == begin) begin = v->next;
@@ -608,26 +636,33 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     vq.updateVertex(n);
     vq.updateVertex(p);
 
-    bool swapped = false;
-
-    if (n->score < p->score) { std::swap(n, p); swapped = true; }
+    if (n->score < p->score) { std::swap(n, p); }
 
     if (n->score > 0.25 && n->isCandidate() && n->isClipable()) {
       vq.remove(n);
       v = n;
+#if defined(DEBUG)
+      std::cerr << " continue clipping (n), score = " << n->score << std::endl;
+#endif
       goto continue_clipping;
     }
 
     if (p->score > 0.25 && p->isCandidate() && p->isClipable()) {
       vq.remove(p);
       v = p;
+#if defined(DEBUG)
+      std::cerr << " continue clipping (p), score = " << n->score << std::endl;
+#endif
       goto continue_clipping;
     }
 
 #if defined(DEBUG)
+    std::cerr << "looking for new start point" << std::endl;
+    std::cerr << "remain = " << remain << std::endl;
+#endif
+
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
     {
-      std::cerr << "looking for new start point" << std::endl;
-      std::cerr << "remain = " << remain << std::endl;
       std::vector<carve::triangulate::tri_idx> dummy;
       std::vector<carve::geom2d::P2> dummy_p;
       vertex_info *v = begin;
@@ -641,9 +676,11 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
   }
 
 #if defined(DEBUG)
-  if (remain >= 3) {
-    std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
+  std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
+#endif
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+  if (remain >= 3) {
     std::vector<carve::triangulate::tri_idx> dummy;
     std::vector<carve::geom2d::P2> dummy_p;
     vertex_info *v = begin;
@@ -659,6 +696,24 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
   bool ret;
 
   if (remain > 3) {
+    std::vector<carve::geom2d::P2> temp;
+    temp.reserve(remain);
+    vertex_info *v = begin;
+
+    do {
+      temp.push_back(v->p);
+      v = v->next;
+    } while (v != begin);
+
+    if (carve::geom2d::signedArea(temp) == 0) {
+      // XXX: this test will fail in cases where the boundary is
+      // twisted so that a negative area balances a positive area.
+#if defined(DEBUG)
+      std::cerr << "skeleton remains. complete." << std::endl;
+#endif
+      goto done;
+    }
+
 #if defined(DEBUG)
     std::cerr << "before removeDegeneracies: remain=" << remain << std::endl;
 #endif
@@ -669,7 +724,7 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
   }
 
   if (remain > 3) {
-    ret = splitAndResume(begin, result);
+    return splitAndResume(begin, result);
   } else if (remain == 3) {
     result.push_back(carve::triangulate::tri_idx(begin->idx, begin->next->idx, begin->next->next->idx));
     ret = true;
@@ -677,6 +732,7 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     ret = true;
   }
 
+ done:
   vertex_info *d = begin;
   do {
     vertex_info *n = d->next;
@@ -855,9 +911,13 @@ void carve::triangulate::triangulate(const std::vector<carve::geom2d::P2> &poly,
   const size_t N = poly.size();
 
 #if defined(DEBUG)
-  dumpPoly(poly, result);
   std::cerr << "TRIANGULATION BEGINS" << std::endl;
 #endif
+
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+  dumpPoly(poly, result);
+#endif
+
   result.clear();
   if (N < 3) {
     return;
@@ -894,8 +954,11 @@ void carve::triangulate::triangulate(const std::vector<carve::geom2d::P2> &poly,
   doTriangulate(begin, result);
 
 #if defined(DEBUG)
-  dumpPoly(poly, result);
   std::cerr << "TRIANGULATION ENDS" << std::endl;
+#endif
+
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+  dumpPoly(poly, result);
 #endif
 }
 
