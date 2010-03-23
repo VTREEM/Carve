@@ -581,6 +581,7 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
 #endif
 
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+  {
     std::vector<carve::triangulate::tri_idx> dummy;
     std::vector<carve::geom2d::P2> dummy_p;
     vertex_info *v = begin;
@@ -589,6 +590,7 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
       v = v->next;
     } while (v != begin);
     dumpPoly(dummy_p, dummy);
+  }
 #endif
 
   EarQueue vq;
