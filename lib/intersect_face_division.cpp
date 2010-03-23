@@ -378,15 +378,19 @@ namespace {
         h_idx = j;
         if (f[(i + F - 1) % F] == h[(j + 1) % H]) {
           shares_edge = true;
-          return;
         }
-        ++I; ++J;
+        const poly_t::vertex_t *t = f[i];
+        do { ++I; } while (I < F && f[f_sort[I]] == t);
+        do { ++J; } while (J < H && h[h_sort[J]] == t);
       } else if (f[i] < h[j]) {
         ++I;
       } else {
         unmatched_h_idx = j;
         ++J;
       }
+    }
+    if (J < H) {
+      unmatched_h_idx = h_sort[J];
     }
   }
 
