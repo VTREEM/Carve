@@ -55,7 +55,8 @@ namespace carve {
         assign_op(max, v1, v2, carve::util::max_functor());
 
         pos = (min + max) / 2.0;
-        extent = max - pos;
+
+        assign_op(extent, max - pos, pos - min, carve::util::max_functor());
       }
 
       void fit(const vector_t &v1, const vector_t &v2, const vector_t &v3) {
@@ -68,7 +69,8 @@ namespace carve {
         assign_op(max, max, v3, carve::util::max_functor());
 
         pos = (min + max) / 2.0;
-        extent = max - pos;
+
+        assign_op(extent, max - pos, pos - min, carve::util::max_functor());
       }
 
       template<typename iter_t, typename adapt_t>
@@ -77,7 +79,8 @@ namespace carve {
         bounds(begin, end, adapt, min, max);
 
         pos = (min + max) / 2.0;
-        extent = max - pos;
+
+        assign_op(extent, max - pos, pos - min, carve::util::max_functor());
       }
 
       template<typename iter_t>
@@ -86,7 +89,8 @@ namespace carve {
         bounds(begin, end, min, max);
 
         pos = (min + max) / 2.0;
-        extent = max - pos;
+
+        assign_op(extent, max - pos, pos - min, carve::util::max_functor());
       }
 
       template<typename iter_t>
@@ -105,7 +109,8 @@ namespace carve {
           }
 
           pos = (min + max) / 2.0;
-          extent = max - pos;
+
+          assign_op(extent, max - pos, pos - min, carve::util::max_functor());
         }
       }
 
@@ -119,7 +124,8 @@ namespace carve {
         assign_op(max, a.max(), b.max(), carve::util::max_functor());
 
         pos = (min + max) / 2.0;
-        extent = max - pos;
+
+        assign_op(extent, max - pos, pos - min, carve::util::max_functor());
       }
 
       void unionAABB(const aabb<ndim> &a) {
@@ -128,7 +134,8 @@ namespace carve {
         assign_op(vmax, max(), a.max(), carve::util::max_functor());
 
         pos = (vmin + vmax) / 2.0;
-        extent = vmax - pos;
+
+        assign_op(extent, vmax - pos, pos - vmin, carve::util::max_functor());
       }
 
       aabb(const vector_t &_pos = vector_t::ZERO(),
