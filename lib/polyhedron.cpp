@@ -507,11 +507,6 @@ namespace carve {
         }
 
         for (std::map<const vertex_t *, std::vector<int> >::iterator j = vec_ef.begin(); j != vec_ef.end(); ++j) {
-          std::cerr << "v: " << (*j).first;
-          for (size_t k = 0; k < (*j).second.size(); ++k) {
-            std::cerr << " " << (*j).second[k];
-          }
-          std::cerr << std::endl;
           if ((*j).second.size() == 2) {
             efp_group.merge_sets((*j).second[0], (*j).second[1]);
           }
