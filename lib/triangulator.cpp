@@ -227,6 +227,26 @@ namespace {
 
 
 
+  bool internalToAngle(const carve::geom2d::P2 &a,
+                       const carve::geom2d::P2 &b,
+                       const carve::geom2d::P2 &c,
+                       const carve::geom2d::P2 &p) {
+    bool reflex = (a < c) ?
+      carve::geom2d::orient2d(a, b, c) <= 0.0 :
+      carve::geom2d::orient2d(c, b, a) >= 0.0;
+    if (reflex) {
+      return
+        carve::geom2d::orient2d(a, b, p) >= 0.0 ||
+        carve::geom2d::orient2d(b, c, p) >= 0.0;
+    } else {
+      return
+        carve::geom2d::orient2d(a, b, p) > 0.0 &&
+        carve::geom2d::orient2d(b, c, p) > 0.0;
+    }
+  }
+
+
+
   bool internalToAngle(const vertex_info *a,
                        const vertex_info *b,
                        const vertex_info *c,
