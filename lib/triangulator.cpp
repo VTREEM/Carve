@@ -574,6 +574,21 @@ size_t carve::triangulate::detail::removeDegeneracies(vertex_info *&begin, std::
 bool carve::triangulate::detail::splitAndResume(vertex_info *begin, std::vector<carve::triangulate::tri_idx> &result) {
   vertex_info *v1, *v2;
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+  {
+    std::vector<carve::triangulate::tri_idx> dummy;
+    std::vector<carve::geom2d::P2> dummy_p;
+    vertex_info *v = begin;
+    do {
+      dummy_p.push_back(v->p);
+      v = v->next;
+    } while (v != begin);
+    std::cerr << "input to splitAndResume:" << std::endl;
+    dumpPoly(dummy_p, dummy);
+  }
+#endif
+
+
   if (!findDiagonal(begin, v1, v2)) return false;
 
   vertex_info *v1_copy = new vertex_info(*v1);
@@ -682,38 +697,11 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     std::cerr << "looking for new start point" << std::endl;
     std::cerr << "remain = " << remain << std::endl;
 #endif
-
-#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-    {
-      std::vector<carve::triangulate::tri_idx> dummy;
-      std::vector<carve::geom2d::P2> dummy_p;
-      vertex_info *v = begin;
-      do {
-        dummy_p.push_back(v->p);
-        v = v->next;
-      } while (v != begin);
-      dumpPoly(dummy_p, dummy);
-    }
-#endif
   }
 
 #if defined(DEBUG)
   std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
 #endif
-
-#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-  if (remain >= 3) {
-    std::vector<carve::triangulate::tri_idx> dummy;
-    std::vector<carve::geom2d::P2> dummy_p;
-    vertex_info *v = begin;
-    do {
-      dummy_p.push_back(v->p);
-      v = v->next;
-    } while (v != begin);
-    dumpPoly(dummy_p, dummy);
-  }
-#endif
-
 
   bool ret;
 
