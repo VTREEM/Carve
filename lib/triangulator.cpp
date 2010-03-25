@@ -755,6 +755,52 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
 
 
 
+bool testCandidateAttachment(const std::vector<std::vector<carve::geom2d::P2> > &poly,
+                             std::vector<std::pair<size_t, size_t> > &current_f_loop,
+                             size_t curr,
+                             carve::geom2d::P2 hole_min) {
+  const size_t SZ = current_f_loop.size();
+
+  if (!internalToAngle(pvert(poly, current_f_loop[(curr+SZ-1) % SZ]),
+                       pvert(poly, current_f_loop[curr]),
+                       pvert(poly, current_f_loop[(curr+1) % SZ]),
+                       hole_min)) {
+    return false;
+  }
+
+  carve::geom2d::LineSegment2 test(hole_min, pvert(poly, current_f_loop[curr]));
+
+  size_t v1 = current_f_loop.size() - 1;
+  size_t v2 = 0;
+  int v1_side = carve::geom2d::orient2d(test.v1, test.v2, pvert(poly, current_f_loop[v1]));
+  int v2_side = 0;
+
+  while (v2 != current_f_loop.size()) {
+    v2_side = carve::geom2d::orient2d(test.v1, test.v2, pvert(poly, current_f_loop[v2]));
+
+    if (v1_side != v2_side) {
+      // XXX: need to test vertices, not indices, because they may
+      // be duplicated.
+      if (pvert(poly, current_f_loop[v1]) != pvert(poly, current_f_loop[curr]) &&
+          pvert(poly, current_f_loop[v2]) != pvert(poly, current_f_loop[curr])) {
+        carve::geom2d::LineSegment2 test2(pvert(poly, current_f_loop[v1]), pvert(poly, current_f_loop[v2]));
+        carve::LineIntersectionClass ic = carve::geom2d::lineSegmentIntersection(test, test2).iclass;
+        if (ic > 0) {
+          // intersection; failed.
+          return false;
+        }
+      }
+    }
+
+    v1 = v2;
+    v1_side = v2_side;
+    ++v2;
+  }
+  return true;
+}
+
+
+
 std::vector<std::pair<size_t, size_t> >
 carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<carve::geom2d::P2> > &poly) {
   typedef std::vector<carve::geom2d::P2> loop_t;
@@ -845,7 +891,8 @@ carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<ca
     // to the hole vertex by their distance to the hole vertex
     heap_ordering_2d _heap_ordering(poly, current_f_loop, hole_min, axis);
 
-    for (size_t j = 0; j < current_f_loop.size(); ++j) {
+    const size_t SZ = current_f_loop.size();
+    for (size_t j = 0; j < SZ; ++j) {
       // it is guaranteed that there exists a polygon vertex with
       // coord < the min hole coord chosen, which can be joined to
       // the min hole coord without crossing the polygon
@@ -865,49 +912,27 @@ carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<ca
     // joining line segment does not cross any other line segment
     // in the current polygon loop (excluding those that have the
     // vertex that we are attempting to join with as an endpoint).
+    size_t attachment_point = current_f_loop.size();
+
     while (f_loop_heap.size()) {
       std::pop_heap(f_loop_heap.begin(), f_loop_heap.end(), _heap_ordering);
       size_t curr = f_loop_heap.back();
       f_loop_heap.pop_back();
       // test the candidate join from current_f_loop[curr] to hole_min
 
-      carve::geom2d::LineSegment2 test(hole_min, pvert(poly, current_f_loop[curr]));
-
-      size_t v1 = current_f_loop.size() - 1;
-      size_t v2 = 0;
-      int v1_side = carve::geom2d::orient2d(test.v1, test.v2, pvert(poly, current_f_loop[v1]));
-      int v2_side = 0;
-
-      while (v2 != current_f_loop.size()) {
-        v2_side = carve::geom2d::orient2d(test.v1, test.v2, pvert(poly, current_f_loop[v2]));
-
-        if (v1_side != v2_side) {
-          // XXX: need to test vertices, not indices, because they may
-          // be duplicated.
-          if (pvert(poly, current_f_loop[v1]) != pvert(poly, current_f_loop[curr]) &&
-              pvert(poly, current_f_loop[v2]) != pvert(poly, current_f_loop[curr])) {
-            carve::geom2d::LineSegment2 test2(pvert(poly, current_f_loop[v1]), pvert(poly, current_f_loop[v2]));
-            carve::LineIntersectionClass ic = carve::geom2d::lineSegmentIntersection(test, test2).iclass;
-            if (ic > 0) {
-              // intersection; failed.
-              goto intersection;
-            }
-          }
-        }
-
-        v1 = v2;
-        v1_side = v2_side;
-        ++v2;
+      if (!testCandidateAttachment(poly, current_f_loop, curr, hole_min)) {
+        continue;
       }
 
-      patchHoleIntoPolygon_2d(current_f_loop, curr, hole_i, hole_i_connect, poly[hole_i].size());
-      goto merged;
-
-intersection:;
+      attachment_point = curr;
+      break;
     }
-    CARVE_FAIL("didn't manage to link up hole!");
 
-merged:;
+    if (attachment_point == current_f_loop.size()) {
+      CARVE_FAIL("didn't manage to link up hole!");
+    }
+
+    patchHoleIntoPolygon_2d(current_f_loop, attachment_point, hole_i, hole_i_connect, poly[hole_i].size());
   }
 
   return current_f_loop;
