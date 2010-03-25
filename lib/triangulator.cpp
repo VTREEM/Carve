@@ -233,7 +233,7 @@ namespace {
                        const carve::geom2d::P2 &p) {
     bool reflex = (a < c) ?
       carve::geom2d::orient2d(a->p, b->p, c->p) <= 0.0 :
-      carve::geom2d::orient2d(c->p, b->p, a->p) <= 0.0;
+      carve::geom2d::orient2d(c->p, b->p, a->p) >= 0.0;
     if (reflex) {
       return
         carve::geom2d::orient2d(a->p, b->p, p) >= 0.0 ||
