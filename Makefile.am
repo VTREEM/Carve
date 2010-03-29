@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS=-I m4
-SUBDIRS=lib include external src
+SUBDIRS=lib include external common src tests examples
 EXTRA_DIST= win32/Carve.sln win32/carvelib/carvelib.vcproj		\
 	win32/glew/glew.vcproj win32/gloop/gloop.vcproj			\
 	win32/glui/glui.vcproj win32/intersect/intersect.vcproj		\

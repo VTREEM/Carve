@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-#include <carve/external/boost/random.hpp>
+#include BOOST_INCLUDE(random.hpp)
 
 namespace {
 

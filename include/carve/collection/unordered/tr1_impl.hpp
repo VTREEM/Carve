@@ -25,11 +25,14 @@ namespace std {
   template <typename Key, typename T, typename Hash,
             typename Pred = std::equal_to<Key> >
   class unordered_map : public std::tr1::unordered_map<Key, T, Hash, Pred> {
+  public:
+    typedef T data_type;
   };
 
   template <typename Value, typename Hash,
             typename Pred = std::equal_to<Value> >
   class unordered_set : public std::tr1::unordered_set<Value, Hash, Pred> {
+  public:
   };
 
 }

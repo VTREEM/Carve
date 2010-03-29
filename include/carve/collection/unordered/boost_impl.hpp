@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include <carve/external/boost/unordered_set.hpp>
-#include <carve/external/boost/unordered_map.hpp>
+#include BOOST_INCLUDE(unordered_set.hpp)
+#include BOOST_INCLUDE(unordered_map.hpp)
+
 #include <functional>
 
 namespace std {

@@ -6,7 +6,7 @@ AC_CANONICAL_SYSTEM
 
 AC_CONFIG_SRCDIR([src])
 AM_CONFIG_HEADER(include/carve_config.h include/carve/config.h)
-AM_INIT_AUTOMAKE(carve, 1.0.0, toby@permuted.net)
+AM_INIT_AUTOMAKE(carve, 1.1.0, toby@permuted.net)
 
 AC_PROG_CC
 AC_PROG_CPP
@@ -185,7 +185,9 @@ AC_SUBST(GLUT_CFLAGS)
 AC_SUBST(GLUT_LIBS)
 
 AC_OUTPUT([
-	Makefile lib/Makefile src/Makefile external/Makefile
+	Makefile lib/Makefile common/Makefile src/Makefile
+        tests/Makefile examples/Makefile
+        external/Makefile
 	external/GLEW/Makefile external/GLOOP/Makefile
 	external/GLUI/Makefile include/Makefile include/carve/Makefile
 	include/carve/collection/Makefile
