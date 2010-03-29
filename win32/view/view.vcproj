@@ -172,35 +172,35 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\..\src\geom_draw.cpp"
+			RelativePath="..\..\common\geom_draw.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\geom_draw.hpp"
+			RelativePath="..\..\common\geom_draw.hpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\geometry.cpp"
+			RelativePath="..\..\common\geometry.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\geometry.hpp"
+			RelativePath="..\..\common\geometry.hpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\read_ply.cpp"
+			RelativePath="..\..\common\read_ply.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\read_ply.hpp"
+			RelativePath="..\..\common\read_ply.hpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\scene.cpp"
+			RelativePath="..\..\common\scene.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\scene.hpp"
+			RelativePath="..\..\common\scene.hpp"
 			>
 		</File>
 		<File
@@ -208,11 +208,11 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\write_ply.cpp"
+			RelativePath="..\..\common\write_ply.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\write_ply.hpp"
+			RelativePath="..\..\common\write_ply.hpp"
 			>
 		</File>
 	</Files>

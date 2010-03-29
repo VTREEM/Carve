@@ -173,11 +173,11 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\..\src\geometry.cpp"
+			RelativePath="..\..\common\geometry.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\geometry.hpp"
+			RelativePath="..\..\common\geometry.hpp"
 			>
 		</File>
 		<File

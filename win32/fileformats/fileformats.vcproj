@@ -151,11 +151,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\read_ply.cpp"
+				RelativePath="..\..\common\read_ply.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\write_ply.cpp"
+				RelativePath="..\..\common\write_ply.cpp"
 				>
 			</File>
 		</Filter>
@@ -165,11 +165,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\src\read_ply.hpp"
+				RelativePath="..\..\common\read_ply.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\write_ply.hpp"
+				RelativePath="..\..\common\write_ply.hpp"
 				>
 			</File>
 		</Filter>

@@ -169,27 +169,27 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\..\src\brick_texture.h"
+			RelativePath="..\..\examples\brick_texture.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\carve_texture.h"
+			RelativePath="..\..\examples\carve_texture.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\leaf_texture.h"
+			RelativePath="..\..\examples\leaf_texture.h"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\scene.cpp"
+			RelativePath="..\..\common\scene.cpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\scene.hpp"
+			RelativePath="..\..\common\scene.hpp"
 			>
 		</File>
 		<File
-			RelativePath="..\..\src\texture_example.cpp"
+			RelativePath="..\..\examples\texture_example.cpp"
 			>
 		</File>
 	</Files>
