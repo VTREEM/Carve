@@ -30,6 +30,7 @@
 #include <gloop/quaternion.hpp>
 #include <gloop/matrix.hpp>
 
+#include <math.h>
 #include <float.h>
 
 namespace gloop {

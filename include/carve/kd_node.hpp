@@ -23,6 +23,7 @@
 
 #include <queue>
 #include <list>
+#include <limits>
 
 namespace carve {
   namespace geom {
