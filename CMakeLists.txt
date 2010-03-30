@@ -10,6 +10,11 @@ set(CARVE_VERSION ${CARVE_VERSION_MAJOR}.${CARVE_VERSION_MINOR}.${CARVE_VERSION_
 
 
 
+if(WIN32)
+  add_definitions(-D_USE_MATH_DEFINES)
+  add_definitions(-DNOMINMAX)
+endif
+
 option(CARVE_WITH_GUI          "Compile gui code"                    ON)
 option(CARVE_SYSTEM_BOOST      "Compile with system installed boost" ON)
 option(CARVE_BOOST_COLLECTIONS "Compile with boost collections"      ON)
