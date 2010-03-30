@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="../../include;../../external/gloop/include;../../external/glew/include;../../external/glui/include;$(GLUT_DIR)"
+                                AdditionalIncludeDirectories="../../include;../../common;../../external/gloop/include;../../external/glew/include;../../external/glui/include;$(GLUT_DIR)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;NOMINMAX;_USE_MATH_DEFINES;GLUI_USE_STATIC_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"

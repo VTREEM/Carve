@@ -117,8 +117,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="../../include;../../external/gloop/include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;NOMINMAX"
+                                AdditionalIncludeDirectories="../../include;../../common;../../external/gloop/include;../../external/glew/include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;NOMINMAX;DISABLE_GLU_TRIANGULATOR"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="carvelib.lib gloop.lib fileformats.lib"
+				AdditionalDependencies="carvelib.lib gloop.lib glu32.lib fileformats.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../Release"
 				GenerateDebugInformation="true"
