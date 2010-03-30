@@ -17,59 +17,57 @@
 
 #pragma once
 
-#undef RGB
-
 #include <functional>
 
-struct RGB {
+struct cRGB {
   typedef float value_type;
   value_type r, g, b;
 
-  RGB() : r(0), g(0), b(0) { }
+  cRGB() : r(0), g(0), b(0) { }
 
   template <typename T>
-  RGB(T _r, T _g, T _b) : r((value_type)_r), g((value_type)_g), b((value_type)_b) { }
+  cRGB(T _r, T _g, T _b) : r((value_type)_r), g((value_type)_g), b((value_type)_b) { }
 };
 
-struct RGBA {
+struct cRGBA {
   typedef float value_type;
   value_type r, g, b, a;
 
-  RGBA() : r(0),g(0),b(0),a(1) { }
+  cRGBA() : r(0),g(0),b(0),a(1) { }
   template <typename T>
-  RGBA(T _r, T _g, T _b, T _a = T(1)) : r((value_type)_r), g((value_type)_g), b((value_type)_b), a((value_type)_a) { }
+  cRGBA(T _r, T _g, T _b, T _a = T(1)) : r((value_type)_r), g((value_type)_g), b((value_type)_b), a((value_type)_a) { }
 
-  RGBA(const RGB &rgb) : r(rgb.r), g(rgb.g), b(rgb.b), a(1) { }
+  cRGBA(const cRGB &rgb) : r(rgb.r), g(rgb.g), b(rgb.b), a(1) { }
 };
 
-static inline RGB operator+(const RGB &a, const RGB &b) {
-  return RGB(a.r + b.r, a.g + b.g, a.b + b.b);
+static inline cRGB operator+(const cRGB &a, const cRGB &b) {
+  return cRGB(a.r + b.r, a.g + b.g, a.b + b.b);
 }
-static inline RGB &operator+=(RGB &a, const RGB &b) {
+static inline cRGB &operator+=(cRGB &a, const cRGB &b) {
   a.r += b.r; a.g += b.g; a.b += b.b;
   return a;
 }
 
-static inline RGB operator*(double s, const RGB &a) {
-  return RGB(s * a.r, s * a.g, s * a.b);
+static inline cRGB operator*(double s, const cRGB &a) {
+  return cRGB(s * a.r, s * a.g, s * a.b);
 }
 
-static inline RGBA operator+(const RGBA &a, const RGBA &b) {
-  return RGBA(a.r + b.r, a.g + b.g, a.b + b.b, a.a + b.a);
+static inline cRGBA operator+(const cRGBA &a, const cRGBA &b) {
+  return cRGBA(a.r + b.r, a.g + b.g, a.b + b.b, a.a + b.a);
 }
-static inline RGBA &operator+=(RGBA &a, const RGBA &b) {
+static inline cRGBA &operator+=(cRGBA &a, const cRGBA &b) {
   a.r += b.r; a.g += b.g; a.b += b.b; a.a += b.a;
   return a;
 }
 
-static inline RGBA operator*(double s, const RGBA &a) {
-  return RGBA(s * a.r, s * a.g, s * a.b, s * a.a);
+static inline cRGBA operator*(double s, const cRGBA &a) {
+  return cRGBA(s * a.r, s * a.g, s * a.b, s * a.a);
 }
 
-static inline RGB HSV2RGB(float H, float S, float V) {
+static inline cRGB HSV2RGB(float H, float S, float V) {
   H = 6.0f * H;
   if (S < 5.0e-6) {
-    RGB(V, V, V);
+    cRGB(V, V, V);
   } else {
     int i = (int)H;
     float f = H - i;
@@ -77,27 +75,27 @@ static inline RGB HSV2RGB(float H, float S, float V) {
     float p2 = V * (1.0f - S * f);
     float p3 = V * (1.0f - S * (1.0f - f));
     switch (i) {
-    case 0: return RGB(V, p3, p1);
-    case 1: return RGB(p2,  V, p1);
-    case 2: return RGB(p1,  V, p3);
-    case 3: return RGB(p1, p2,  V);
-    case 4: return RGB(p3, p1,  V);
-    case 5: return RGB(V, p1, p2);
+    case 0: return cRGB(V, p3, p1);
+    case 1: return cRGB(p2,  V, p1);
+    case 2: return cRGB(p1,  V, p3);
+    case 3: return cRGB(p1, p2,  V);
+    case 4: return cRGB(p3, p1,  V);
+    case 5: return cRGB(V, p1, p2);
     }
   }
-  return RGB(0, 0, 0);
+  return cRGB(0, 0, 0);
 }
 
 struct colour_clamp_t {
-  RGB operator()(const RGB &c) const {
-    return RGB(std::min(std::max(c.r, 0.0f), 1.0f),
-               std::min(std::max(c.g, 0.0f), 1.0f),
-               std::min(std::max(c.b, 0.0f), 1.0f));
-  }
-  RGBA operator()(const RGBA &c) const {
-    return RGBA(std::min(std::max(c.r, 0.0f), 1.0f),
+  cRGB operator()(const cRGB &c) const {
+    return cRGB(std::min(std::max(c.r, 0.0f), 1.0f),
                 std::min(std::max(c.g, 0.0f), 1.0f),
-                std::min(std::max(c.b, 0.0f), 1.0f),
-                std::min(std::max(c.a, 0.0f), 1.0f));
+                std::min(std::max(c.b, 0.0f), 1.0f));
+  }
+  cRGBA operator()(const cRGBA &c) const {
+    return cRGBA(std::min(std::max(c.r, 0.0f), 1.0f),
+                 std::min(std::max(c.g, 0.0f), 1.0f),
+                 std::min(std::max(c.b, 0.0f), 1.0f),
+                 std::min(std::max(c.a, 0.0f), 1.0f));
   }
 };

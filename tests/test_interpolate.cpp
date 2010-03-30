@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
   TestScene *scene = new TestScene(argc, argv, 2);
 
   std::vector<carve::geom2d::P2> poly;
-  std::vector<RGBA> colour;
+  std::vector<cRGBA> colour;
   for (int i = 0; i < POINTS; ++i) {
     double r = rad(i);
     poly.push_back(carve::geom::VECTOR(cos(i * M_TWOPI / POINTS) * r, sin(i * M_TWOPI / POINTS) * r));
@@ -107,10 +107,10 @@ int main(int argc, char **argv) {
     for (int y = -100; y < +100; y++) {
       double Y = y / 100.0;
       double Y2 = (y + 1) / 100.0;
-      RGBA c1 = carve::interpolate::interp(poly, colour, X, Y, colour_clamp_t());
-      RGBA c2 = carve::interpolate::interp(poly, colour, X2, Y, colour_clamp_t());
-      RGBA c3 = carve::interpolate::interp(poly, colour, X2, Y2, colour_clamp_t());
-      RGBA c4 = carve::interpolate::interp(poly, colour, X, Y2, colour_clamp_t());
+      cRGBA c1 = carve::interpolate::interp(poly, colour, X, Y, colour_clamp_t());
+      cRGBA c2 = carve::interpolate::interp(poly, colour, X2, Y, colour_clamp_t());
+      cRGBA c3 = carve::interpolate::interp(poly, colour, X2, Y2, colour_clamp_t());
+      cRGBA c4 = carve::interpolate::interp(poly, colour, X, Y2, colour_clamp_t());
 
       glColor4f(c1.r, c1.g, c1.b, c1.a);
       glVertex3f(X * 20, Y * 20, 1.0);

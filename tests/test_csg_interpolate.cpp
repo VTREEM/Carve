@@ -55,11 +55,11 @@ static inline void glVertex(const carve::geom3d::Vector &v) {
              g_scale * (v.z + g_translation.z));
 }
 
-static inline void glColor(const RGBA &c) {
+static inline void glColor(const cRGBA &c) {
   glColor4f(c.r, c.g, c.b, c.a);
 }
 
-carve::interpolate::FaceVertexAttr<RGBA> fv_colours;
+carve::interpolate::FaceVertexAttr<cRGBA> fv_colours;
 
 void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a, bool offset) {
   if (offset) {
@@ -67,10 +67,10 @@ void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a, bool
     glPolygonOffset(0.5, 0.5);
   }
 
-  RGBA cdefault = RGBA(r, g, b);
+  cRGBA cdefault = cRGBA(r, g, b);
   glColor(cdefault);
 
-  std::vector<RGBA> vc;
+  std::vector<cRGBA> vc;
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glBegin(GL_TRIANGLES);
@@ -118,40 +118,40 @@ poly_t *colourCube(const carve::math::Matrix &transform = carve::math::Matrix::I
   faces.reserve(6);
 
   faces.push_back(poly_t::face_t(&v[0], &v[1], &v[2], &v[3]));
-  fv_colours.setAttribute(&faces[0], 0, RGBA(0,0,1));
-  fv_colours.setAttribute(&faces[0], 1, RGBA(0,0,0));
-  fv_colours.setAttribute(&faces[0], 2, RGBA(0,1,1));
-  fv_colours.setAttribute(&faces[0], 3, RGBA(1,0,1));
+  fv_colours.setAttribute(&faces[0], 0, cRGBA(0,0,1));
+  fv_colours.setAttribute(&faces[0], 1, cRGBA(0,0,0));
+  fv_colours.setAttribute(&faces[0], 2, cRGBA(0,1,1));
+  fv_colours.setAttribute(&faces[0], 3, cRGBA(1,0,1));
 
   faces.push_back(poly_t::face_t(&v[7], &v[6], &v[5], &v[4]));
-  fv_colours.setAttribute(&faces[1], 0, RGBA(0,1,0));
-  fv_colours.setAttribute(&faces[1], 1, RGBA(0,1,1));
-  fv_colours.setAttribute(&faces[1], 2, RGBA(0,0,0));
-  fv_colours.setAttribute(&faces[1], 3, RGBA(1,1,0));
+  fv_colours.setAttribute(&faces[1], 0, cRGBA(0,1,0));
+  fv_colours.setAttribute(&faces[1], 1, cRGBA(0,1,1));
+  fv_colours.setAttribute(&faces[1], 2, cRGBA(0,0,0));
+  fv_colours.setAttribute(&faces[1], 3, cRGBA(1,1,0));
 
   faces.push_back(poly_t::face_t(&v[0], &v[4], &v[5], &v[1]));
-  fv_colours.setAttribute(&faces[2], 0, RGBA(0,1,1));
-  fv_colours.setAttribute(&faces[2], 1, RGBA(0,1,0));
-  fv_colours.setAttribute(&faces[2], 2, RGBA(0,0,1));
-  fv_colours.setAttribute(&faces[2], 3, RGBA(1,1,1));
+  fv_colours.setAttribute(&faces[2], 0, cRGBA(0,1,1));
+  fv_colours.setAttribute(&faces[2], 1, cRGBA(0,1,0));
+  fv_colours.setAttribute(&faces[2], 2, cRGBA(0,0,1));
+  fv_colours.setAttribute(&faces[2], 3, cRGBA(1,1,1));
 
   faces.push_back(poly_t::face_t(&v[1], &v[5], &v[6], &v[2]));
-  fv_colours.setAttribute(&faces[3], 0, RGBA(1,0,0));
-  fv_colours.setAttribute(&faces[3], 1, RGBA(1,0,1));
-  fv_colours.setAttribute(&faces[3], 2, RGBA(1,1,0));
-  fv_colours.setAttribute(&faces[3], 3, RGBA(0,0,0));
+  fv_colours.setAttribute(&faces[3], 0, cRGBA(1,0,0));
+  fv_colours.setAttribute(&faces[3], 1, cRGBA(1,0,1));
+  fv_colours.setAttribute(&faces[3], 2, cRGBA(1,1,0));
+  fv_colours.setAttribute(&faces[3], 3, cRGBA(0,0,0));
 
   faces.push_back(poly_t::face_t(&v[2], &v[6], &v[7], &v[3]));
-  fv_colours.setAttribute(&faces[4], 0, RGBA(1,0,1));
-  fv_colours.setAttribute(&faces[4], 1, RGBA(1,0,0));
-  fv_colours.setAttribute(&faces[4], 2, RGBA(1,1,1));
-  fv_colours.setAttribute(&faces[4], 3, RGBA(0,0,1));
+  fv_colours.setAttribute(&faces[4], 0, cRGBA(1,0,1));
+  fv_colours.setAttribute(&faces[4], 1, cRGBA(1,0,0));
+  fv_colours.setAttribute(&faces[4], 2, cRGBA(1,1,1));
+  fv_colours.setAttribute(&faces[4], 3, cRGBA(0,0,1));
 
   faces.push_back(poly_t::face_t(&v[3], &v[7], &v[4], &v[0]));
-  fv_colours.setAttribute(&faces[5], 0, RGBA(1,1,0));
-  fv_colours.setAttribute(&faces[5], 1, RGBA(1,1,1));
-  fv_colours.setAttribute(&faces[5], 2, RGBA(1,0,0));
-  fv_colours.setAttribute(&faces[5], 3, RGBA(0,1,0));
+  fv_colours.setAttribute(&faces[5], 0, cRGBA(1,1,0));
+  fv_colours.setAttribute(&faces[5], 1, cRGBA(1,1,1));
+  fv_colours.setAttribute(&faces[5], 2, cRGBA(1,0,0));
+  fv_colours.setAttribute(&faces[5], 3, cRGBA(0,1,0));
 
 
   return new poly_t(faces);

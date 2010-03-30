@@ -246,7 +246,7 @@ static void __stdcall _faceBegin(GLenum type, void *data) {
 }
 
 static void __stdcall _faceVertex(void *vertex_data, void *data) {
-  std::pair<carve::geom3d::Vector, RGBA> &vd(*static_cast<std::pair<carve::geom3d::Vector, RGBA> *>(vertex_data));
+  std::pair<carve::geom3d::Vector, cRGBA> &vd(*static_cast<std::pair<carve::geom3d::Vector, cRGBA> *>(vertex_data));
   glColor4f(vd.second.r, vd.second.g, vd.second.b, vd.second.a);
   glVertex3f(vd.first.x, vd.first.y, vd.first.z);
 }
@@ -255,7 +255,7 @@ static void __stdcall _faceEnd(void *data) {
   glEnd();
 }
 
-void drawColourFace(carve::poly::Face<3> *face, const std::vector<RGBA> &vc, bool offset) {
+void drawColourFace(carve::poly::Face<3> *face, const std::vector<cRGBA> &vc, bool offset) {
   if (offset) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(0.5, 0.5);
@@ -272,7 +272,7 @@ void drawColourFace(carve::poly::Face<3> *face, const std::vector<RGBA> &vc, boo
   gluTessBeginPolygon(tess, (void *)face);
   gluTessBeginContour(tess);
 
-  std::vector<std::pair<carve::geom3d::Vector, RGBA> > v;
+  std::vector<std::pair<carve::geom3d::Vector, cRGBA> > v;
   v.resize(face->vertices.size());
   for (size_t i = 0, l = face->vertices.size(); i != l; ++i) {
     v[i] = std::make_pair(g_scale * (face->vertices[i]->v + g_translation), vc[i]);
@@ -289,7 +289,7 @@ void drawColourFace(carve::poly::Face<3> *face, const std::vector<RGBA> &vc, boo
   }
 }
 
-void drawFace(carve::poly::Face<3> *face, RGBA fc, bool offset) {
+void drawFace(carve::poly::Face<3> *face, cRGBA fc, bool offset) {
   if (offset) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(0.5, 0.5);
@@ -306,7 +306,7 @@ void drawFace(carve::poly::Face<3> *face, RGBA fc, bool offset) {
   gluTessBeginPolygon(tess, (void *)face);
   gluTessBeginContour(tess);
 
-  std::vector<std::pair<carve::geom3d::Vector, RGBA> > v;
+  std::vector<std::pair<carve::geom3d::Vector, cRGBA> > v;
   v.resize(face->vertices.size());
   for (size_t i = 0, l = face->vertices.size(); i != l; ++i) {
     v[i] = std::make_pair(g_scale * (face->vertices[i]->v + g_translation), fc);
@@ -555,7 +555,7 @@ void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, fl
     carve::poly::Face<3> &f = poly->faces[i];
     if (group == -1 || f.manifold_id == group) {
       if (f.vertices.size() != 3) {
-        drawFace(&poly->faces[i], RGBA(r, g, b, a), false);
+        drawFace(&poly->faces[i], cRGBA(r, g, b, a), false);
       }
     }
   }

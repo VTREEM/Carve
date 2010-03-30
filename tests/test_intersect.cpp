@@ -647,7 +647,7 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
     for (std::list<Input>::const_iterator it = inputs.begin(); it != inputs.end(); ++it) {
       H = fmod((H + .37), 1.0);
       S = 0.5 + fmod((S - 0.37), 0.5);
-      RGB colour = HSV2RGB(H, S, V);
+      cRGB colour = HSV2RGB(H, S, V);
 
       count++;
       sprintf(buf, "Input %d wireframe", count);
