@@ -26,3 +26,11 @@ add_library(carve
             tag.cpp
             timing.cpp
             triangulator.cpp)
+
+set_target_properties(carve PROPERTIES
+                      VERSION   "${carve_VERSION_MAJOR}.${carve_VERSION_MINOR}.${carve_VERSION_PATCH}"
+                      SOVERSION "${carve_VERSION_MAJOR}.${carve_VERSION_MINOR}")
+
+install(TARGETS carve
+        LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/lib"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")

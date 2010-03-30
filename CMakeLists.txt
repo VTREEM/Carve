@@ -2,11 +2,20 @@ cmake_minimum_required(VERSION 2.6)
 
 project(carve)
 
-set(CARVE_VERSION_MAJOR 1)
-set(CARVE_VERSION_MINOR 1)
-set(CARVE_VERSION_PATCH 0)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-set(CARVE_VERSION ${CARVE_VERSION_MAJOR}.${CARVE_VERSION_MINOR}.${CARVE_VERSION_PATCH})
+set(carve_VERSION_MAJOR 1)
+set(carve_VERSION_MINOR 1)
+set(carve_VERSION_PATCH 0)
+
+set(CARVE_VERSION ${carve_VERSION_MAJOR}.${carve_VERSION_MINOR}.${carve_VERSION_PATCH})
+
+option(BUILD_SHARED_LIBS       "Compile libcarve as shared"          ON)
+option(CARVE_WITH_GUI          "Compile gui code"                    ON)
+option(CARVE_SYSTEM_BOOST      "Compile with system installed boost" ON)
+option(CARVE_BOOST_COLLECTIONS "Compile with boost collections"      ON)
+option(CARVE_DEBUG             "Compile in debug code"               OFF)
 
 
 
@@ -15,24 +24,17 @@ if(WIN32)
   add_definitions(-DNOMINMAX)
 endif(WIN32)
 
-option(CARVE_WITH_GUI          "Compile gui code"                    ON)
-option(CARVE_SYSTEM_BOOST      "Compile with system installed boost" ON)
-option(CARVE_BOOST_COLLECTIONS "Compile with boost collections"      ON)
-option(CARVE_DEBUG             "Compile in debug code"               OFF)
-
-
-
 set(HAVE_TR1_UNORDERED_COLLECTIONS FALSE)
 set(HAVE_STD_UNORDERED_COLLECTIONS FALSE)
 set(HAVE_LIBSTDCPP_UNORDERED_COLLECTIONS FALSE)
 
 set(HAVE_BOOST_UNORDERED_COLLECTIONS FALSE)
 
-
 if(CARVE_SYSTEM_BOOST)
   find_package(BOOST 1.40)
   if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
+    message(STATUS "Using system boost")
   else(Boost_FOUND)
     set(CARVE_SYSTEM_BOOST OFF)
   endif(Boost_FOUND)
@@ -69,12 +71,6 @@ else(CARVE_BOOST_COLLECTIONS)
 
 endif(CARVE_BOOST_COLLECTIONS)
 
-configure_file (
-  "${carve_SOURCE_DIR}/include/carve/cmake-config.h.in"
-  "${carve_BINARY_DIR}/include/carve/config.h"
-)
-include_directories(${carve_BINARY_DIR}/include)
-
 if(CARVE_WITH_GUI)
   find_package(OpenGL)
   find_package(GLUT)
@@ -99,6 +95,12 @@ if(CARVE_WITH_GUI)
 endif(CARVE_WITH_GUI)
 
 add_subdirectory(external/GLOOP) 
+
+configure_file (
+  "${carve_SOURCE_DIR}/include/carve/cmake-config.h.in"
+  "${carve_BINARY_DIR}/include/carve/config.h"
+)
+include_directories(${carve_BINARY_DIR}/include)
 
 add_subdirectory(lib) 
 add_subdirectory(include) 

@@ -28,3 +28,8 @@ target_link_libraries(cutgraph    carve_fileformats carve gloop_model)
 
 add_executable       (convert     convert.cpp)
 target_link_libraries(convert     carve_fileformats carve gloop_model)
+
+foreach(tgt intersect view triangulate convert)
+  install(TARGETS ${tgt}
+          RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+endforeach(tgt)
