@@ -118,7 +118,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
                                 AdditionalIncludeDirectories="../../include;../../common;../../external/gloop/include;../../external/glew/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;NOMINMAX;DISABLE_GLU_TRIANGULATOR"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;NOMINMAX;DISABLE_GLU_TRIANGULATOR"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
