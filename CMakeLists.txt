@@ -13,7 +13,7 @@ set(CARVE_VERSION ${CARVE_VERSION_MAJOR}.${CARVE_VERSION_MINOR}.${CARVE_VERSION_
 if(WIN32)
   add_definitions(-D_USE_MATH_DEFINES)
   add_definitions(-DNOMINMAX)
-endif
+endif(WIN32)
 
 option(CARVE_WITH_GUI          "Compile gui code"                    ON)
 option(CARVE_SYSTEM_BOOST      "Compile with system installed boost" ON)
@@ -101,6 +101,7 @@ endif(CARVE_WITH_GUI)
 add_subdirectory(external/GLOOP) 
 
 add_subdirectory(lib) 
+add_subdirectory(include) 
 add_subdirectory(common) 
 add_subdirectory(src) 
 add_subdirectory(examples) 
