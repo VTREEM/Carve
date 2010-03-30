@@ -24,9 +24,6 @@ set(HAVE_LIBSTDCPP_UNORDERED_COLLECTIONS FALSE)
 set(HAVE_BOOST_UNORDERED_COLLECTIONS FALSE)
 
 
-find_package(OpenGL)
-find_package(GLUT)
-
 if(CARVE_SYSTEM_BOOST)
   find_package(BOOST 1.40)
   if(Boost_FOUND)
@@ -74,8 +71,26 @@ configure_file (
 include_directories(${carve_BINARY_DIR}/include)
 
 if(CARVE_WITH_GUI)
-  add_subdirectory(external/GLEW) 
-  add_subdirectory(external/GLUI) 
+  find_package(OpenGL)
+  find_package(GLUT)
+
+  if(NOT OPENGL_FOUND)
+    message(WARNING "Unable to locate OpenGL")
+    set(CARVE_WITH_GUI OFF)
+
+  elseif(NOT GLUT_FOUND)
+    message(WARNING "Unable to locate GLUT")
+    set(CARVE_WITH_GUI OFF)
+
+  else(OENGL_FOUND AND GLUT_FOUND)
+    message(STATUS "Found OpenGL and GLUT")
+    include_directories(${OPENGL_INCLUDE_DIR})
+    include_directories(${GLUT_INCLUDE_DIR})
+    add_subdirectory(external/GLEW) 
+    add_subdirectory(external/GLUI) 
+
+  endif(NOT OPENGL_FOUND)
+
 endif(CARVE_WITH_GUI)
 
 add_subdirectory(external/GLOOP) 

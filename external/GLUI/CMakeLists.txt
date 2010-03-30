@@ -7,7 +7,8 @@ project(glui)
 
 include_directories("${glui_SOURCE_DIR}/include")
 
-include_directories(${OPENGL_INCLUDE_DIR} ${GLUT_INCLUDE_DIR})
+include_directories(${OPENGL_INCLUDE_DIR})
+include_directories(${GLUT_INCLUDE_DIR})
 
 add_library(glui STATIC 
             src/algebra3.cpp

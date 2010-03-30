@@ -27,22 +27,22 @@ add_executable       (tetrahedron        tetrahedron.cpp)
 target_link_libraries(tetrahedron        carve)
 
 add_executable       (test_intersect     test_intersect.cpp)
-target_link_libraries(test_intersect     carve carve_fileformats carve_ui carve_misc glui gloop_model ${OPENGL_LIBRARY})
+target_link_libraries(test_intersect     carve carve_fileformats carve_ui carve_misc glui gloop_model ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
 add_executable       (test_interpolate   test_interpolate.cpp)
-target_link_libraries(test_interpolate   carve carve_ui glui ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
+target_link_libraries(test_interpolate   carve carve_ui glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
 add_executable       (test_csg_interpolate   test_csg_interpolate.cpp)
-target_link_libraries(test_csg_interpolate   carve carve_ui carve_misc glui ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
+target_link_libraries(test_csg_interpolate   carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
 add_executable       (test_slice             test_slice.cpp)
-target_link_libraries(test_slice             carve carve_ui carve_misc glui ${OPENGL_LIBRARY})
+target_link_libraries(test_slice             carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
 add_executable       (test_slice_classify    test_slice_classify.cpp)
-target_link_libraries(test_slice_classify    carve carve_ui carve_misc glui ${OPENGL_LIBRARY})
+target_link_libraries(test_slice_classify    carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
 add_executable       (test_triangulate       test_triangulate.cpp)
-target_link_libraries(test_triangulate       carve carve_ui carve_misc glui ${OPENGL_LIBRARY})
+target_link_libraries(test_triangulate       carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
 add_executable       (test_hole_incorporate  test_hole_incorporate.cpp)
-target_link_libraries(test_hole_incorporate  carve carve_ui carve_misc glui ${OPENGL_LIBRARY})
+target_link_libraries(test_hole_incorporate  carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})

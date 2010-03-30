@@ -10,7 +10,7 @@ link_directories("${carve_BINARY_DIR}/common")
 
 if(ENABLE_GLU_TRI)
   add_executable       (intersect   glu_triangulator.cpp intersect.cpp)
-  target_link_libraries(intersect   carve_fileformats carve_misc carve gloop_model ${OPENGL_LIBRARY})
+  target_link_libraries(intersect   carve_fileformats carve_misc carve gloop_model ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 else(ENABLE_GLU_TRI)
   add_definitions(-DDISABLE_GLU_TRIANGULATOR)
   add_executable       (intersect   intersect.cpp)
@@ -18,7 +18,7 @@ else(ENABLE_GLU_TRI)
 endif(ENABLE_GLU_TRI)
 
 add_executable       (view   view.cpp)
-target_link_libraries(view   carve_fileformats carve_misc carve_ui carve gloop_model glui ${opengl_library})
+target_link_libraries(view   carve_fileformats carve_misc carve_ui carve gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
 add_executable       (triangulate triangulate.cpp)
 target_link_libraries(triangulate carve_fileformats carve gloop_model)
