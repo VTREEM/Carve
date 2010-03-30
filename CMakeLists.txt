@@ -20,6 +20,7 @@ option(CARVE_DEBUG             "Compile in debug code"               OFF)
 
 
 if(WIN32)
+  set(BUILD_SHARED_LIBS OFF) # until everything is exported
   add_definitions(-D_USE_MATH_DEFINES)
   add_definitions(-DNOMINMAX)
 endif(WIN32)
@@ -79,11 +80,11 @@ if(CARVE_WITH_GUI)
     message(WARNING "Unable to locate OpenGL")
     set(CARVE_WITH_GUI OFF)
 
-  elseif(NOT GLUT_FOUND)
+  elseif(1 OR NOT GLUT_FOUND)
     message(WARNING "Unable to locate GLUT")
     set(CARVE_WITH_GUI OFF)
 
-  else(OENGL_FOUND AND GLUT_FOUND)
+  else(OPENGL_FOUND AND GLUT_FOUND)
     message(STATUS "Found OpenGL and GLUT")
     include_directories(${OPENGL_INCLUDE_DIR})
     include_directories(${GLUT_INCLUDE_DIR})
