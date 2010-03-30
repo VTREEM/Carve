@@ -80,7 +80,7 @@ if(CARVE_WITH_GUI)
     message(WARNING "Unable to locate OpenGL")
     set(CARVE_WITH_GUI OFF)
 
-  elseif(1 OR NOT GLUT_FOUND)
+  elseif(NOT GLUT_FOUND)
     message(WARNING "Unable to locate GLUT")
     set(CARVE_WITH_GUI OFF)
 
