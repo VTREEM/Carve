@@ -7,6 +7,9 @@ project(glui)
 
 include_directories("${glui_SOURCE_DIR}/include")
 
+add_definitions(-DGLUI_NO_LIB_PRAGMA)
+add_definitions(-DGLUI_USE_STATIC_LIB)
+
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLUT_INCLUDE_DIR})
 
