@@ -9,7 +9,7 @@ link_directories("${gloop_BINARY_DIR}")
 link_directories("${carve_BINARY_DIR}/common")
 
 add_executable       (custom_collector   custom_collector.cpp)
-target_link_libraries(custom_collector   carve carve_ui carve_misc glui ${OPENGL_LIBRARY})
+target_link_libraries(custom_collector   carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
 add_executable       (texture_example    texture_example.cpp)
-target_link_libraries(texture_example    carve carve_ui carve_misc glui ${OPENGL_LIBRARY})
+target_link_libraries(texture_example    carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
