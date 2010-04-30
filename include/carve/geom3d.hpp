@@ -50,7 +50,7 @@ namespace carve {
       p1 = c1 = adapt(*i++); if (i == end) return false;
       p2 = c2 = adapt(*i++); if (i == end) return false;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       size_t N = 2;
 #endif
       while (i != end) {
@@ -59,7 +59,7 @@ namespace carve {
         if (v.v[dominantAxis(v)]) v.negate();
         n += v;
         p1 = p2; p2 = p3;
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         ++N;
 #endif
       }
@@ -77,7 +77,7 @@ namespace carve {
       n.normalize();
       plane.N = n;
       plane.d = -dot(n, centroid);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       if (N > 3) {
         std::cerr << "N = " << N << " fitted distance:";
         for (i = begin; i != end; ++i) {

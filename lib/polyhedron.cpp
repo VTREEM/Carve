@@ -19,7 +19,7 @@
 #  include <carve_config.h>
 #endif
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
 #define DEBUG_CONTAINS_VERTEX
 #endif
 
@@ -183,7 +183,7 @@ namespace {
                 int m_id) {
 
     std::map<int, carve::PointClass> result;
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "test " << v << " (m_id:" << m_id << ")" << std::endl;
 #endif
     poly->testVertexAgainstClosedManifolds(v, result, true);
@@ -194,13 +194,13 @@ namespace {
       if ((*j).first == m_id) continue;
       if ((*j).second == carve::POINT_IN) inside.insert((*j).first);
       else if ((*j).second == carve::POINT_ON) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << " FAIL" << std::endl;
 #endif
         return false;
       }
     }
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << " OK (inside.size()==" << inside.size() << ")" << std::endl;
 #endif
     embedding[m_id] = inside;
@@ -683,7 +683,7 @@ namespace carve {
 
     done:;
       for (std::map<int, std::set<int> >::iterator i = embedding.begin(); i != embedding.end(); ++i) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << (*i).first << " : ";
         std::copy((*i).second.begin(), (*i).second.end(), std::ostream_iterator<int>(std::cerr, ","));
         std::cerr << std::endl;
@@ -699,11 +699,11 @@ namespace carve {
           if ((*i).second.size() == 1) {
             if (parents.find(*(*i).second.begin()) != parents.end()) {
               new_parents.insert((*i).first);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
               std::cerr << "parent(" << (*i).first << "): " << *(*i).second.begin() << std::endl;
 #endif
             } else {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
               std::cerr << "no parent: " << (*i).first << " (looking for: " << *(*i).second.begin() << ")" << std::endl;
 #endif
             }
@@ -791,14 +791,14 @@ namespace carve {
 
         manifold_is_closed.push_back(is_closed);
         manifold_is_negative.push_back(is_closed && max_abs_x > 0.0);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "{manifold: " << m_id << (manifold_is_negative.back() ? " is" : " is not") << " negative}" << std::endl;
 #endif
         if (is_closed) closed_manifold_count++;
         ++m_id;
       }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "polyhedron " << this << " has " << m_id << " manifolds (" << closed_manifold_count << " closed)" << std::endl;
 #endif
 
@@ -1109,7 +1109,7 @@ namespace carve {
       }
 
       for (size_t i = 0; i < crossings.size(); ++i) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "crossing: " << i << " = " << crossings[i] << " is_negative = " << manifold_is_negative[i] << std::endl;
 #endif
         if (!manifold_is_closed[i]) continue;

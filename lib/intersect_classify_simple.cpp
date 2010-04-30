@@ -40,7 +40,7 @@ public:
   typedef mapped_type data_type;
 };
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
 static void drawEdgeGraph(edge_graph_t &eg) {
   for (edge_graph_t::const_iterator
          j = eg.begin(), je = eg.end(); j != je; ++j) {
@@ -60,7 +60,7 @@ static bool find_cycles(edge_graph_t &eg, std::list<V2Set> &cycles) {
   for (edge_graph_t::const_iterator
          i = eg.begin(), e = eg.end(); i != e; ++i) {
     if ((*i).second.second.size() != 1) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       // HOOK(drawEdgeGraph(eg););
 #endif
       std::cerr << "WARNING:edge loop graph does not consist of simple cycles"
@@ -70,7 +70,7 @@ static bool find_cycles(edge_graph_t &eg, std::list<V2Set> &cycles) {
   }
 
   while (eg.size()) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "eg.size(): " << eg.size() << std::endl;
 #endif
     std::list<const Vector *> path;
@@ -95,7 +95,7 @@ static bool find_cycles(edge_graph_t &eg, std::list<V2Set> &cycles) {
       (*i).second.first = c++;
     }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << (i != eg.end() ? "found" : "didn't find") << " cycle "
               << std::endl
               << "path.size(): " << path.size()
@@ -135,7 +135,7 @@ static bool eliminate_simple(const LoopEdges &edge_map,
   const Vector *v1, *v2;
   loops.clear();
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << edges.size() << " edges to eliminate" << std::endl;
 #endif
 
@@ -151,7 +151,7 @@ static bool eliminate_simple(const LoopEdges &edge_map,
     }
 
     FaceLoop *to_remove = *((*i).second.begin());
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "  removing face loop " << to_remove << std::endl;
 #endif
     loops.insert(to_remove);
@@ -162,12 +162,12 @@ static bool eliminate_simple(const LoopEdges &edge_map,
 
       V2Set::iterator v = edges.find(std::make_pair(v1, v2));
       if (v != edges.end()) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "    removing edge " << v1 << "-" << v2 << std::endl;
 #endif
         edges.erase(v);
       } else {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "    adding edge " << v2 << "-" << v1 << std::endl;
 #endif
         edges.insert(std::make_pair(v2, v1));
@@ -177,12 +177,12 @@ static bool eliminate_simple(const LoopEdges &edge_map,
 
       v1 = v2;
     }
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "  " << edges.size() << " edges remain." << std::endl;
 #endif
   }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "eliminate succeeded" << std::endl;
 #endif
 
@@ -323,7 +323,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
       edge_graph_t::data_type &data(edge_graph[v1]);
       data.first = INT_MAX;
       data.second.insert(v2);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "--- " << v1 << "-" << v2 << std::endl;
 #endif
     }
@@ -332,7 +332,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
   cycles.clear();
   if (!find_cycles(edge_graph, cycles)) return;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << cycles.size() << " reverse cycles" << std::endl;
 #endif
 
@@ -348,7 +348,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
     }
     if (eliminate_simple(edge_map_a, (*i), a_loopset, a_extra_edges) &&
         eliminate_simple(edge_map_b, b_cycle, b_loopset, b_extra_edges)) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "paired "
                 << a_loopset.size() << " poly_a faces with "
                 << b_loopset.size() << " poly_b faces in reverse loop ("
@@ -365,7 +365,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
                                                poly_a,
                                                FACE_ON_ORIENT_IN);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "a_class = " << ENUM(a_class) << std::endl
                 << "b_class = " << ENUM(b_class) << std::endl;
 #endif
@@ -375,7 +375,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
       else if (a_class != FACE_ON_ORIENT_IN && b_class == FACE_ON_ORIENT_IN)
         b_class = a_class;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "modified a_class = " << ENUM(a_class) << std::endl
                 << "         b_class = " << ENUM(b_class) << std::endl;
 #endif
@@ -401,7 +401,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
         b_face_loops.remove((*j));
       }
     } else {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "pairing failed" << std::endl;
 #endif
    }
@@ -418,7 +418,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
       edge_graph_t::data_type &data(edge_graph[v1]);
       data.first = INT_MAX;
       data.second.insert(v2);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "+++ " << v1 << "-" << v2 << std::endl;
 #endif
     }
@@ -427,7 +427,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
   cycles.clear();
   if (!find_cycles(edge_graph, cycles)) return;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << cycles.size() << " forward cycles" << std::endl;
 #endif
 
@@ -439,7 +439,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
 
     if (eliminate_simple(edge_map_a, (*i), a_loopset, a_extra_edges) &&
         eliminate_simple(edge_map_b, b_cycle, b_loopset, b_extra_edges)) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "paired "
                 << a_loopset.size() << " poly_a faces with "
                 << b_loopset.size() << " poly_b faces in forward loop"
@@ -455,7 +455,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
       b_class = faceClassificationBasedOnEdges(b_extra_edges,
                                                poly_a,
                                                FACE_ON_ORIENT_OUT);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "a_class = " << ENUM(a_class) << std::endl
                 << "b_class = " << ENUM(b_class) << std::endl;
 #endif
@@ -465,7 +465,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
       else if (a_class != FACE_ON_ORIENT_OUT && b_class == FACE_ON_ORIENT_OUT)
         b_class = (FaceClass)-a_class;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "modified a_class = " << ENUM(a_class) << std::endl
                 << "         b_class = " << ENUM(b_class) << std::endl;
 #endif
@@ -491,7 +491,7 @@ static void classifyOnFaces_2(FaceLoopList &a_face_loops,
         b_face_loops.remove((*j));
       }
     } else {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "pairing failed" << std::endl;
 #endif
     }
@@ -532,11 +532,11 @@ void classifyEasyFaces(FaceLoopList &face_loops,
 
       if (pc == POINT_UNK) {
         pc = other_poly->containsVertex(*f_loop[test]);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "testing " << f_loop[test] << " pc = " << pc << std::endl;
 #endif
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         if (pc != POINT_IN && pc != POINT_OUT) {
           HOOK(drawFaceLoop(f_loop, i->orig_face->normal, 1.0, 0.0, 0.0, 0.5, true););
           HOOK(drawFaceLoopWireframe(f_loop, i->orig_face->normal, 1.0, 1.0, 0.0, 1.0););
@@ -624,7 +624,7 @@ void carve::csg::CSG::classifyFaceGroupsSimple(const V2Set &shared_edges,
   classifyEasyFaces(a_face_loops, vclass, poly_b, 1, intersections, collector);
   classifyEasyFaces(b_face_loops, vclass, poly_a, 0, intersections, collector);
 
-#if 0 && defined(DEBUG)
+#if 0 && defined(CARVE_DEBUG)
   HOOK(drawFaceLoopList(a_face_loops, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f););
   HOOK(drawFaceLoopList(b_face_loops, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f););
 #endif
@@ -693,7 +693,7 @@ void carve::csg::CSG::classifyFaceGroupsSimple(const V2Set &shared_edges,
     }
 
     // CARVE_ASSERT(pc == POINT_IN || pc == POINT_OUT);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     {
       float r,g,b,a;
       switch(fc) {
@@ -749,7 +749,7 @@ void carve::csg::CSG::classifyFaceGroupsSimple(const V2Set &shared_edges,
     }
 
     // CARVE_ASSERT(pc == POINT_IN || pc == POINT_OUT);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     {
       float r,g,b,a;
       switch(fc) {

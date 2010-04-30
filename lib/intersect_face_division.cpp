@@ -211,7 +211,7 @@ namespace {
                         const carve::csg::VertexIntersections &vi) {
     Graph graph;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "splitFace()" << " face=" << face << " face->vertices.size()=" << face->vertices.size() << " edges.size()=" << edges.size() << std::endl;
 #endif
 
@@ -225,7 +225,7 @@ namespace {
     }
 
     graph.computeProjection(face);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     graph.print(&vi);
 #endif
 
@@ -289,16 +289,16 @@ namespace {
         graph.removeEdge(edge);
         edge = next;
       }
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "===============================================" << std::endl;
       graph.print(&vi);
 #endif
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "signed area of loop: " << carve::geom2d::signedArea(projected) << std::endl;
 #endif
       CARVE_ASSERT(edge == start);
       if (carve::geom2d::signedArea(projected) < 0) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "output face loop size: " << loop.size() << " : ";
         for (size_t i = 0; i < loop.size(); ++i) std::cerr << " " << loop[i];
         std::cerr << std::endl;
@@ -306,7 +306,7 @@ namespace {
         face_loops.push_back(std::vector<const poly_t::vertex_t *>());
         face_loops.back().swap(loop);
       } else {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "output hole loop size: " << loop.size() << " : ";
         for (size_t i = 0; i < loop.size(); ++i) std::cerr << " " << loop[i];
         std::cerr << std::endl;
@@ -315,7 +315,7 @@ namespace {
         hole_loops.back().swap(loop);
       }
     }
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "===============================================" << std::endl;
 
     std::cerr << "result: " << face_loops.size() << " face loops (";
@@ -488,7 +488,7 @@ namespace {
                                    shares_vertex,
                                    shares_edge);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "face: " << j
                   << " hole: " << i
                   << " shares_vertex: " << shares_vertex
@@ -505,7 +505,7 @@ namespace {
           // trivially. Still need to record its containment, so that
           // the assignment below works.
           if (unmatched_h_idx != -1) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
             std::cerr << "using unmatched vertex: " << unmatched_h_idx << std::endl;
 #endif
             test = hole_loops[i][unmatched_h_idx]->v;
@@ -531,18 +531,18 @@ namespace {
         // XXX: use loop area to avoid some point-in-poly tests? Loop
         // area is faster, but not sure which is more robust.
         if (carve::geom2d::pointInPolySimple(face_loops_projected[j], test_p)) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "contains: " << i << " - " << j << std::endl;
 #endif
           containing_faces[i].push_back(j);
         } else {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "does not contain: " << i << " - " << j << std::endl;
 #endif
         }
       }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       if (containing_faces[i].size() == 0) {
         //HOOK(drawFaceLoopWireframe(hole_loops[i], face->normal, 1.0, 0.0, 0.0, 1.0););
         std::cerr << "hole loop: ";
@@ -637,7 +637,7 @@ namespace {
             f_loop[p] = h_loop[a];
           }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "hook face " << f << " to hole " << i << "(vertex)" << std::endl;
 #endif
         } else {
@@ -656,7 +656,7 @@ namespace {
         if (containing_faces[i].size() == 1) {
           int f = containing_faces[i][0];
           face_holes[f].push_back(i);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "hook face " << f << " to hole " << i << std::endl;
 #endif
           removed.insert(f);

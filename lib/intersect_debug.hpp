@@ -17,7 +17,7 @@
 
 #include <carve/debug_hooks.hpp>
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
 
 #define DEBUG_DRAW_FACE_EDGES
 #define DEBUG_DRAW_INTERSECTIONS

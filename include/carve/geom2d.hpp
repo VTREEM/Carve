@@ -229,7 +229,7 @@ namespace carve {
 
     template<typename T, typename adapt_t>
     bool pickContainedPoint(const std::vector<T> &poly, adapt_t adapt, P2 &result) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "pickContainedPoint ";
       for (unsigned i = 0; i < poly.size(); ++i) std::cerr << " " << adapt(poly[i]);
       std::cerr << std::endl;

@@ -204,7 +204,7 @@ namespace carve {
           }
         }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "intersection segment: " << out.size() << " edges." << std::endl;
 #if defined(DEBUG_DRAW_INTERSECTION_LINE)
         {
@@ -422,11 +422,11 @@ namespace carve {
           out.insert(edge.second);
           if (out.size() == 3) branch_points.insert(edge.first);
 
-#if defined(DEBUG) && defined(DEBUG_DRAW_INTERSECTION_LINE)
+#if defined(CARVE_DEBUG) && defined(DEBUG_DRAW_INTERSECTION_LINE)
           HOOK(drawEdge(edge.first, edge.second, 1, 1, 1, 1, 1, 1, 1, 1, 1.0););
 #endif
         }
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "graph nodes: " << shared_edge_graph.size() << std::endl;
         std::cerr << "branch nodes: " << branch_points.size() << std::endl;
 #endif
@@ -502,7 +502,7 @@ namespace carve {
               if ((*a)->face_loops.count == 1 && (*b)->face_loops.count == 1) {
                 uint32_t fcb = x == +1 ? FACE_ON_ORIENT_OUT_BIT : FACE_ON_ORIENT_IN_BIT;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
                 std::cerr << "paired groups: " << (*a) << ", " << (*b) << std::endl;
 #endif
 
@@ -565,7 +565,7 @@ namespace carve {
 
       CandidateOnMap candidate_on_map;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "a input loops (" << a_loops_grouped.size() << "): ";
       for (FLGroupList::iterator i = a_loops_grouped.begin(); i != a_loops_grouped.end(); ++i) {
         std::cerr << &*i << " ";
@@ -673,7 +673,7 @@ namespace carve {
       }
 
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "poly a:" << std::endl;
       for (Classification::iterator i = a_classification.begin(), e = a_classification.end(); i != e; ++i) {
         FaceLoopGroup *grp = ((*i).first.first);
@@ -749,7 +749,7 @@ namespace carve {
 
       for (FLGroupList::iterator i = a_loops_grouped.begin(); i != a_loops_grouped.end(); ++i) {
         if ((*i).classification.size() == 0) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << " non intersecting group (poly a): " << &(*i) << std::endl;
 #endif
           bool classified = false;
@@ -778,7 +778,7 @@ namespace carve {
 
       for (FLGroupList::iterator i = b_loops_grouped.begin(); i != b_loops_grouped.end(); ++i) {
         if ((*i).classification.size() == 0) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << " non intersecting group (poly b): " << &(*i) << std::endl;
 #endif
           bool classified = false;

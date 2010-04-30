@@ -125,7 +125,7 @@ namespace carve {
                                               CSG::Hooks &hooks) {
   
       for (FLGroupList::iterator i = group.begin(); i != group.end();) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "............group " << &(*i) << std::endl;
 #endif
         FaceLoopGroup &grp = (*i);
@@ -190,7 +190,7 @@ namespace carve {
           }
         }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << ">>> n_in: " << n_in << " n_on: " << n_on << " n_out: " << n_out << std::endl;
 #endif
 
@@ -246,7 +246,7 @@ namespace carve {
         case POINT_OUT: fc = FACE_OUT; break;
         case POINT_ON: {
           double d = carve::geom::distance(hit_face->plane_eqn, v);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "d = " << d << std::endl;
 #endif
           fc = d < 0 ? FACE_IN : FACE_OUT;
@@ -254,7 +254,7 @@ namespace carve {
 	default:
           CARVE_FAIL("unhandled switch case -- should not happen");
         }
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "CLASS: " << (fc == FACE_IN ? "FACE_IN" : "FACE_OUT" ) << std::endl;
 #endif
 
@@ -308,13 +308,13 @@ namespace carve {
           for (std::list<FLGroupList::iterator>::iterator ji = (*a).second.begin(), je = (*a).second.end(); ji != je; ++ji) {
             j = (*ji);
             if (isSameFwd((*i).perimeter, (*j).perimeter)) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
               std::cerr << "SAME FWD PAIR" << std::endl;
 #endif
               fc = FACE_ON_ORIENT_OUT;
               goto face_pair;
             } else if (isSameRev((*i).perimeter, (*j).perimeter)) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
               std::cerr << "SAME REV PAIR" << std::endl;
 #endif
               fc = FACE_ON_ORIENT_IN;

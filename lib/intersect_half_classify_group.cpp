@@ -81,7 +81,7 @@ namespace carve {
         }
 
         void explain(FaceLoop *f, size_t index, PointClass pc) const {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "face loop " << f << " from poly b is easy because vertex " << index << " (" << f->vertices[index]->v << ") is " << ENUM(pc) << std::endl;
 #endif
         }
@@ -102,7 +102,7 @@ namespace carve {
                             const carve::poly::Polyhedron *poly_b) const {
           GroupPoly group_poly(poly_b, b_out);
           performClassifySimpleOnFaceGroups(a_loops_grouped, b_loops_grouped, poly_a, poly_b, group_poly, hooks);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "after removal of simple on groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
         }
@@ -114,7 +114,7 @@ namespace carve {
                           const carve::poly::Polyhedron *poly_b) const {
           GroupPoly group_poly(poly_b, b_out);
           performClassifyEasyFaceGroups(b_loops_grouped, poly_a, vclass, FaceMaker(), group_poly, hooks);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "after removal of easy groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
         }
@@ -126,7 +126,7 @@ namespace carve {
                           const carve::poly::Polyhedron *poly_b) const {
           GroupPoly group_poly(poly_b, b_out);
           performClassifyHardFaceGroups(b_loops_grouped, poly_a, FaceMaker(), group_poly, hooks);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "after removal of hard groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
 
@@ -143,7 +143,7 @@ namespace carve {
 
         void postRemovalCheck(FLGroupList &a_loops_grouped,
                               FLGroupList &b_loops_grouped) const {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "after removal of on groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
         }
@@ -154,7 +154,7 @@ namespace carve {
         }
 
         void finish(FLGroupList &a_loops_grouped,FLGroupList &b_loops_grouped) const {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           if (a_loops_grouped.size() || b_loops_grouped.size())
             std::cerr << "UNCLASSIFIED! a=" << a_loops_grouped.size() << ", b=" << b_loops_grouped.size() << std::endl;
 #endif   

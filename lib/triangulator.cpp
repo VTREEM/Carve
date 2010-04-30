@@ -132,7 +132,7 @@ namespace {
     }
 
     void push(vertex_info *v) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       checkheap();
 #endif
       queue.push_back(v);
@@ -140,7 +140,7 @@ namespace {
     }
 
     vertex_info *pop() {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       checkheap();
 #endif
       std::pop_heap(queue.begin(), queue.end(), vertex_info_ordering());
@@ -150,7 +150,7 @@ namespace {
     }
 
     void remove(vertex_info *v) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       checkheap();
 #endif
       CARVE_ASSERT(std::find(queue.begin(), queue.end(), v) != queue.end());
@@ -167,7 +167,7 @@ namespace {
     }
 
     void changeScore(vertex_info *v, double score) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       checkheap();
 #endif
       CARVE_ASSERT(std::find(queue.begin(), queue.end(), v) != queue.end());
@@ -287,7 +287,7 @@ namespace {
         std::pop_heap(heap.begin(), heap.end(), vertex_info_l2norm_inc_ordering(v1));
         v2 = heap.back(); heap.pop_back();
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "testing: " << v1 << " - " << v2 << std::endl;
         std::cerr << "  length = " << (v2->p - v1->p).length() << std::endl;
         std::cerr << "  pos: " << v1->p << " - " << v2->p << std::endl;
@@ -338,7 +338,7 @@ namespace {
               intersected = true;
             }
           }
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           if (intersected) {
             std::cerr << "  failed on edge: " << t << " - " << u << std::endl;
             std::cerr << "    pos: " << t->p << " - " << u->p << std::endl;
@@ -611,7 +611,7 @@ bool carve::triangulate::detail::splitAndResume(vertex_info *begin, std::vector<
 
 
 bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<carve::triangulate::tri_idx> &result) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "entering doTriangulate" << std::endl;
 #endif
 
@@ -638,7 +638,7 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     remain++;
   } while (v != begin);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "remain = " << remain << std::endl;
 #endif
 
@@ -655,7 +655,7 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
 
     result.push_back(carve::triangulate::tri_idx(v->prev->idx, v->idx, v->next->idx));
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     {
       std::vector<carve::geom2d::P2> temp;
       temp.push_back(v->prev->p);
@@ -678,7 +678,7 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     if (n->score > 0.25 && n->isCandidate() && n->isClipable()) {
       vq.remove(n);
       v = n;
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << " continue clipping (n), score = " << n->score << std::endl;
 #endif
       goto continue_clipping;
@@ -687,19 +687,19 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     if (p->score > 0.25 && p->isCandidate() && p->isClipable()) {
       vq.remove(p);
       v = p;
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << " continue clipping (p), score = " << n->score << std::endl;
 #endif
       goto continue_clipping;
     }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "looking for new start point" << std::endl;
     std::cerr << "remain = " << remain << std::endl;
 #endif
   }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
 #endif
 
@@ -718,17 +718,17 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
     if (carve::geom2d::signedArea(temp) == 0) {
       // XXX: this test will fail in cases where the boundary is
       // twisted so that a negative area balances a positive area.
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "skeleton remains. complete." << std::endl;
 #endif
       goto done;
     }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "before removeDegeneracies: remain=" << remain << std::endl;
 #endif
     remain -= removeDegeneracies(begin, result);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "after removeDegeneracies: remain=" << remain << std::endl;
 #endif
   }
@@ -945,7 +945,7 @@ void carve::triangulate::triangulate(const std::vector<carve::geom2d::P2> &poly,
   std::vector<detail::vertex_info *> vinfo;
   const size_t N = poly.size();
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "TRIANGULATION BEGINS" << std::endl;
 #endif
 
@@ -988,7 +988,7 @@ void carve::triangulate::triangulate(const std::vector<carve::geom2d::P2> &poly,
   removeDegeneracies(begin, result);
   doTriangulate(begin, result);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "TRIANGULATION ENDS" << std::endl;
 #endif
 

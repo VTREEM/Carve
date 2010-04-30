@@ -300,7 +300,7 @@ namespace carve {
 
           findSharedEdge(ai, bi);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           if (carve::geom2d::signedArea(project(poly[a->v[0]]), project(poly[a->v[1]]), project(poly[a->v[2]])) > 0.0 ||
               carve::geom2d::signedArea(project(poly[b->v[0]]), project(poly[b->v[1]]), project(poly[b->v[2]])) > 0.0) {
             std::cerr << "warning: triangle pair " << this << " contains triangles with incorrect orientation" << std::endl;
@@ -364,7 +364,7 @@ namespace carve {
                         size_t &n) {
           double old_score = tp->score;
           double new_score = tp->calc(project, poly);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "tp:" << tp << " old_score: " << old_score << " new_score: " << new_score << std::endl;
 #endif
           if (new_score > 0.0 && old_score <= 0.0) {
@@ -391,19 +391,19 @@ namespace carve {
           vert_edge_t old_e, new_e;
           vert_edge_t perim[4];
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "improvable edges: " << n << std::endl;
 #endif
 
           tri_pair_t *tp = *std::max_element(edges.begin(), edges.begin() + n, max_score());
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "improving tri-pair: " << tp << " with score: " << tp->score << std::endl;
 #endif
 
           tp->flip(old_e, new_e, perim);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "old_e: " << old_e.first << "," << old_e.second << " -> new_e: " << new_e.first << "," << new_e.second << std::endl;
 #endif
 
@@ -448,7 +448,7 @@ namespace carve {
             if (tp->a && tp->b) {
               tp->calc(project, poly);
               count++;
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
               std::cerr << "internal edge: " << (*i).first.first << "," << (*i).first.second << " -> " << tp << " " << tp->score << std::endl;
 #endif
               ++i;
@@ -678,7 +678,7 @@ namespace carve {
                  std::vector<tri_idx> &result) {
       detail::tri_pairs_t tri_pairs;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       bool warn = false;
       for (size_t i = 0; i < result.size(); ++i) {
         tri_idx &t = result[i];
@@ -712,7 +712,7 @@ namespace carve {
       //   for each q in the up-to-four adjoining tri pairs:
       //     update q's tri ptr, if changed, and its score.
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       double initial_score = 0;
       for (size_t i = 0; i < edges.size(); ++i) {
         initial_score += edges[i]->edgeLen(project, poly);
@@ -724,7 +724,7 @@ namespace carve {
         tri_pairs.flip(project, poly, edges, n);
       }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       double final_score = 0;
       for (size_t i = 0; i < edges.size(); ++i) {
         final_score += edges[i]->edgeLen(project, poly);
@@ -732,7 +732,7 @@ namespace carve {
       std::cerr << "final score: " << final_score << std::endl;
 #endif
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       if (!warn) {
         for (size_t i = 0; i < result.size(); ++i) {
           tri_idx &t = result[i];

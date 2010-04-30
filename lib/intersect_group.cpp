@@ -58,7 +58,7 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
     }
   }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   detail::VVSMap edge_graph;
 
   for (V2Set::const_iterator i = shared_edges.begin(); i != shared_edges.end(); ++i) {

@@ -414,7 +414,7 @@ static const poly_t::vertex_t *weld(
     carve::csg::VertexPool &vertex_pool) {
   const poly_t::vertex_t *weld_point = chooseWeldPoint(equivalent, vertex_pool);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "weld: " << equivalent.size() << " vertices ( ";
   for (detail::VSet::const_iterator
          i = equivalent.begin(), e = equivalent.end();
@@ -457,7 +457,7 @@ void carve::csg::CSG::groupIntersections() {
   
   std::vector<const poly_t::vertex_t *> vertices;
   detail::VVSMap graph;
-#if 1 || defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "groupIntersections()" << ": vertex_intersections.size()==" << vertex_intersections.size() << std::endl;
 #endif
 
@@ -485,7 +485,7 @@ void carve::csg::CSG::groupIntersections() {
 
     for (size_t j = 0; j < out.size(); ++j) {
       if (vertices[i] != out[j] && carve::geom::equal(vertices[i]->v, out[j]->v)) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "EQ: " << vertices[i] << "," << out[j] << " " << vertices[i]->v << "," << out[j]->v << std::endl;
 #endif
         graph[vertices[i]].insert(out[j]);
@@ -770,41 +770,41 @@ void carve::csg::CSG::generateIntersections(const poly_t *a, const poly_t *b) {
   generateVertexEdgeIntersections(a, b);
   generateVertexEdgeIntersections(b, a);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "generateEdgeEdgeIntersections" << std::endl;
 #endif
   generateEdgeEdgeIntersections(a, b);
 
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "generateEdgeFaceIntersections" << std::endl;
 #endif
   generateEdgeFaceIntersections(a, b);
   generateEdgeFaceIntersections(b, a);
 
  
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "makeVertexIntersections" << std::endl;
 #endif
   makeVertexIntersections();
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "  intersections.size() " << intersections.size() << std::endl;
   map_histogram(intersections);
   std::cerr << "  vertex_intersections.size() " << vertex_intersections.size() << std::endl;
   map_histogram(vertex_intersections);
 #endif
 
-#if defined(DEBUG) && defined(DEBUG_DRAW_INTERSECTIONS)
+#if defined(CARVE_DEBUG) && defined(DEBUG_DRAW_INTERSECTIONS)
   HOOK(drawIntersections(vertex_intersections););
 #endif
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   // std::cerr << "groupIntersections" << std::endl;
 #endif
   //groupIntersections();
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "  intersections.size() " << intersections.size() << std::endl;
   std::cerr << "  vertex_intersections.size() " << vertex_intersections.size() << std::endl;
 #endif
@@ -929,7 +929,7 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
                             face_b_intersections.end(),
                             std::back_inserter(vertices));
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "face pair: "
                 << face_a << ":" << face_b
                 << " N(verts) " << vertices.size() << std::endl;
@@ -951,13 +951,13 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
 
         // determine whether the midpoint of the implied edge is contained in face_a and face_b
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
         std::cerr << "face_a->vertices.size() = " << face_a->vertices.size() << " face_a->containsPointInProjection(c) = " << face_a->containsPointInProjection(c) << std::endl;
         std::cerr << "face_b->vertices.size() = " << face_b->vertices.size() << " face_b->containsPointInProjection(c) = " << face_b->containsPointInProjection(c) << std::endl;
 #endif
 
         if (face_a->containsPointInProjection(c) && face_b->containsPointInProjection(c)) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "adding edge: " << v1 << "-" << v2 << std::endl;
 #if defined(DEBUG_DRAW_FACE_EDGES)
           HOOK(drawEdge(v1, v2, 1, 1, 1, 1, 1, 1, 1, 1, 2.0););
@@ -993,7 +993,7 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
           const poly_t::vertex_t *v2 = ordered[k + 1];
           carve::geom3d::Vector c = (v1->v + v2->v) / 2;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "testing edge: " << v1 << "-" << v2 << " at " << c << std::endl;
           std::cerr << "a: " << face_a->containsPointInProjection(c) << " b: " << face_b->containsPointInProjection(c) << std::endl;
           std::cerr << "face_a->containsPointInProjection(c): " << face_a->containsPointInProjection(c) << std::endl;
@@ -1001,7 +1001,7 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
 #endif
 
           if (face_a->containsPointInProjection(c) && face_b->containsPointInProjection(c)) {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
             std::cerr << "adding edge: " << v1 << "-" << v2 << std::endl;
 #if defined(DEBUG_DRAW_FACE_EDGES)
             HOOK(drawEdge(v1, v2, .5, .5, .5, 1, .5, .5, .5, 1, 2.0););
@@ -1114,19 +1114,19 @@ void carve::csg::CSG::calc(const poly_t *a,
                            size_t &b_edge_count) {
   detail::Data data;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "init" << std::endl;
 #endif
   init();
 
   generateIntersections(a, b);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "intersectingFacePairs" << std::endl;
 #endif
   intersectingFacePairs(data);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "emap:" << std::endl;
   map_histogram(data.emap);
   std::cerr << "fmap:" << std::endl;
@@ -1138,31 +1138,31 @@ void carve::csg::CSG::calc(const poly_t *a,
   // std::cerr << "removeCoplanarFaces" << std::endl;
   // fp_intersections.removeCoplanarFaces();
 
-#if defined(DEBUG) && defined(DEBUG_DRAW_OCTREE)
+#if defined(CARVE_DEBUG) && defined(DEBUG_DRAW_OCTREE)
   HOOK(drawOctree(a->octree););
   HOOK(drawOctree(b->octree););
 #endif
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "divideEdges" << std::endl;
 #endif
   // divideEdges(a->edges, b, data);
   // divideEdges(b->edges, a, data);
   divideIntersectedEdges(data);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "makeFaceEdges" << std::endl;
 #endif
   // makeFaceEdges(data.face_split_edges, eclass, data.fmap, data.fmap_rev);
   makeFaceEdges(eclass, data);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "generateFaceLoops" << std::endl;
 #endif
   a_edge_count = generateFaceLoops(a, data, a_face_loops);
   b_edge_count = generateFaceLoops(b, data, b_face_loops);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "generated " << a_edge_count << " edges for poly a" << std::endl;
   std::cerr << "generated " << b_edge_count << " edges for poly b" << std::endl;
 #endif
@@ -1170,7 +1170,7 @@ void carve::csg::CSG::calc(const poly_t *a,
   checkFaceLoopIntegrity(a_face_loops);
   checkFaceLoopIntegrity(b_face_loops);
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << "classify" << std::endl;
 #endif
   // initialize some classification information.
@@ -1187,7 +1187,7 @@ void carve::csg::CSG::calc(const poly_t *a,
     vclass[(*i).first] = PC2(POINT_ON, POINT_ON);
   }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
   std::cerr << data.divided_edges.size() << " edges are split" << std::endl;
   std::cerr << data.face_split_edges.size() << " faces are split" << std::endl;
 
@@ -1306,13 +1306,13 @@ poly_t *carve::csg::CSG::compute(const poly_t *a,
     carve::TimingBlock block(FUNC_NAME);
     groupFaceLoops(a_face_loops, a_edge_map, shared_edges, a_loops_grouped);
     groupFaceLoops(b_face_loops, b_edge_map, shared_edges, b_loops_grouped);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
     std::cerr << "*** a_loops_grouped.size(): " << a_loops_grouped.size() << std::endl;
     std::cerr << "*** b_loops_grouped.size(): " << b_loops_grouped.size() << std::endl;
 #endif
   }
 
-#if defined(DEBUG) && defined(DEBUG_DRAW_GROUPS)
+#if defined(CARVE_DEBUG) && defined(DEBUG_DRAW_GROUPS)
   {
     float n = 1.0 / (a_loops_grouped.size() + b_loops_grouped.size() + 1);
     float H = 0.0, S = 1.0, V = 1.0;

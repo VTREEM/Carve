@@ -25,7 +25,7 @@ static inline bool facesAreCoplanar(const carve::poly::Polyhedron::face_t *a, co
   return !carve::geom3d::planeIntersection(a->plane_eqn, b->plane_eqn, temp);
 }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
 
 #include <carve/debug_hooks.hpp>
 
@@ -40,7 +40,7 @@ namespace carve {
       return (*i).second;
     }
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
 
     class IntersectDebugHooks;
     extern IntersectDebugHooks *g_debug;

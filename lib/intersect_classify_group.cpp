@@ -53,7 +53,7 @@ namespace carve {
           return vclass[f->vertices[index]].cls[1] == POINT_ON;
         }
         void explain(FaceLoop *f, size_t index, PointClass pc) const {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "face loop " << f << " from poly " << "ab"[0] << " is easy because vertex " << index << " (" << *f->vertices[index] << ") is " << ENUM(pc) << std::endl;
 #endif
         }
@@ -69,7 +69,7 @@ namespace carve {
           return vclass[f->vertices[index]].cls[0] == POINT_ON;
         }
         void explain(FaceLoop *f, size_t index, PointClass pc) const {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "face loop " << f << " from poly " << "ab"[1] << " is easy because vertex " << index << " (" << *f->vertices[index] << ") is " << ENUM(pc) << std::endl;
 #endif
         }
@@ -89,7 +89,7 @@ namespace carve {
         }
 
         void explain(FaceLoop *f, size_t index, PointClass pc) const {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "face loop " << f << " from poly " << "ab"[poly_num] << " is easy because vertex " << index << " (" << f->vertices[index]->v << ") is " << ENUM(pc) << std::endl;
 #endif
         }
@@ -115,7 +115,7 @@ namespace carve {
           } else {
             performClassifySimpleOnFaceGroups(b_loops_grouped, a_loops_grouped, poly_b, poly_a, collector, hooks);
           }
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "after removal of simple on groups: " << a_loops_grouped.size() << " a groups" << std::endl;
           std::cerr << "after removal of simple on groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
@@ -128,7 +128,7 @@ namespace carve {
                           const carve::poly::Polyhedron *poly_b) const {
           performClassifyEasyFaceGroups(a_loops_grouped, poly_b, vclass, FaceMaker0(collector, hooks), collector, hooks);
           performClassifyEasyFaceGroups(b_loops_grouped, poly_a, vclass, FaceMaker1(collector, hooks), collector, hooks);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "after removal of easy groups: " << a_loops_grouped.size() << " a groups" << std::endl;
           std::cerr << "after removal of easy groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
@@ -141,7 +141,7 @@ namespace carve {
                           const carve::poly::Polyhedron *poly_b) const {
           performClassifyHardFaceGroups(a_loops_grouped, poly_b, FaceMaker0(collector, hooks), collector, hooks);
           performClassifyHardFaceGroups(b_loops_grouped, poly_a, FaceMaker1(collector, hooks), collector, hooks);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "after removal of hard groups: " << a_loops_grouped.size() << " a groups" << std::endl;
           std::cerr << "after removal of hard groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
@@ -158,7 +158,7 @@ namespace carve {
     
         void postRemovalCheck(FLGroupList &a_loops_grouped,
                               FLGroupList &b_loops_grouped) const {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           std::cerr << "after removal of on groups: " << a_loops_grouped.size() << " a groups" << std::endl;
           std::cerr << "after removal of on groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
@@ -169,7 +169,7 @@ namespace carve {
         }
 
         void finish(FLGroupList &a_loops_grouped,FLGroupList &b_loops_grouped) const {
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           if (a_loops_grouped.size() || b_loops_grouped.size())
             std::cerr << "UNCLASSIFIED! a=" << a_loops_grouped.size() << ", b=" << b_loops_grouped.size() << std::endl;
 #endif   
@@ -187,7 +187,7 @@ namespace carve {
                                  const detail::LoopEdges &b_edge_map,
                                  CSG::Collector &collector) {
       ClassifyFaceGroups classifier(collector, hooks);
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
       std::cerr << "initial groups: " << a_loops_grouped.size() << " a groups" << std::endl;
       std::cerr << "initial groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif

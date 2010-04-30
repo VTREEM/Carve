@@ -76,7 +76,7 @@ namespace carve {
             faces.push_back(face_data_t(new_faces[i], orig_face, false));
           }
 
-#if defined(DEBUG) && defined(DEBUG_PRINT_RESULT_FACES)
+#if defined(CARVE_DEBUG) && defined(DEBUG_PRINT_RESULT_FACES)
           std::cerr << "+" << ENUM(face_class) << " ";
           for (unsigned i = 0; i < vertices.size(); ++i) std::cerr << " " << vertices[i] << ":" << *vertices[i];
           std::cerr << std::endl;
@@ -98,7 +98,7 @@ namespace carve {
             faces.push_back(face_data_t(new_faces[i], orig_face, true));
           }
 
-#if defined(DEBUG) && defined(DEBUG_PRINT_RESULT_FACES)
+#if defined(CARVE_DEBUG) && defined(DEBUG_PRINT_RESULT_FACES)
           std::cerr << "-" << ENUM(face_class) << " ";
           for (unsigned i = 0; i < vertices.size(); ++i) std::cerr << " " << vertices[i] << ":" << *vertices[i];
           std::cerr << std::endl;
@@ -188,7 +188,7 @@ namespace carve {
 
           bool is_poly_a = cinfo.front().intersected_poly == src_b;
 
-#if defined(DEBUG)
+#if defined(CARVE_DEBUG)
           bool is_poly_b = cinfo.front().intersected_poly == src_a;
           std::cerr << "collect:: " << ENUM(fc) << " grp: " << grp << " (" << grp->face_loops.size() << " faces) is_poly_a?:" << is_poly_a << " is_poly_b?:" << is_poly_b << " against:" << cinfo.front().intersected_poly << std::endl;;
 #endif
