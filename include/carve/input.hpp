@@ -96,8 +96,10 @@ namespace carve {
   
       template <typename Iter>
       void addFace(Iter begin, Iter end) {
-        faceIndices.push_back(std::distance(begin, end));
-        faceIndices.insert(faceIndices.end(), begin, end);
+        size_t n = std::distance(begin, end);
+        faceIndices.reserve(faceIndices.size() + n + 1);
+        faceIndices.push_back(n);
+        std::copy(begin, end, std::back_inserter(faceIndices));
         ++faceCount;
       }
   
