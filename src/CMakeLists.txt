@@ -29,6 +29,9 @@ target_link_libraries(triangulate carve_fileformats carve gloop_model)
 add_executable       (cutgraph    cut.cpp)
 target_link_libraries(cutgraph    carve_fileformats carve gloop_model)
 
+add_executable       (extrude     extrude.cpp)
+target_link_libraries(extrude     carve_fileformats carve gloop_model)
+
 add_executable       (convert     convert.cpp)
 target_link_libraries(convert     carve_fileformats carve gloop_model)
 
