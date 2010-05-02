@@ -19,6 +19,10 @@
 
 #include <carve/geom2d.hpp>
 
+#if defined(CARVE_DEBUG)
+#  include <iostream>
+#endif
+
 namespace carve {
   namespace triangulate {
     namespace detail {

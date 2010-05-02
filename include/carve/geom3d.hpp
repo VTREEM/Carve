@@ -27,6 +27,10 @@
 #include <list>
 #include <map>
 
+#if defined(CARVE_DEBUG)
+#  include <iostream>
+#endif
+
 namespace carve {
   namespace geom3d {
 

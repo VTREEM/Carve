@@ -28,6 +28,10 @@
 
 #include <math.h>
 
+#if defined(CARVE_DEBUG)
+#  include <iostream>
+#endif
+
 namespace carve {
   namespace geom2d {
 

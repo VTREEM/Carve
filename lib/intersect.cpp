@@ -416,7 +416,7 @@ static const poly_t::vertex_t *weld(
 
 #if defined(CARVE_DEBUG)
   std::cerr << "weld: " << equivalent.size() << " vertices ( ";
-  for (detail::VSet::const_iterator
+  for (carve::csg::detail::VSet::const_iterator
          i = equivalent.begin(), e = equivalent.end();
        i != e;
        ++i) {
@@ -790,9 +790,9 @@ void carve::csg::CSG::generateIntersections(const poly_t *a, const poly_t *b) {
 
 #if defined(CARVE_DEBUG)
   std::cerr << "  intersections.size() " << intersections.size() << std::endl;
-  map_histogram(intersections);
+  map_histogram(std::cerr, intersections);
   std::cerr << "  vertex_intersections.size() " << vertex_intersections.size() << std::endl;
-  map_histogram(vertex_intersections);
+  map_histogram(std::cerr, vertex_intersections);
 #endif
 
 #if defined(CARVE_DEBUG) && defined(DEBUG_DRAW_INTERSECTIONS)
@@ -1128,11 +1128,11 @@ void carve::csg::CSG::calc(const poly_t *a,
 
 #if defined(CARVE_DEBUG)
   std::cerr << "emap:" << std::endl;
-  map_histogram(data.emap);
+  map_histogram(std::cerr, data.emap);
   std::cerr << "fmap:" << std::endl;
-  map_histogram(data.fmap);
+  map_histogram(std::cerr, data.fmap);
   std::cerr << "fmap_rev:" << std::endl;
-  map_histogram(data.fmap_rev);
+  map_histogram(std::cerr, data.fmap_rev);
 #endif
 
   // std::cerr << "removeCoplanarFaces" << std::endl;

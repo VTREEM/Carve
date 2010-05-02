@@ -226,7 +226,7 @@ namespace {
 
     graph.computeProjection(face);
 #if defined(CARVE_DEBUG)
-    graph.print(&vi);
+    graph.print(std::cerr, &vi);
 #endif
 
     while (!graph.empty()) {
@@ -291,7 +291,7 @@ namespace {
       }
 #if defined(CARVE_DEBUG)
       std::cerr << "===============================================" << std::endl;
-      graph.print(&vi);
+      graph.print(std::cerr, &vi);
 #endif
 #if defined(CARVE_DEBUG)
       std::cerr << "signed area of loop: " << carve::geom2d::signedArea(projected) << std::endl;
