@@ -43,6 +43,19 @@ namespace carve {
 
 
     template<unsigned ndim>
+    struct p2_adapt_project {
+      typedef carve::geom2d::P2 (*proj_t)(const carve::geom::vector<ndim> &);
+      proj_t proj;
+      p2_adapt_project(proj_t _proj) : proj(_proj) { }
+      carve::geom2d::P2 operator()(const carve::geom::vector<ndim> &v) const { return proj(v); }
+      carve::geom2d::P2 operator()(const carve::geom::vector<ndim> *v) const { return proj(*v); }
+      carve::geom2d::P2 operator()(const Vertex<ndim> &v) const { return proj(v.v); }
+      carve::geom2d::P2 operator()(const Vertex<ndim> *v) const { return proj(v->v); }
+    };
+
+
+
+    template<unsigned ndim>
     class Face : public tagable {
     public:
       typedef Vertex<ndim> vertex_t;
@@ -100,6 +113,10 @@ namespace carve {
         carve::geom::centroid(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr(), c);
         return c;
       }
+
+      p2_adapt_project<ndim> projector() const {
+        return p2_adapt_project<ndim>(project);
+      }
     };
 
 
@@ -146,19 +163,6 @@ namespace carve {
 
 
     }
-
-
-
-    template<unsigned ndim>
-    struct p2_adapt_project {
-      typedef carve::geom2d::P2 (*proj_t)(const carve::geom::vector<ndim> &);
-      proj_t proj;
-      p2_adapt_project(proj_t _proj) : proj(_proj) { }
-      carve::geom2d::P2 operator()(const carve::geom::vector<ndim> &v) const { return proj(v); }
-      carve::geom2d::P2 operator()(const carve::geom::vector<ndim> *v) const { return proj(*v); }
-      carve::geom2d::P2 operator()(const Vertex<ndim> &v) const { return proj(v.v); }
-      carve::geom2d::P2 operator()(const Vertex<ndim> *v) const { return proj(v->v); }
-    };
 
 
 
