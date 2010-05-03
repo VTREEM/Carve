@@ -8,3 +8,4 @@
 #cmakedefine CARVE_SYSTEM_BOOST
 
 #cmakedefine CARVE_DEBUG
+#cmakedefine CARVE_DEBUG_WRITE_PLY_DATA

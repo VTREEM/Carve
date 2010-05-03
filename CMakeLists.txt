@@ -11,11 +11,12 @@ set(carve_VERSION_PATCH 0)
 
 set(CARVE_VERSION ${carve_VERSION_MAJOR}.${carve_VERSION_MINOR}.${carve_VERSION_PATCH})
 
-option(BUILD_SHARED_LIBS       "Compile libcarve as shared"          ON)
-option(CARVE_WITH_GUI          "Compile gui code"                    ON)
-option(CARVE_SYSTEM_BOOST      "Compile with system installed boost" ON)
-option(CARVE_BOOST_COLLECTIONS "Compile with boost collections"      ON)
-option(CARVE_DEBUG             "Compile in debug code"               OFF)
+option(BUILD_SHARED_LIBS          "Compile libcarve as shared"          ON)
+option(CARVE_WITH_GUI             "Compile gui code"                    ON)
+option(CARVE_SYSTEM_BOOST         "Compile with system installed boost" ON)
+option(CARVE_BOOST_COLLECTIONS    "Compile with boost collections"      ON)
+option(CARVE_DEBUG                "Compile in debug code"               OFF)
+option(CARVE_DEBUG_WRITE_PLY_DATA "Write geometry output during debug"  OFF)
 
 
 
