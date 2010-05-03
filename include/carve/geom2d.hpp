@@ -169,6 +169,27 @@ namespace carve {
 
 
 
+    template<typename iter_t, typename adapt_t>
+    double signedArea(iter_t begin, iter_t end, adapt_t adapt) {
+      double A = 0.0;
+      P2 p, n;
+
+      if (begin == end) return 0.0;
+
+      p = adapt(*begin);
+      for (iter_t c = begin; ++c != end; ) {
+        P2 n = adapt(*c);
+        A += (n.y + p.y) * (n.x - p.x);
+        p = n;
+      }
+      n = adapt(*begin);
+      A += (n.y + p.y) * (n.x - p.x);
+
+      return A / 2.0;
+    }
+
+
+
     bool pointInPolySimple(const std::vector<P2> &points, const P2 &p);
 
     template<typename T, typename adapt_t>
