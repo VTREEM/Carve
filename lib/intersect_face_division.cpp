@@ -883,9 +883,19 @@ namespace {
     noncross.reserve(endpoint_indices.size());
 
     for (size_t i = 0; i < endpoint_indices.size(); ++i) {
-      if (endpoint_indices[i].edge_idx[0] > endpoint_indices[i].edge_idx[1]) {
+      if (endpoint_indices[i].edge_idx[0] == endpoint_indices[i].edge_idx[1]) {
+        // in this case, we need to orient the path so that the constructed loop has the right orientation.
+        double area = carve::geom2d::signedArea(endpoint_indices[i].path->begin() + 1,
+                                                endpoint_indices[i].path->end(),
+                                                face->projector());
+        if (area < 0) {
+          std::reverse(endpoint_indices[i].path->begin(), endpoint_indices[i].path->end());
+        }
+      } else if (endpoint_indices[i].edge_idx[0] > endpoint_indices[i].edge_idx[1]) {
         std::swap(endpoint_indices[i].edge_idx[0], endpoint_indices[i].edge_idx[1]);
+        std::reverse(endpoint_indices[i].path->begin(), endpoint_indices[i].path->end());
       }
+
       if (endpoint_indices[i].edge_idx[1] != N) {
         cross.push_back(endpoint_indices[i]);
       } else {
@@ -914,6 +924,38 @@ namespace {
     std::vector<const poly_t::vertex_t *> out;
 
     for (size_t i = 0; i < cross.size(); ++i) {
+      size_t j;
+      for (j = i + 1;
+           j < cross.size() &&
+             cross[i].edge_idx[0] == cross[j].edge_idx[0] && 
+             cross[i].edge_idx[1] == cross[j].edge_idx[1];
+           ++j) {}
+      if (j - i >= 2) {
+        // when there are multiple paths that begin and end at the
+        // same point, they need to be ordered so that the constructed
+        // loops have the right orientation. this means that the loop
+        // made by taking path(i+1) forward, then path(i) backward
+        // needs to have negative area. this combined area is equal to
+        // the area of path(i+1) minus the area of path(i). in turn
+        // this means that the loop made by path path(i+1) alone has
+        // to have smaller signed area than loop made by path(i).
+        // thus, we sort paths in order of decreasing area.
+        std::vector<std::pair<double, std::vector<const poly_t::vertex_t *> *> > order;
+        order.reserve(j - i);
+        for (size_t k = i; k < j; ++k) {
+          double area = carve::geom2d::signedArea(cross[k].path->begin(),
+                                                  cross[k].path->end(),
+                                                  face->projector());
+          order.push_back(std::make_pair(-area, cross[k].path));
+        }
+        std::sort(order.begin(), order.end());
+        for (size_t k = i; k < j; ++k) {
+          cross[k].path = order[k-i].second;
+        }
+      }
+    }
+
+    for (size_t i = 0; i < cross.size(); ++i) {
       size_t e1_0 = cross[i].edge_idx[0];
       size_t e1_1 = cross[i].edge_idx[1];
       std::vector<const poly_t::vertex_t *> &p1 = *cross[i].path;
@@ -936,12 +978,9 @@ namespace {
           // copy up to the beginning of the next path.
           std::copy(base_loop.begin() + pos, base_loop.begin() + e2_0, std::back_inserter(out));
 
+          CARVE_ASSERT(base_loop[e2_0] == p2[0]);
           // copy the next path in the right direction.
-          if (p2.front() == base_loop[e2_0]) {
-            std::copy(p2.begin(), p2.end() - 1, std::back_inserter(out));
-          } else {
-            std::copy(p2.rbegin(), p2.rend() - 1, std::back_inserter(out));
-          }
+          std::copy(p2.begin(), p2.end() - 1, std::back_inserter(out));
 
           // move to the position of the end of the path.
           pos = e2_1;
@@ -960,22 +999,14 @@ namespace {
         // copy up to the end of the path.
         std::copy(base_loop.begin() + pos, base_loop.begin() + e1_1, std::back_inserter(out));
 
-        // copy the path in the right direction.
-        if (p1.front() == base_loop[e1_1]) {
-          std::copy(p1.begin(), p1.end() - 1, std::back_inserter(out));
-        } else {
-          std::copy(p1.rbegin(), p1.rend() - 1, std::back_inserter(out));
-        }
+        CARVE_ASSERT(base_loop[e1_1] == p1.back());
+        std::copy(p1.rbegin(), p1.rend() - 1, std::back_inserter(out));
       } else {
         size_t loop_size = (e1_1 - e1_0) + (p1.size() - 1);
         out.reserve(loop_size);
 
         std::copy(base_loop.begin() + e1_0, base_loop.begin() + e1_1, std::back_inserter(out));
-        if (p1.front() == base_loop[e1_1]) {
-          std::copy(p1.begin(), p1.end() - 1, std::back_inserter(out));
-        } else {
-          std::copy(p1.rbegin(), p1.rend() - 1, std::back_inserter(out));
-        }
+        std::copy(p1.rbegin(), p1.rend() - 1, std::back_inserter(out));
 
         CARVE_ASSERT(out.size() == loop_size);
       }
