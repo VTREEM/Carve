@@ -231,7 +231,7 @@ namespace carve {
           } else {
             carve::geom2d::P2 p = carve::poly::face::project(orig_face, new_face->vertices[i]->v);
             attr_t attr = interp(orig_face->vertices,
-                                 carve::poly::p2_adapt_project<3>(orig_face->project),
+                                 orig_face->projector(),
                                  vertex_attrs,
                                  p.x,
                                  p.y);

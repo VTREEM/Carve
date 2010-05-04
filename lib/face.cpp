@@ -179,7 +179,7 @@ namespace carve {
       int da = carve::geom::dominantAxis(plane_eqn.N);
       project = getProjector<ndim>(false, da);
 
-      double A = carve::geom2d::signedArea(vertices, p2_adapt_project<ndim>(project));
+      double A = carve::geom2d::signedArea(vertices, projector());
       if ((A < 0.0) ^ (plane_eqn.N.v[da] < 0.0)) {
         plane_eqn.negate();
       }
@@ -216,13 +216,13 @@ namespace carve {
     template<unsigned ndim>
     bool Face<ndim>::containsPoint(const vector_t &p) const {
       if (!carve::math::ZERO(carve::geom::distance(plane_eqn, p))) return false;
-      // return pointInPolySimple(vertices, p2_adapt_project(project), (this->*project)(p));
-      return carve::geom2d::pointInPoly(vertices, p2_adapt_project<ndim>(project), face::project(this, p)).iclass != POINT_OUT;
+      // return pointInPolySimple(vertices, projector(), (this->*project)(p));
+      return carve::geom2d::pointInPoly(vertices, projector(), face::project(this, p)).iclass != POINT_OUT;
     }
 
     template<unsigned ndim>
     bool Face<ndim>::containsPointInProjection(const vector_t &p) const {
-      return carve::geom2d::pointInPoly(vertices, p2_adapt_project<ndim>(project), face::project(this, p)).iclass != POINT_OUT;
+      return carve::geom2d::pointInPoly(vertices, projector(), face::project(this, p)).iclass != POINT_OUT;
     }
 
     template<unsigned ndim>
@@ -239,7 +239,7 @@ namespace carve {
       }
 
       carve::geom2d::P2 proj_p(face::project(this, p));
-      if (carve::geom2d::pointInPolySimple(vertices, p2_adapt_project<ndim>(project), proj_p)) {
+      if (carve::geom2d::pointInPolySimple(vertices, projector(), proj_p)) {
         intersection = p;
         return true;
       }
@@ -265,7 +265,7 @@ namespace carve {
 
       carve::geom2d::P2 proj_p(face::project(this, p));
 
-      carve::geom2d::PolyInclusionInfo pi = carve::geom2d::pointInPoly(vertices, p2_adapt_project<ndim>(project), proj_p);
+      carve::geom2d::PolyInclusionInfo pi = carve::geom2d::pointInPoly(vertices, projector(), proj_p);
       switch (pi.iclass) {
       case POINT_VERTEX:
         intersection = p;

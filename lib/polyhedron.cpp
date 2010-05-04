@@ -666,7 +666,7 @@ namespace carve {
         int m_id = faces[i].manifold_id;
         if (embedding.find(m_id) == embedding.end()) {
           carve::geom2d::P2 pv;
-          if (!carve::geom2d::pickContainedPoint(faces[i].vertices, p2_adapt_project<3>(faces[i].project), pv)) continue;
+          if (!carve::geom2d::pickContainedPoint(faces[i].vertices, faces[i].projector(), pv)) continue;
           carve::geom3d::Vector v = carve::poly::face::unproject(faces[i], pv);
           if (emb_test(this, embedding, v, m_id) && embedding.size() == MCOUNT) {
             carve::Timing::stop();

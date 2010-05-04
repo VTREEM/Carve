@@ -683,7 +683,7 @@ namespace {
       }
       if (face_hole_loops.size()) {
 
-        f_loops.push_back(carve::triangulate::incorporateHolesIntoPolygon(carve::poly::p2_adapt_project<3>(face->project), face_loops[i], face_hole_loops));
+        f_loops.push_back(carve::triangulate::incorporateHolesIntoPolygon(face->projector(), face_loops[i], face_hole_loops));
       } else {
         f_loops.push_back(face_loops[i]);
       }

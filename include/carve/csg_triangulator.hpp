@@ -55,9 +55,9 @@ namespace carve {
 
             std::vector<triangulate::tri_idx> result;
 
-            triangulate::triangulate(poly::p2_adapt_project<3>(face->project), face->vertices, result);
+            triangulate::triangulate(face->projector(), face->vertices, result);
             if (with_improvement) {
-              triangulate::improve(poly::p2_adapt_project<3>(face->project), face->vertices, result);
+              triangulate::improve(face->projector(), face->vertices, result);
             }
 
             std::vector<const poly::Polyhedron::vertex_t *> fv;
