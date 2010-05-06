@@ -605,6 +605,7 @@ void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool normal, int gro
   drawEdges(poly, 0.8, group);
 
   glDepthMask(GL_TRUE);
+  glEnable(GL_LIGHTING);
 }
 
 void installDebugHooks() {
