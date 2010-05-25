@@ -1095,6 +1095,7 @@ namespace {
         face_loops_out.push_back(divided_base_loop[i]);
       }
     }
+    return true;
   }
 
 
