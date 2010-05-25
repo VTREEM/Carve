@@ -131,6 +131,7 @@ int main(int argc, char **argv) {
     carve::line::PolylineSet *l;
 
     if ((p = carve::input::Input::create<carve::poly::Polyhedron>(*i)) != NULL)  {
+      if (options.canonicalize) p->canonicalize();
       if (options.obj) {
         writeOBJ(std::cout, p);
       } else if (options.vtk) {
