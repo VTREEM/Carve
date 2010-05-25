@@ -874,6 +874,14 @@ namespace {
       }
     }
 
+#if defined(CARVE_DEBUG)
+    std::cerr << "### N: " << N << std::endl;
+    for (size_t i = 0; i < paths.size(); ++i) {
+      std::cerr << "### path: " << i << " endpoints: " << endpoint_indices[i].edge_idx[0] << " - " << endpoint_indices[i].edge_idx[1] << std::endl;
+    }
+#endif
+
+
     // divide paths up into those that connect to the base loop in two
     // places, and those that do not.
     std::vector<crossing_data> cross, noncross;
@@ -911,6 +919,9 @@ namespace {
     base_loop_temp_path.push_back(base_loop.back());
 
     cross.push_back(crossing_data(&base_loop_temp_path, 0, base_loop.size() - 1));
+#if defined(CARVE_DEBUG)
+    std::cerr << "### crossing edge count (with sentinel): " << cross.size() << std::endl;
+#endif
 
     // sort paths by increasing beginning point and decreasing ending point.
     std::sort(cross.begin(), cross.end());
@@ -938,6 +949,7 @@ namespace {
         // this means that the loop made by path path(i+1) alone has
         // to have smaller signed area than loop made by path(i).
         // thus, we sort paths in order of decreasing area.
+
         std::vector<std::pair<double, std::vector<const poly_t::vertex_t *> *> > order;
         order.reserve(j - i);
         for (size_t k = i; k < j; ++k) {
@@ -954,6 +966,9 @@ namespace {
     }
 
     for (size_t i = 0; i < cross.size(); ++i) {
+#if defined(CARVE_DEBUG)
+      std::cerr << "### working on edge: " << cross[i].edge_idx[0] << " - " << cross[i].edge_idx[1] << std::endl;
+#endif
       size_t e1_0 = cross[i].edge_idx[0];
       size_t e1_1 = cross[i].edge_idx[1];
       std::vector<const poly_t::vertex_t *> &p1 = *cross[i].path;
@@ -1128,6 +1143,9 @@ namespace {
 
     // build graph from edges.
     for (V2Set::const_iterator i = edges.begin(); i != edges.end(); ++i) {
+#if defined(CARVE_DEBUG)
+      std::cerr << "###    edge: " << (*i).first << " - " << (*i).second << std::endl;
+#endif
       vertex_graph[(*i).first].insert((*i).second);
       vertex_graph[(*i).second].insert((*i).first);
     }
@@ -1135,12 +1153,18 @@ namespace {
     // find the endpoints in the graph.
     for (detail::VVSMap::const_iterator i = vertex_graph.begin(); i != vertex_graph.end(); ++i) {
       if ((*i).second.size() != 2) {
+#if defined(CARVE_DEBUG)
+        std::cerr << "###    endpoint: " << (*i).first << std::endl;
+#endif
         endpoints.insert((*i).first);
       }
     }
 
     for (size_t i = 0; i < extra_endpoints.size(); ++i) {
       if (vertex_graph.find(extra_endpoints[i]) != vertex_graph.end()) {
+#if defined(CARVE_DEBUG)
+        std::cerr << "###    extra endpoint: " << extra_endpoints[i] << std::endl;
+#endif
         endpoints.insert(extra_endpoints[i]);
       }
     }
@@ -1344,6 +1368,9 @@ namespace {
       return;
     }
 
+#if defined(CARVE_DEBUG)
+    std::cerr << "### split_edges.size(): " << split_edges.size() << std::endl;
+#endif
     if (split_edges.size() == 1) {
       const poly_t::vertex_t *v1 = split_edges.begin()->first;
       const poly_t::vertex_t *v2 = split_edges.begin()->second;
@@ -1382,6 +1409,11 @@ namespace {
     std::vector<std::vector<const poly_t::vertex_t *> > loops;
 
     composeEdgesIntoPaths(split_edges, base_loop, paths, loops);
+
+#if defined(CARVE_DEBUG)
+    std::cerr << "###   paths.size(): " << paths.size() << std::endl;
+    std::cerr << "###   loops.size(): " << loops.size() << std::endl;
+#endif
 
     if (!paths.size()) {
       // loops found by composeEdgesIntoPaths() can't touch the boundary, or each other, so we can deal with the no paths case simply.
@@ -1464,13 +1496,27 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
     generateOneFaceLoop(face, data, vertex_intersections, hooks, face_loops);
 
     // now record all the resulting face loops.
+#if defined(CARVE_DEBUG)
+    std::cerr << "### ======" << std::endl;
+#endif
     for (std::list<std::vector<const poly_t::vertex_t *> >::const_iterator
            f = face_loops.begin(), fe = face_loops.end();
          f != fe;
          ++f) {
+#if defined(CARVE_DEBUG)
+      std::cerr << "### loop:";
+      for (size_t i = 0; i < (*f).size(); ++i) {
+        std::cerr << " " << (*f)[i];
+      }
+      std::cerr << std::endl;
+#endif
+
       face_loops_out.append(new FaceLoop(face, *f));
       generated_edges += (*f).size();
     }
+#if defined(CARVE_DEBUG)
+    std::cerr << "### ======" << std::endl;
+#endif
   }
   return generated_edges;
 }
