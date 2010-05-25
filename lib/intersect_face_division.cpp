@@ -902,7 +902,8 @@ namespace {
         std::reverse(endpoint_indices[i].path->begin(), endpoint_indices[i].path->end());
       }
 
-      if (endpoint_indices[i].edge_idx[1] != N) {
+      if (endpoint_indices[i].edge_idx[1] != N &&
+          endpoint_indices[i].edge_idx[0] != endpoint_indices[i].edge_idx[1]) {
         cross.push_back(endpoint_indices[i]);
       } else {
         noncross.push_back(endpoint_indices[i]);
@@ -976,7 +977,7 @@ namespace {
       out.clear();
 
       if (i < cross.size() - 1 &&
-          cross[i+1].edge_idx[0] < cross[i].edge_idx[1]) {
+          cross[i+1].edge_idx[1] <= cross[i].edge_idx[1]) {
         // complex case. crossing path with other crossing paths embedded within.
         size_t pos = e1_0;
 
