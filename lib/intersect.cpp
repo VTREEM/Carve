@@ -40,10 +40,6 @@
 
 #include <carve/timing.hpp>
 
-#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-void writePLY(std::string &out_file, const carve::point::PointSet *points, bool ascii);
-#endif
-
 typedef carve::poly::Polyhedron poly_t;
 
 carve::csg::VertexPool::VertexPool() {
@@ -77,6 +73,19 @@ bool carve::csg::VertexPool::inPool(const poly_t::vertex_t *v) const {
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
 void writePLY(std::string &out_file, const carve::point::PointSet *points, bool ascii);
 void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
+void writePLY(std::string &out_file, const carve::poly::Polyhedron *poly, bool ascii);
+
+static carve::poly::Polyhedron *faceLoopsToPolyhedron(const carve::csg::FaceLoopList &fl) {
+  std::vector<carve::poly::Polyhedron::face_t > faces;
+  faces.reserve(fl.size());
+  for (carve::csg::FaceLoop *f = fl.head; f; f = f->next) {
+    faces.push_back(carve::poly::Polyhedron::face_t());
+    faces.back().init(f->orig_face, f->vertices, false);
+  }
+  carve::poly::Polyhedron *poly = new carve::poly::Polyhedron(faces);
+
+  return poly;
+}
 #endif
 
 namespace {
@@ -1164,6 +1173,15 @@ void carve::csg::CSG::calc(const poly_t *a,
   std::cerr << "generated " << a_edge_count << " edges for poly a" << std::endl;
   std::cerr << "generated " << b_edge_count << " edges for poly b" << std::endl;
 #endif
+
+  {
+    std::string out("/tmp/a_split.ply");
+    writePLY(out, faceLoopsToPolyhedron(a_face_loops), false);
+  }
+  {
+    std::string out("/tmp/b_split.ply");
+    writePLY(out, faceLoopsToPolyhedron(b_face_loops), false);
+  }
 
   checkFaceLoopIntegrity(a_face_loops);
   checkFaceLoopIntegrity(b_face_loops);
