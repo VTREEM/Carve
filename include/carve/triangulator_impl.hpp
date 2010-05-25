@@ -56,9 +56,15 @@ namespace carve {
          */
         order_h_loops(const project_t &_project, int _axis) : project(_project), axis(_axis) { }
 
-        bool operator()(const std::pair<const std::vector<vert_t> *, typename std::vector<vert_t>::const_iterator> &a,
-                        const std::pair<const std::vector<vert_t> *, typename std::vector<vert_t>::const_iterator> &b) const {
-          return axisOrdering(project(*(a.second)), project(*(b.second)));
+        bool operator()(const vert_t &a,
+                        const vert_t &b) const {
+          return axisOrdering(project(a), project(b), axis);
+        }
+
+        bool operator()(
+            const std::pair<const typename std::vector<vert_t> *, typename std::vector<vert_t>::const_iterator> &a,
+            const std::pair<const typename std::vector<vert_t> *, typename std::vector<vert_t>::const_iterator> &b) {
+          return axisOrdering(project(*(a.second)), project(*(b.second)), axis);
         }
       };
 
@@ -576,7 +582,7 @@ namespace carve {
         f_loop_heap.clear();
         // we order polygon loop vertices that may be able to be connected
         // to the hole vertex by their distance to the hole vertex
-        detail::heap_ordering<project_t, vert_t> _heap_ordering(project, current_f_loop, *h_loop_connect);
+        detail::heap_ordering<project_t, vert_t> _heap_ordering(project, current_f_loop, *h_loop_connect, axis);
 
         for (size_t j = 0; j < current_f_loop.size(); ++j) {
           // it is guaranteed that there exists a polygon vertex with

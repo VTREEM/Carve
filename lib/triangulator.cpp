@@ -801,8 +801,159 @@ bool testCandidateAttachment(const std::vector<std::vector<carve::geom2d::P2> > 
 
 
 
+void
+carve::triangulate::incorporateHolesIntoPolygon(
+    const std::vector<std::vector<carve::geom2d::P2> > &poly,
+    std::vector<std::pair<size_t, size_t> > &result,
+    size_t poly_loop,
+    const std::vector<size_t> &hole_loops) {
+  typedef std::vector<carve::geom2d::P2> loop_t;
+
+  size_t N = poly[poly_loop].size();
+
+  // work out how much space to reserve for the patched in holes.
+  for (size_t i = 0; i < hole_loops.size(); i++) {
+    N += 2 + poly[hole_loops[i]].size();
+  }
+
+  // this is the vector that we will build the result in.
+  result.clear();
+  result.reserve(N);
+
+  // this is a heap of result indices that defines the vertex test order.
+  std::vector<size_t> f_loop_heap;
+  f_loop_heap.reserve(N);
+
+  // add the poly loop to result.
+  for (size_t i = 0; i < poly[poly_loop].size(); ++i) {
+    result.push_back(std::make_pair((size_t)poly_loop, i));
+  }
+
+  if (hole_loops.size() == 0) {
+    return;
+  }
+
+  std::vector<std::pair<size_t, size_t> > h_loop_min_vertex;
+
+  h_loop_min_vertex.reserve(hole_loops.size());
+
+  // find the major axis for the holes - this is the axis that we
+  // will sort on for finding vertices on the polygon to join
+  // holes up to.
+  //
+  // it might also be nice to also look for whether it is better
+  // to sort ascending or descending.
+  // 
+  // another trick that could be used is to modify the projection
+  // by 90 degree rotations or flipping about an axis. just as
+  // long as we keep the carve::geom3d::Vector pointers for the
+  // real data in sync, everything should be ok. then we wouldn't
+  // need to accomodate axes or sort order in the main loop.
+
+  // find the bounding box of all the holes.
+  carve::geom2d::P2 h_min, h_max;
+  h_min = h_max = poly[hole_loops[0]][0];
+  for (size_t i = 0; i < hole_loops.size(); ++i) {
+    const loop_t &hole = poly[hole_loops[i]];
+    for (size_t j = 0; j < hole.size(); ++j) {
+      assign_op(h_min, h_min, hole[j], carve::util::min_functor());
+      assign_op(h_max, h_max, hole[j], carve::util::max_functor());
+    }
+  }
+  // choose the axis for which the bbox is largest.
+  int axis = (h_max.x - h_min.x) > (h_max.y - h_min.y) ? 0 : 1;
+
+  // for each hole, find the minimum vertex in the chosen axis.
+  for (size_t i = 0; i < hole_loops.size(); ++i) {
+    const loop_t &hole = poly[hole_loops[i]];
+    size_t best, curr;
+    best = 0;
+    for (curr = 1; curr != hole.size(); ++curr) {
+      if (detail::axisOrdering(hole[curr], hole[best], axis)) {
+        best = curr;
+      }
+    }
+    h_loop_min_vertex.push_back(std::make_pair(hole_loops[i], best));
+  }
+
+  // sort the holes by the minimum vertex.
+  std::sort(h_loop_min_vertex.begin(), h_loop_min_vertex.end(), order_h_loops_2d(poly, axis));
+
+  // now, for each hole, find a vertex in the current polygon loop that it can be joined to.
+  for (unsigned i = 0; i < h_loop_min_vertex.size(); ++i) {
+    // the index of the vertex in the hole to connect.
+    size_t hole_i = h_loop_min_vertex[i].first;
+    size_t hole_i_connect = h_loop_min_vertex[i].second;
+
+    carve::geom2d::P2 hole_min = poly[hole_i][hole_i_connect];
+
+    f_loop_heap.clear();
+    // we order polygon loop vertices that may be able to be connected
+    // to the hole vertex by their distance to the hole vertex
+    heap_ordering_2d _heap_ordering(poly, result, hole_min, axis);
+
+    const size_t SZ = result.size();
+    for (size_t j = 0; j < SZ; ++j) {
+      // it is guaranteed that there exists a polygon vertex with
+      // coord < the min hole coord chosen, which can be joined to
+      // the min hole coord without crossing the polygon
+      // boundary. also, because we merge holes in ascending
+      // order, it is also true that this join can never cross
+      // another hole (and that doesn't need to be tested for).
+      if (pvert(poly, result[j]).v[axis] < hole_min.v[axis]) {
+        f_loop_heap.push_back(j);
+        std::push_heap(f_loop_heap.begin(), f_loop_heap.end(), _heap_ordering);
+      }
+    }
+
+    // we are going to test each potential (according to the
+    // previous test) polygon vertex as a candidate join. we order
+    // by closeness to the hole vertex, so that the join we make
+    // is as small as possible. to test, we need to check the
+    // joining line segment does not cross any other line segment
+    // in the current polygon loop (excluding those that have the
+    // vertex that we are attempting to join with as an endpoint).
+    size_t attachment_point = result.size();
+
+    while (f_loop_heap.size()) {
+      std::pop_heap(f_loop_heap.begin(), f_loop_heap.end(), _heap_ordering);
+      size_t curr = f_loop_heap.back();
+      f_loop_heap.pop_back();
+      // test the candidate join from result[curr] to hole_min
+
+      if (!testCandidateAttachment(poly, result, curr, hole_min)) {
+        continue;
+      }
+
+      attachment_point = curr;
+      break;
+    }
+
+    if (attachment_point == result.size()) {
+      CARVE_FAIL("didn't manage to link up hole!");
+    }
+
+    patchHoleIntoPolygon_2d(result, attachment_point, hole_i, hole_i_connect, poly[hole_i].size());
+  }
+}
+
+
+
 std::vector<std::pair<size_t, size_t> >
 carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<carve::geom2d::P2> > &poly) {
+#if 1
+  std::vector<std::pair<size_t, size_t> > result;
+  std::vector<size_t> hole_indices;
+  hole_indices.reserve(poly.size() - 1);
+  for (size_t i = 1; i < poly.size(); ++i) {
+    hole_indices.push_back(i);
+  }
+
+  incorporateHolesIntoPolygon(poly, result, 0, hole_indices);
+
+  return result;
+
+#else
   typedef std::vector<carve::geom2d::P2> loop_t;
   size_t N = poly[0].size();
   //
@@ -936,6 +1087,46 @@ carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<ca
   }
 
   return current_f_loop;
+#endif
+}
+
+
+
+std::vector<std::vector<std::pair<size_t, size_t> > >
+carve::triangulate::mergePolygonsAndHoles(const std::vector<std::vector<carve::geom2d::P2> > &poly) {
+  std::vector<size_t> poly_indices, hole_indices;
+
+  poly_indices.reserve(poly.size());
+  hole_indices.reserve(poly.size());
+
+  for (size_t i = 0; i < poly.size(); ++i) {
+    if (carve::geom2d::signedArea(poly[i]) < 0) {
+      poly_indices.push_back(i);
+    } else {
+      hole_indices.push_back(i);
+    }
+  }
+
+  std::vector<std::vector<std::pair<size_t, size_t> > > result;
+  result.resize(poly_indices.size());
+
+  if (hole_indices.size() == 0) {
+    for (size_t i = 0; i < poly.size(); ++i) {
+      result[i].resize(poly[i].size());
+      for (size_t j = 0; j < poly[i].size(); ++j) {
+        result[i].push_back(std::make_pair(i, j));
+      }
+    }
+    return result;
+  }
+
+  if (poly_indices.size() == 1) {
+    incorporateHolesIntoPolygon(poly, result[0], poly_indices[0], hole_indices);
+
+    return result;
+  }
+  
+  throw carve::exception("not implemented");
 }
 
 

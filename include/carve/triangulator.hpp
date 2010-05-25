@@ -59,6 +59,12 @@ namespace carve {
                                 const std::vector<vert_t> &f_loop,
                                 const std::vector<std::vector<vert_t> > &h_loops);
 
+    void
+    incorporateHolesIntoPolygon(const std::vector<std::vector<carve::geom2d::P2> > &poly,
+                                std::vector<std::pair<size_t, size_t> > &result,
+                                size_t poly_loop,
+                                const std::vector<size_t> &hole_loops);
+
     /** 
      * \brief Merge a set of holes into a polygon. (2d)
      *
@@ -77,6 +83,7 @@ namespace carve {
      */
     std::vector<std::pair<size_t, size_t> > incorporateHolesIntoPolygon(const std::vector<std::vector<carve::geom2d::P2> > &poly);
 
+    std::vector<std::vector<std::pair<size_t, size_t> > > mergePolygonsAndHoles(const std::vector<std::vector<carve::geom2d::P2> > &poly);
 
 
     struct tri_idx {
