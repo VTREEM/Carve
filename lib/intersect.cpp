@@ -277,8 +277,6 @@ namespace {
         ie = csg_intersections.end();
         i != ie;
         ++i) {
-      const carve::csg::IObj &i_src = ((*i).first);
-
       for (carve::csg::Intersections::mapped_type::const_iterator
           j = (*i).second.begin(),
           je = (*i).second.end();
