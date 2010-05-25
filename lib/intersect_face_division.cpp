@@ -806,7 +806,7 @@ namespace {
 
 
 
-  void processCrossingEdges(const poly_t::face_t *face,
+  bool processCrossingEdges(const poly_t::face_t *face,
                             const carve::csg::VertexIntersections &vertex_intersections,
                             carve::csg::CSG::Hooks &hooks,
                             std::vector<const poly_t::vertex_t *> &base_loop,
@@ -1413,7 +1413,18 @@ namespace {
         mergeFacesAndHoles(face, face_loops, hole_loops, hooks);
       }
     } else {
-      processCrossingEdges(face, vertex_intersections, hooks, base_loop, paths, loops, face_loops);
+      if (!processCrossingEdges(face, vertex_intersections, hooks, base_loop, paths, loops, face_loops)) {
+        // complex case - fall back to old edge tracing code.
+        for (V2Set::const_iterator i = split_edges.begin(); i != split_edges.end(); ++i) {
+          face_edges.insert(std::make_pair((*i).first, (*i).second));
+          face_edges.insert(std::make_pair((*i).second, (*i).first));
+        }
+        splitFace(face, face_edges, face_loops, hole_loops, vertex_intersections);
+
+        if (hole_loops.size()) {
+          mergeFacesAndHoles(face, face_loops, hole_loops, hooks);
+        }
+      }
     }
   }
 
