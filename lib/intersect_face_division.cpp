@@ -425,8 +425,6 @@ namespace {
                                  std::vector<std::vector<const poly_t::vertex_t *> > &hole_loops,
                                  std::vector<std::vector<int> > &containing_faces,
                                  std::map<int, std::map<int, std::pair<unsigned, unsigned> > > &hole_shared_vertices) {
-    unsigned m, n;
-
     std::vector<std::vector<carve::geom2d::P2> > face_loops_projected, hole_loops_projected;
     std::vector<std::vector<unsigned> > face_loops_sorted, hole_loops_sorted;
 
@@ -447,7 +445,7 @@ namespace {
       const std::vector<const poly_t::vertex_t *> &f_loop = (face_loops[m]);
       face_loops_projected[m].reserve(f_loop.size());
       face_loops_sorted[m].reserve(f_loop.size());
-      for (n = 0; n < f_loop.size(); ++n) {
+      for (size_t n = 0; n < f_loop.size(); ++n) {
         face_loops_projected[m].push_back(carve::poly::face::project(face, f_loop[n]->v));
         face_loops_sorted[m].push_back(n);
       }
@@ -462,7 +460,7 @@ namespace {
       const std::vector<const poly_t::vertex_t *> &h_loop = (hole_loops[m]);
       hole_loops_projected[m].reserve(h_loop.size());
       hole_loops_projected[m].reserve(h_loop.size());
-      for (n = 0; n < h_loop.size(); ++n) {
+      for (size_t n = 0; n < h_loop.size(); ++n) {
         hole_loops_projected[m].push_back(carve::poly::face::project(face, h_loop[n]->v));
         hole_loops_sorted[m].push_back(n);
       }

@@ -420,21 +420,25 @@ namespace carve {
 
           tri_pair_t *tp2;
 
-          if (tp2 = get(perim[0])) {
+          tp2 = get(perim[0]);
+          if (tp2 != NULL) {
             updateEdge(tp2, project, poly, edges, n);
           }
 
-          if (tp2 = get(perim[1])) {
+          tp2 = get(perim[1]);
+          if (tp2 != NULL) {
             CARVE_ASSERT(tp2->a == tp->b || tp2->b == tp->b);
             if (tp2->a == tp->b) { tp2->a = tp->a; } else { tp2->b = tp->a; }
             updateEdge(tp2, project, poly, edges, n);
           }
 
-          if (tp2 = get(perim[2])) {
+          tp2 = get(perim[2]);
+          if (tp2 != NULL) {
             updateEdge(tp2, project, poly, edges, n);
           }
 
-          if (tp2 = get(perim[3])) {
+          tp2 = get(perim[3]);
+          if (tp2 != NULL) {
             CARVE_ASSERT(tp2->a == tp->a || tp2->b == tp->a);
             if (tp2->a == tp->a) { tp2->a = tp->b; } else { tp2->b = tp->b; }
             updateEdge(tp2, project, poly, edges, n);
