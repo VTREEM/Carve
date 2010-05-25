@@ -629,8 +629,6 @@ namespace carve {
 
 
       for (Classification::iterator i = a_classification.begin(), e = a_classification.end(); i != e; ++i) {
-        FaceLoopGroup *grp = ((*i).first.first);
-
         if (!(*i).second.class_decided) {
           if ((*i).second.c[FACE_IN            + 2] == 0) (*i).second.class_bits &= ~ FACE_IN_BIT;
           if ((*i).second.c[FACE_ON_ORIENT_IN  + 2] == 0) (*i).second.class_bits &= ~ FACE_ON_ORIENT_IN_BIT;
@@ -651,8 +649,6 @@ namespace carve {
       }
 
       for (Classification::iterator i = b_classification.begin(), e = b_classification.end(); i != e; ++i) {
-        FaceLoopGroup *grp = ((*i).first.first);
-
         if (!(*i).second.class_decided) {
           if ((*i).second.c[FACE_IN            + 2] == 0) (*i).second.class_bits &= ~ FACE_IN_BIT;
           if ((*i).second.c[FACE_ON_ORIENT_IN  + 2] == 0) (*i).second.class_bits &= ~ FACE_ON_ORIENT_IN_BIT;
@@ -767,6 +763,8 @@ namespace carve {
                   (*i).classification.push_back(ClassificationInfo(poly_b, -1, FACE_OUT));
                   classified = true;
                   break;
+                default:
+                  break;
               }
             }
           }
@@ -795,6 +793,8 @@ namespace carve {
                 case POINT_OUT:
                   (*i).classification.push_back(ClassificationInfo(poly_a, -1, FACE_OUT));
                   classified = true;
+                  break;
+                default:
                   break;
               }
             }

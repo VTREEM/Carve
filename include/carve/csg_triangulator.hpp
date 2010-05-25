@@ -148,6 +148,7 @@ namespace carve {
     };
 
     class CarveTriangulationQuadMerger : public csg::CSG::Hook {
+      // this code is incomplete.
       typedef std::map<V2, F2> edge_map_t;
 
     public:
@@ -162,6 +163,7 @@ namespace carve {
       }
 
       poly::Polyhedron::face_t *mergeQuad(edge_map_t::iterator i, edge_map_t &edge_map) {
+        return NULL;
       }
 
       void recordEdge(const poly::Polyhedron::vertex_t *v1,

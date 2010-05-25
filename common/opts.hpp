@@ -185,6 +185,9 @@ namespace opt {
     Parser() {
     }
 
+    virtual ~Parser() {
+    }
+
     Parser &option(const std::string &str, char ch, bool arg, const std::string &help) {
       long_opts.push_back(Long(str, arg, help));
       short_opts.push_back(Short(ch, arg, help));
