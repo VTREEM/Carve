@@ -136,6 +136,7 @@ static carve::poly::Polyhedron *groupToPolyhedron(const carve::csg::FaceLoopGrou
   }
   carve::poly::Polyhedron *poly = new carve::poly::Polyhedron(faces);
 
+  poly->canonicalize();
   return poly;
 }
 #endif
@@ -149,6 +150,10 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
   // Find all the groups of face loops that are connected by edges
   // that are not part of no_cross.
   // this could potentially be done with a disjoint set data-structure.
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+  static int call_num = 0;
+  call_num++;
+#endif
 
   static carve::TimingName GROUP_FACE_LOOPS("groupFaceLoops()");
 
@@ -215,7 +220,7 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
     {
       carve::poly::Polyhedron *poly = groupToPolyhedron(group);
       char buf[128];
-      sprintf(buf, "/tmp/group-%p.ply", &curr);
+      sprintf(buf, "/tmp/group-%d-%p.ply", call_num, &curr);
       std::string out(buf);
       ::writePLY(out, poly, false);
       delete poly;
