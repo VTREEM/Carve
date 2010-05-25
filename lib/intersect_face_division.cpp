@@ -1368,6 +1368,20 @@ namespace {
       return;
     }
 
+#if 0
+    // old face splitting method.
+    for (V2Set::const_iterator i = split_edges.begin(); i != split_edges.end(); ++i) {
+      face_edges.insert(std::make_pair((*i).first, (*i).second));
+      face_edges.insert(std::make_pair((*i).second, (*i).first));
+    }
+    splitFace(face, face_edges, face_loops, hole_loops, vertex_intersections);
+
+    if (hole_loops.size()) {
+      mergeFacesAndHoles(face, face_loops, hole_loops, hooks);
+    }
+    return;
+#endif
+
 #if defined(CARVE_DEBUG)
     std::cerr << "### split_edges.size(): " << split_edges.size() << std::endl;
 #endif
