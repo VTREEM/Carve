@@ -1174,6 +1174,7 @@ void carve::csg::CSG::calc(const poly_t *a,
   std::cerr << "generated " << b_edge_count << " edges for poly b" << std::endl;
 #endif
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
   {
     std::string out("/tmp/a_split.ply");
     writePLY(out, faceLoopsToPolyhedron(a_face_loops), false);
@@ -1182,6 +1183,7 @@ void carve::csg::CSG::calc(const poly_t *a,
     std::string out("/tmp/b_split.ply");
     writePLY(out, faceLoopsToPolyhedron(b_face_loops), false);
   }
+#endif
 
   checkFaceLoopIntegrity(a_face_loops);
   checkFaceLoopIntegrity(b_face_loops);
