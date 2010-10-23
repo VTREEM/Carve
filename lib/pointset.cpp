@@ -30,6 +30,7 @@ namespace carve {
       for (size_t i = 0; i < points.size(); ++i) {
         vertices[i].v = points[i];
       }
+      aabb.fit(points.begin(), points.end());
     }
 
     void PointSet::sortVertices(const carve::geom3d::Vector &axis) {
