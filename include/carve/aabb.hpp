@@ -147,7 +147,7 @@ namespace carve {
         fit(begin, end, adapt);
       }
 
-      template<typename iter_t, typename adapt_t>
+      template<typename iter_t>
       aabb(iter_t begin, iter_t end) {
         fit(begin, end);
       }
