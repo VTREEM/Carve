@@ -119,9 +119,12 @@ GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
     aabb = polys[0]->aabb;
   } else if (lines.size()) {
     aabb = lines[0]->aabb;
+  } else if (points.size()) {
+    aabb = points[0]->aabb;
   }
   for (size_t p = 0; p < polys.size(); ++p) aabb.unionAABB(polys[p]->aabb);
   for (size_t p = 0; p < lines.size(); ++p) aabb.unionAABB(lines[p]->aabb);
+  for (size_t p = 0; p < points.size(); ++p) aabb.unionAABB(points[p]->aabb);
 
   GLuint dlist = glGenLists((GLsizei)(*listSize = n));
   is_wireframe.resize(n, false);
