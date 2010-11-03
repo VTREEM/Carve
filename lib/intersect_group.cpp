@@ -189,7 +189,8 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
             for (std::list<carve::csg::FaceLoop *>::const_iterator
                    k = (*j).second.begin(), ke = (*j).second.end();
                  k != ke; ++k) {
-              if ((*k)->group != NULL) continue;
+              if ((*k)->group != NULL ||
+                  (*k)->orig_face->manifold_id != expand->orig_face->manifold_id) continue;
               face_loops.remove((*k));
               curr.append((*k));
               (*k)->group = &group;
@@ -201,7 +202,8 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
             for (std::list<carve::csg::FaceLoop *>::const_iterator
                    k = (*j).second.begin(), ke = (*j).second.end();
                  k != ke; ++k) {
-              if ((*k)->group != NULL) continue;
+              if ((*k)->group != NULL ||
+                  (*k)->orig_face->manifold_id != expand->orig_face->manifold_id) continue;
               face_loops.remove((*k));
               curr.append((*k));
               (*k)->group = &group;
