@@ -381,6 +381,20 @@ namespace carve {
       c /= double(n);
     }
 
+    template<unsigned ndim>
+    vector<2> select(const vector<ndim> &a, int a1, int a2) {
+      vector<2> r(NOINIT);
+      r.v[0] = a.v[a1]; r.v[1] = a.v[a2];
+      return r;
+    }
+
+    template<unsigned ndim>
+    vector<3> select(const vector<ndim> &a, int a1, int a2, int a3) {
+      vector<3> r(NOINIT);
+      r.v[0] = a.v[a1]; r.v[1] = a.v[a2]; r.v[2] = a.v[a3];
+      return r;
+    }
+
     static inline vector<3> cross(const vector<3> &a, const vector<3> &b) {
       // Compute a x b
       return VECTOR(+(a.y * b.z - a.z * b.y),
