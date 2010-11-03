@@ -102,6 +102,7 @@ if(CARVE_WITH_GUI)
 endif(CARVE_WITH_GUI)
 
 add_subdirectory(external/GLOOP) 
+add_subdirectory(external/gtest-1.5.0)
 
 configure_file (
   "${carve_SOURCE_DIR}/include/carve/cmake-config.h.in"
