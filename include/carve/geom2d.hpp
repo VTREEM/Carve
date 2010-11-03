@@ -71,6 +71,55 @@ namespace carve {
       return acx * bcy - acy * bcx;
     }
 
+    /** 
+     * \brief Determine whether p is internal to the anticlockwise
+     *        angle abc, where b is the apex of the angle.
+     *
+     * @param[in] a 
+     * @param[in] b 
+     * @param[in] c 
+     * @param[in] p 
+     * 
+     * @return true, if p is contained in the anticlockwise angle from
+     *               b->a to b->c. Reflex angles contain p if p lies
+     *               on b->a or on b->c. Acute angles do not contain p
+     *               if p lies on b->a or on b->c. This is so that
+     *               internalToAngle(a,b,c,p) = !internalToAngle(c,b,a,p)
+     */
+    inline bool internalToAngle(const P2 &a,
+                                const P2 &b,
+                                const P2 &c,
+                                const P2 &p) {
+      bool reflex = (a < c) ?
+        orient2d(a, b, c) <= 0.0 :
+        orient2d(c, b, a) > 0.0;
+      if (reflex) {
+        double d1 = orient2d(a, b, p);
+        double d2 = orient2d(b, c, p);
+        return d1 >= 0.0 || d2 >= 0.0;
+      } else {
+        double d1 = orient2d(a, b, p);
+        double d2 = orient2d(b, c, p);
+        return d1 > 0.0 && d2 > 0.0;
+      }
+    }
+
+    /** 
+     * \brief Determine whether p is internal to the anticlockwise
+     *        angle ac, with apex at (0,0).
+     *
+     * @param[in] a 
+     * @param[in] c 
+     * @param[in] p 
+     * 
+     * @return true, if p is contained in a0c.
+     */
+    inline bool internalToAngle(const P2 &a,
+                                const P2 &c,
+                                const P2 &p) {
+      return internalToAngle(a, P2::ZERO(), c, p);
+    }
+
 
 
     static inline double atan2(const P2 &p) {
