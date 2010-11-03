@@ -786,26 +786,6 @@ namespace {
 
 
 
-  static inline bool internalToAngle(const carve::geom2d::P2 &a,
-                                     const carve::geom2d::P2 &b,
-                                     const carve::geom2d::P2 &c,
-                                     const carve::geom2d::P2 &p) {
-    bool reflex = (a < c) ?
-      carve::geom2d::orient2d(a, b, c) <= 0.0 :
-      carve::geom2d::orient2d(c, b, a) >= 0.0;
-    if (reflex) {
-      return
-        carve::geom2d::orient2d(a, b, p) >= 0.0 ||
-        carve::geom2d::orient2d(b, c, p) >= 0.0;
-    } else {
-      return
-        carve::geom2d::orient2d(a, b, p) > 0.0 &&
-        carve::geom2d::orient2d(b, c, p) > 0.0;
-    }
-  }
-
-
-
   bool processCrossingEdges(const poly_t::face_t *face,
                             const carve::csg::VertexIntersections &vertex_intersections,
                             carve::csg::CSG::Hooks &hooks,
@@ -840,10 +820,10 @@ namespace {
 
             const poly_t::vertex_t *adj = (p[0] == base_loop[i]) ? p[1] : p[pN-2];
 
-            if (internalToAngle(face->project(a->v),
-                                face->project(b->v),
-                                face->project(c->v),
-                                face->project(adj->v))) {
+            if (carve::geom2d::internalToAngle(face->project(a->v),
+                                               face->project(b->v),
+                                               face->project(c->v),
+                                               face->project(adj->v))) {
               endpoint_indices[j].edge_idx[0] = i;
             }
           }
@@ -863,10 +843,10 @@ namespace {
 
             const poly_t::vertex_t *adj = (p[0] == base_loop[i]) ? p[1] : p[pN-2];
 
-            if (internalToAngle(face->project(a->v),
-                                face->project(b->v),
-                                face->project(c->v),
-                                face->project(adj->v))) {
+            if (carve::geom2d::internalToAngle(face->project(a->v),
+                                               face->project(b->v),
+                                               face->project(c->v),
+                                               face->project(adj->v))) {
               endpoint_indices[j].edge_idx[1] = i;
             }
           }

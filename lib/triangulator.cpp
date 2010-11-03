@@ -227,42 +227,11 @@ namespace {
 
 
 
-  bool internalToAngle(const carve::geom2d::P2 &a,
-                       const carve::geom2d::P2 &b,
-                       const carve::geom2d::P2 &c,
-                       const carve::geom2d::P2 &p) {
-    bool reflex = (a < c) ?
-      carve::geom2d::orient2d(a, b, c) <= 0.0 :
-      carve::geom2d::orient2d(c, b, a) >= 0.0;
-    if (reflex) {
-      return
-        carve::geom2d::orient2d(a, b, p) >= 0.0 ||
-        carve::geom2d::orient2d(b, c, p) >= 0.0;
-    } else {
-      return
-        carve::geom2d::orient2d(a, b, p) > 0.0 &&
-        carve::geom2d::orient2d(b, c, p) > 0.0;
-    }
-  }
-
-
-
   bool internalToAngle(const vertex_info *a,
                        const vertex_info *b,
                        const vertex_info *c,
                        const carve::geom2d::P2 &p) {
-    bool reflex = (a < c) ?
-      carve::geom2d::orient2d(a->p, b->p, c->p) <= 0.0 :
-      carve::geom2d::orient2d(c->p, b->p, a->p) >= 0.0;
-    if (reflex) {
-      return
-        carve::geom2d::orient2d(a->p, b->p, p) >= 0.0 ||
-        carve::geom2d::orient2d(b->p, c->p, p) >= 0.0;
-    } else {
-      return
-        carve::geom2d::orient2d(a->p, b->p, p) > 0.0 &&
-        carve::geom2d::orient2d(b->p, c->p, p) > 0.0;
-    }
+    return carve::geom2d::internalToAngle(a->p, b->p, c->p, p);
   }
 
 
@@ -761,10 +730,10 @@ bool testCandidateAttachment(const std::vector<std::vector<carve::geom2d::P2> > 
                              carve::geom2d::P2 hole_min) {
   const size_t SZ = current_f_loop.size();
 
-  if (!internalToAngle(pvert(poly, current_f_loop[(curr+SZ-1) % SZ]),
-                       pvert(poly, current_f_loop[curr]),
-                       pvert(poly, current_f_loop[(curr+1) % SZ]),
-                       hole_min)) {
+  if (!carve::geom2d::internalToAngle(pvert(poly, current_f_loop[(curr+SZ-1) % SZ]),
+                                      pvert(poly, current_f_loop[curr]),
+                                      pvert(poly, current_f_loop[(curr+1) % SZ]),
+                                      hole_min)) {
     return false;
   }
 
