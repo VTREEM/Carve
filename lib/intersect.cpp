@@ -39,6 +39,7 @@
 #include "csg_collector.hpp"
 
 #include <carve/timing.hpp>
+#include <carve/colour.hpp>
 
 typedef carve::poly::Polyhedron poly_t;
 
@@ -89,30 +90,6 @@ static carve::poly::Polyhedron *faceLoopsToPolyhedron(const carve::csg::FaceLoop
 #endif
 
 namespace {
-  static inline void HSV2RGB(float H, float S, float V, float &r, float &g, float &b) {
-    H = 6.0f * H;
-    if (S < 5.0e-6) {
-      r = g = b = V; return;
-    } else {
-      int i = (int)H;
-      float f = H - i;
-      float p1 = V * (1.0f - S);
-      float p2 = V * (1.0f - S * f);
-      float p3 = V * (1.0f - S * (1.0f - f));
-      switch (i) {
-      case 0:  r = V;  g = p3; b = p1; return;
-      case 1:  r = p2; g = V;  b = p1; return;
-      case 2:  r = p1; g = V;  b = p3; return;
-      case 3:  r = p1; g = p2; b = V;  return;
-      case 4:  r = p3; g = p1; b = V;  return;
-      case 5:  r = V;  g = p1; b = p2; return;
-      }
-    }
-    r = g = b = 0.0;
-  }
-
-
-
   /** 
    * \brief Sort a range [\a beg, \a end) of vertices in order of increasing dot product of vertex - \a base on \dir.
    * 
@@ -1336,11 +1313,11 @@ poly_t *carve::csg::CSG::compute(const poly_t *a,
     float H = 0.0, S = 1.0, V = 1.0;
     float r, g, b;
     for (FLGroupList::const_iterator i = a_loops_grouped.begin(); i != a_loops_grouped.end(); ++i) {
-      HSV2RGB(H, S, V, r, g, b); H += n;
+      carve::colour::HSV2RGB(H, S, V, r, g, b); H += n;
       drawFaceLoopList((*i).face_loops, r, g, b, 1.0, r * .5, g * .5, b * .5, 1.0, true);
     }
     for (FLGroupList::const_iterator i = b_loops_grouped.begin(); i != b_loops_grouped.end(); ++i) {
-      HSV2RGB(H, S, V, r, g, b); H += n;
+      carve::colour::HSV2RGB(H, S, V, r, g, b); H += n;
       drawFaceLoopList((*i).face_loops, r, g, b, 1.0, r * .5, g * .5, b * .5, 1.0, true);
     }
 
@@ -1351,7 +1328,6 @@ poly_t *carve::csg::CSG::compute(const poly_t *a,
       drawFaceLoopListWireframe((*i).face_loops);
     }
   }
-
 #endif
 
   switch (classify_type) {

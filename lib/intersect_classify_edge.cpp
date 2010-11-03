@@ -25,6 +25,7 @@
 
 #include <carve/csg.hpp>
 #include <carve/debug_hooks.hpp>
+#include <carve/colour.hpp>
 
 #include <list>
 #include <set>
@@ -138,30 +139,6 @@ namespace carve {
 
 
 
-      static inline void HSV2RGB(float H, float S, float V, float &r, float &g, float &b) {
-        H = 6.0f * H;
-        if (S < 5.0e-6) {
-          r = g = b = V; return;
-        } else {
-          int i = (int)H;
-          float f = H - i;
-          float p1 = V * (1.0f - S);
-          float p2 = V * (1.0f - S * f);
-          float p3 = V * (1.0f - S * (1.0f - f));
-          switch (i) {
-          case 0:  r = V;  g = p3; b = p1; return;
-          case 1:  r = p2; g = V;  b = p1; return;
-          case 2:  r = p1; g = V;  b = p3; return;
-          case 3:  r = p1; g = p2; b = V;  return;
-          case 4:  r = p3; g = p1; b = V;  return;
-          case 5:  r = V;  g = p1; b = p2; return;
-          }
-        }
-        r = g = b = 0.0;
-      }
-
-
-
       static void walkGraphSegment(carve::csg::detail::VVSMap &shared_edge_graph,
                                    const carve::csg::detail::VSet &branch_points,
                                    V2 initial,
@@ -213,7 +190,7 @@ namespace carve {
 
           H = fmod((H + .37), 1.0);
           S = 0.5 + fmod((S - 0.37), 0.5);
-          HSV2RGB(H, S, V, r, g, b);
+          carve::colour::HSV2RGB(H, S, V, r, g, b);
 
           if (out.size() > 1) {
             drawEdges(out.begin(), ++out.begin(),
