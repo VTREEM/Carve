@@ -820,9 +820,9 @@ namespace {
 
             const poly_t::vertex_t *adj = (p[0] == base_loop[i]) ? p[1] : p[pN-2];
 
-            if (carve::geom2d::internalToAngle(face->project(a->v),
+            if (carve::geom2d::internalToAngle(face->project(c->v),
                                                face->project(b->v),
-                                               face->project(c->v),
+                                               face->project(a->v),
                                                face->project(adj->v))) {
               endpoint_indices[j].edge_idx[0] = i;
             }
@@ -843,9 +843,9 @@ namespace {
 
             const poly_t::vertex_t *adj = (p[0] == base_loop[i]) ? p[1] : p[pN-2];
 
-            if (carve::geom2d::internalToAngle(face->project(a->v),
+            if (carve::geom2d::internalToAngle(face->project(c->v),
                                                face->project(b->v),
-                                               face->project(c->v),
+                                               face->project(a->v),
                                                face->project(adj->v))) {
               endpoint_indices[j].edge_idx[1] = i;
             }

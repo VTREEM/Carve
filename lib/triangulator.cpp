@@ -245,8 +245,8 @@ namespace {
       heap.clear();
 
       for (v2 = v1->next->next; v2 != v1->prev; v2 = v2->next) {
-        if (!internalToAngle(v1->prev, v1, v1->next, v2->p) ||
-            !internalToAngle(v2->prev, v2, v2->next, v1->p)) continue;
+        if (!internalToAngle(v1->next, v1, v1->prev, v2->p) ||
+            !internalToAngle(v2->next, v2, v2->prev, v1->p)) continue;
 
         heap.push_back(v2);
         std::push_heap(heap.begin(), heap.end(), vertex_info_l2norm_inc_ordering(v1));
@@ -519,7 +519,7 @@ size_t carve::triangulate::detail::removeDegeneracies(vertex_info *&begin, std::
         //        /
         //      a -- c -- d
         // n.b. can only do this if the shard is pointing out of the polygon. i.e. b is outside z-a-c
-        remove = !internalToAngle(v->prev, v, v->next->next->next, v->next->p);
+        remove = !internalToAngle(v->next->next->next, v, v->prev, v->next->p);
       }
     }
 
@@ -730,9 +730,9 @@ bool testCandidateAttachment(const std::vector<std::vector<carve::geom2d::P2> > 
                              carve::geom2d::P2 hole_min) {
   const size_t SZ = current_f_loop.size();
 
-  if (!carve::geom2d::internalToAngle(pvert(poly, current_f_loop[(curr+SZ-1) % SZ]),
+  if (!carve::geom2d::internalToAngle(pvert(poly, current_f_loop[(curr+1) % SZ]),
                                       pvert(poly, current_f_loop[curr]),
-                                      pvert(poly, current_f_loop[(curr+1) % SZ]),
+                                      pvert(poly, current_f_loop[(curr+SZ-1) % SZ]),
                                       hole_min)) {
     return false;
   }

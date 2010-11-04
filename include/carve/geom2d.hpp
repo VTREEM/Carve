@@ -90,17 +90,13 @@ namespace carve {
                                 const P2 &b,
                                 const P2 &c,
                                 const P2 &p) {
-      bool reflex = (a < c) ?
-        orient2d(a, b, c) <= 0.0 :
-        orient2d(c, b, a) > 0.0;
+      bool reflex = (a < c) ?  orient2d(b, a, c) <= 0.0 : orient2d(b, c, a) > 0.0;
+      double d1 = orient2d(b, a, p);
+      double d2 = orient2d(b, c, p);
       if (reflex) {
-        double d1 = orient2d(a, b, p);
-        double d2 = orient2d(b, c, p);
-        return d1 >= 0.0 || d2 >= 0.0;
+        return d1 >= 0.0 || d2 <= 0.0;
       } else {
-        double d1 = orient2d(a, b, p);
-        double d2 = orient2d(b, c, p);
-        return d1 > 0.0 && d2 > 0.0;
+        return d1 > 0.0 && d2 < 0.0;
       }
     }
 
