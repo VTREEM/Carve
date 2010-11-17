@@ -35,6 +35,9 @@ target_link_libraries(extrude     carve_fileformats carve gloop_model)
 add_executable       (convert     convert.cpp)
 target_link_libraries(convert     carve_fileformats carve gloop_model)
 
+add_executable       (selfintersect     selfintersect.cpp)
+target_link_libraries(selfintersect     carve_fileformats carve gloop_model)
+
 foreach(tgt intersect triangulate convert)
   install(TARGETS ${tgt}
           RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
