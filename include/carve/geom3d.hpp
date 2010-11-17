@@ -60,7 +60,7 @@ namespace carve {
       while (i != end) {
         p3 = adapt(*i++);
         v = cross(p3 - p2, p1 - p2);
-        if (v.v[dominantAxis(v)]) v.negate();
+        if (v.v[largestAxis(v)]) v.negate();
         n += v;
         p1 = p2; p2 = p3;
 #if defined(CARVE_DEBUG)
@@ -70,12 +70,12 @@ namespace carve {
 
       p1 = p2; p2 = p3; p3 = c1;
       v = cross(p3 - p2, p1 - p2);
-      if (v.v[dominantAxis(v)]) v.negate();
+      if (v.v[largestAxis(v)]) v.negate();
       n += v;
 
       p1 = p2; p2 = p3; p3 = c2;
       v = cross(p3 - p2, p1 - p2);
-      if (v.v[dominantAxis(v)]) v.negate();
+      if (v.v[largestAxis(v)]) v.negate();
       n += v;
 
       n.normalize();

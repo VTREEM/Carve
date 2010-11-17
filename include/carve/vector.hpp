@@ -133,7 +133,7 @@ namespace carve {
 
     template<typename iter_t, typename adapt_t>
     void sortInDirectionOfRay(const Vector &ray_dir, iter_t begin, iter_t end, adapt_t adapt) {
-      switch (carve::geom::dominantAxis(ray_dir)) {
+      switch (carve::geom::largestAxis(ray_dir)) {
       case 0:
         if (ray_dir.x > 0) {
           std::sort(begin, end, vec_lt_x(adapt));

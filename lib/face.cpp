@@ -152,7 +152,7 @@ namespace carve {
       if (project != NULL) {
         plane_eqn.negate();
 
-        int da = carve::geom::dominantAxis(plane_eqn.N);
+        int da = carve::geom::largestAxis(plane_eqn.N);
 
         project = getProjector<ndim>(plane_eqn.N.v[da] > 0, da);
         unproject = getUnprojector<ndim>(plane_eqn.N.v[da] > 0, da);
@@ -176,7 +176,7 @@ namespace carve {
         return false;
       }
 
-      int da = carve::geom::dominantAxis(plane_eqn.N);
+      int da = carve::geom::largestAxis(plane_eqn.N);
       project = getProjector<ndim>(false, da);
 
       double A = carve::geom2d::signedArea(vertices, projector());
@@ -205,7 +205,7 @@ namespace carve {
       aabb.fit(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr());
       untag();
 
-      int da = carve::geom::dominantAxis(plane_eqn.N);
+      int da = carve::geom::largestAxis(plane_eqn.N);
 
       project = getProjector<ndim>(plane_eqn.N.v[da] > 0, da);
       unproject = getUnprojector<ndim>(plane_eqn.N.v[da] > 0, da);

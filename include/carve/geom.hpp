@@ -300,7 +300,18 @@ namespace carve {
     }
 
     template<unsigned ndim>
-    int dominantAxis(const vector<ndim> &a) {
+    int smallestAxis(const vector<ndim> &a) {
+      int x = 0;
+      double y = fabs(a[0]);
+      for (unsigned i = 1; i < ndim; ++i) {
+        double z = fabs(a[i]);
+        if (z <= y) { y = z; x = i; }
+      }
+      return x;
+    }
+
+    template<unsigned ndim>
+    int largestAxis(const vector<ndim> &a) {
       int x = 0;
       double y = fabs(a[0]);
       for (unsigned i = 1; i < ndim; ++i) {

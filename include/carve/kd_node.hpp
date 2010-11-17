@@ -149,7 +149,7 @@ namespace carve {
           splitpos.pos = std::numeric_limits<double>::max();
 
           // choose the axis of the AABB with the biggest extent.
-          splitpos.axis = dominantAxis(aabb.extent);
+          splitpos.axis = largestAxis(aabb.extent);
 
           if (parent && splitpos.axis == parent->splitpos.axis) {
             // but don't choose the same axis as the parent node;

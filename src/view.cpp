@@ -129,7 +129,7 @@ GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
   GLuint dlist = glGenLists((GLsizei)(*listSize = n));
   is_wireframe.resize(n, false);
 
-  double scale_fac = 20.0 / aabb.extent[carve::geom::dominantAxis(aabb.extent)];
+  double scale_fac = 20.0 / aabb.extent[carve::geom::largestAxis(aabb.extent)];
 
   if (options.fit) {
     g_translation = -aabb.pos;
