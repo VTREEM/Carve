@@ -1304,6 +1304,14 @@ namespace carve {
 
 
 
+    void Polyhedron::findEdgesNear(const carve::geom::aabb<3> &aabb,
+                                   std::vector<const edge_t *> &outEdges) const {
+      outEdges.clear();
+      octree.findEdgesNear(aabb, outEdges);
+    }
+
+
+
     void Polyhedron::findEdgesNear(const carve::geom3d::LineSegment &line,
                                    std::vector<const edge_t *> &outEdges) const {
       outEdges.clear();
@@ -1340,6 +1348,14 @@ namespace carve {
                                    std::vector<const face_t *> &outFaces) const {
       outFaces.clear();
       octree.findFacesNear(line, outFaces);
+    }
+
+
+
+    void Polyhedron::findFacesNear(const carve::geom::aabb<3> &aabb,
+                                   std::vector<const face_t *> &outFaces) const {
+      outFaces.clear();
+      octree.findFacesNear(aabb, outFaces);
     }
 
 

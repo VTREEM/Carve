@@ -119,11 +119,13 @@ namespace carve {
 
       // *** locality queries
 
+      void findEdgesNear(const carve::geom::aabb<3> &aabb, std::vector<const edge_t *> &edges) const;
       void findEdgesNear(const carve::geom3d::LineSegment &l, std::vector<const edge_t *> &edges) const;
       void findEdgesNear(const carve::geom3d::Vector &v, std::vector<const edge_t *> &edges) const;
       void findEdgesNear(const face_t &face, std::vector<const edge_t *> &edges) const;
       void findEdgesNear(const edge_t &edge, std::vector<const edge_t *> &edges) const;
 
+      void findFacesNear(const carve::geom::aabb<3> &aabb, std::vector<const face_t *> &faces) const;
       void findFacesNear(const carve::geom3d::LineSegment &l, std::vector<const face_t *> &faces) const;
       void findFacesNear(const edge_t &edge, std::vector<const face_t *> &faces) const;
 

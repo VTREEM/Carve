@@ -155,6 +155,37 @@ namespace carve {
       return carve::geom3d::AABB(centre, size);
     }
 
+    void Octree::doFindEdges(const carve::geom::aabb<3> &aabb,
+                             Node *node,
+                             std::vector<const carve::poly::Edge<3> *> &out,
+                             unsigned depth) const {
+      if (node == NULL) {
+        return;
+      }
+
+      if (node->aabb.intersects(aabb)) {
+        if (node->hasChildren()) {
+          for (int i = 0; i < 8; ++i) {
+            doFindEdges(aabb, node->children[i], out, depth + 1);
+          }
+        } else {
+          if (depth < MAX_SPLIT_DEPTH && node->edges.size() > EDGE_SPLIT_THRESHOLD) {
+            if (!node->split()) {
+              for (int i = 0; i < 8; ++i) {
+                doFindEdges(aabb, node->children[i], out, depth + 1);
+              }
+              return;
+            }
+          }
+          for (std::vector<const carve::poly::Edge<3>*>::const_iterator it = node->edges.begin(), e = node->edges.end(); it != e; ++it) {
+            if ((*it)->tag_once()) {
+              out.push_back(*it);
+            }
+          }
+        }
+      }
+    }
+
     void Octree::doFindEdges(const carve::geom3d::LineSegment &l,
                              Node *node,
                              std::vector<const carve::poly::Edge<3> *> &out,
@@ -210,6 +241,37 @@ namespace carve {
           }
           for (std::vector<const carve::poly::Edge<3>*>::const_iterator
                  it = node->edges.begin(), e = node->edges.end(); it != e; ++it) {
+            if ((*it)->tag_once()) {
+              out.push_back(*it);
+            }
+          }
+        }
+      }
+    }
+
+    void Octree::doFindFaces(const carve::geom::aabb<3> &aabb,
+                             Node *node,
+                             std::vector<const carve::poly::Face<3>*> &out,
+                             unsigned depth) const {
+      if (node == NULL) {
+        return;
+      }
+
+      if (node->aabb.intersects(aabb)) {
+        if (node->hasChildren()) {
+          for (int i = 0; i < 8; ++i) {
+            doFindFaces(aabb, node->children[i], out, depth + 1);
+          }
+        } else {
+          if (depth < MAX_SPLIT_DEPTH && node->faces.size() > FACE_SPLIT_THRESHOLD) {
+            if (!node->split()) {
+              for (int i = 0; i < 8; ++i) {
+                doFindFaces(aabb, node->children[i], out, depth + 1);
+              }
+              return;
+            }
+          }
+          for (std::vector<const carve::poly::Face<3>*>::const_iterator it = node->faces.begin(), e = node->faces.end(); it != e; ++it) {
             if ((*it)->tag_once()) {
               out.push_back(*it);
             }
@@ -275,6 +337,11 @@ namespace carve {
       }
     }
 
+    void Octree::findEdgesNear(const carve::geom::aabb<3> &aabb, std::vector<const carve::poly::Edge<3>*> &out) const {
+      tagable::tag_begin();
+      doFindEdges(aabb, root, out, 0);
+    }
+
     void Octree::findEdgesNear(const carve::geom3d::LineSegment &l, std::vector<const carve::poly::Edge<3>*> &out) const {
       tagable::tag_begin();
       doFindEdges(l, root, out, 0);
@@ -288,6 +355,11 @@ namespace carve {
     void Octree::findEdgesNear(const carve::geom3d::Vector &v, std::vector<const carve::poly::Edge<3>*> &out) const {
       tagable::tag_begin();
       doFindEdges(v, root, out, 0);
+    }
+
+    void Octree::findFacesNear(const carve::geom::aabb<3> &aabb, std::vector<const carve::poly::Face<3>*> &out) const {
+      tagable::tag_begin();
+      doFindFaces(aabb, root, out, 0);
     }
 
     void Octree::findFacesNear(const carve::geom3d::LineSegment &l, std::vector<const carve::poly::Face<3>*> &out) const {
