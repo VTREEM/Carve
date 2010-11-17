@@ -133,14 +133,108 @@ namespace carve {
     // of the tetrahedron.
     //
     // see: http://mathworld.wolfram.com/Tetrahedron.html
-    static inline double tetrahedronVolume(const carve::geom3d::Vector &a,
-        const carve::geom3d::Vector &b,
-        const carve::geom3d::Vector &c,
-        const carve::geom3d::Vector &d) {
+    inline double tetrahedronVolume(const Vector &a,
+                                    const Vector &b,
+                                    const Vector &c,
+                                    const Vector &d) {
       return dotcross((a - d), (b - d), (c - d)) / 6.0;
     }
 
+    /** 
+     * \brief Determine whether p is internal to the wedge defined by
+     *        the area between the planes defined by a,b,c and a,b,d
+     *        angle abc, where ab is the apex of the angle.
+     *
+     * @param[in] a 
+     * @param[in] b 
+     * @param[in] c
+     * @param[in] d
+     * @param[in] p 
+     * 
+     * @return true, if p is contained in the wedge defined by the
+     *               area between the planes defined by a,b,c and
+     *               a,b,d. If the wedge is reflex, p is considered to
+     *               be contained if it lies on either plane. Acute
+     *               wdges do not contain p if p lies on either
+     *               plane. This is so that internalToWedge(a,b,c,d,p) =
+     *               !internalToWedge(a,b,d,c,p)
+     */
+    inline bool internalToWedge(const Vector &a,
+                                const Vector &b,
+                                const Vector &c,
+                                const Vector &d,
+                                const Vector &p) {
+      bool reflex = (c < d) ?
+        orient3d(a, b, c, d) >= 0.0 :
+        orient3d(a, b, d, c) < 0.0;
 
+      double d1 = orient3d(a, b, c, p);
+      double d2 = orient3d(a, b, d, p);
+
+      if (reflex) {
+        // above a,b,c or below a,b,d (or coplanar with either)
+        return d1 <= 0.0 || d2 >= 0.0;
+      } else {
+        // above a,b,c and below a,b,d
+        return d1 < 0.0 && d2 > 0.0;
+      }
+    }
+
+    /** 
+     * \brief Determine the ordering relationship of a and b, when
+     *        rotating around direction, starting from base.
+     *
+     * @param[in] adirection
+     * @param[in] base
+     * @param[in] a
+     * @param[in] b
+     * 
+     * @return 
+     *         * -1, if a is ordered before b around, rotating about direction.
+     *         * 0, if a and b are equal in angle.
+     *         * +1, if a is ordered after b around, rotating about direction.
+     */
+    inline int compareAngles(const Vector &direction, const Vector &base, const Vector &a, const Vector &b) {
+      double d1 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, a, b);
+
+      // CASE: a and b are coplanar wrt. direction.
+      if (d1 == 0.0) {
+        // a and b point in the same direction.
+        if (dot(a, b) > 0.0) {
+          // Neither is less than the other.
+          return 0;
+        }
+
+        // a and b point in opposite directions.
+        double d2 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, a);
+        // * if d2 > 0.0, a is below plane(direction, base) and is less
+        //   than b.
+        // * if d2 == 0.0 a is coplanar with plane(direction, base) and is
+        //   less than b if it points in the same direction as base.
+        // * if d2 < 0.0, a is above plane(direction, base) and is greater
+        //   than b.
+        return (d2 > 0.0 || (d2 == 0.0 && dot(a, base) > 0.0)) ? -1 : +1;
+      }
+
+      // CASE: a and b are not coplanar wrt. direction
+      double d2 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, a);
+      double d3 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, b);
+
+      if (d2 < 0.0) {
+        // if a is above plane(direction,base), then a is less than b if
+        // b is below plane(direction,base) or b is above plane(direction,a)
+        return (d3 > 0.0 || d1 < 0.0) ? -1 : +1;
+      } else if (d2 == 0.0) {
+        // if a is on plane(direction,base) then a is less than b if a
+        // points in the same direction as base, or b is below
+        // plane(direction,base)
+        return (dot(a, base) > 0.0 || d3 > 0.0) ? -1 : +1;
+      } else {
+        // if a is below plane(direction,base), then a is less than b if b
+        // is below plane(direction,base) and b is above plane(direction,a)
+        return (d3 > 0.0 && d1 < 0.0) ? -1 : +1;
+      }
+    }
 
     // The anticlockwise angle from vector "from" to vector "to", oriented around the vector "orient".
     static inline double antiClockwiseAngle(const Vector &from, const Vector &to, const Vector &orient) {
