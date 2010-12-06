@@ -6,6 +6,7 @@ include_directories("${carve_SOURCE_DIR}/common")
 include_directories(${OPENGL_INCLUDE_DIR})
 
 link_directories("${gloop_BINARY_DIR}")
+link_directories("${carve_BINARY_DIR}/lib")
 link_directories("${carve_BINARY_DIR}/common")
 
 add_executable       (test_geom          test_geom.cpp)
@@ -34,13 +35,13 @@ if(CARVE_WITH_GUI)
   target_link_libraries(test_interpolate   carve carve_ui glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
   add_executable       (test_csg_interpolate   test_csg_interpolate.cpp)
-  target_link_libraries(test_csg_interpolate   carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
+  target_link_libraries(test_csg_interpolate   carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
   add_executable       (test_slice             test_slice.cpp)
-  target_link_libraries(test_slice             carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
+  target_link_libraries(test_slice             carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
   add_executable       (test_slice_classify    test_slice_classify.cpp)
-  target_link_libraries(test_slice_classify    carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
+  target_link_libraries(test_slice_classify    carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
   add_executable       (test_triangulate       test_triangulate.cpp)
   target_link_libraries(test_triangulate       carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
