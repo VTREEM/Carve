@@ -89,22 +89,22 @@ namespace carve {
 
     // only implemented for 3d.
     template<unsigned ndim>
-    typename Face<ndim>::project_t getProjector(bool positive_facing, int axis) {
+    typename Face<ndim>::project_t Face<ndim>::getProjector(bool positive_facing, int axis) {
       return NULL;
     }
 
     template<>
-    Face<3>::project_t getProjector<3>(bool positive_facing, int axis) {
+    Face<3>::project_t Face<3>::getProjector(bool positive_facing, int axis) {
       return project_tab[positive_facing ? 1 : 0][axis];
     }
 
     template<unsigned ndim>
-    typename Face<ndim>::unproject_t getUnprojector(bool positive_facing, int axis) {
+    typename Face<ndim>::unproject_t Face<ndim>::getUnprojector(bool positive_facing, int axis) {
       return NULL;
     }
 
     template<>
-    Face<3>::unproject_t getUnprojector<3>(bool positive_facing, int axis) {
+    Face<3>::unproject_t Face<3>::getUnprojector(bool positive_facing, int axis) {
       return unproject_tab[positive_facing ? 1 : 0][axis];
     }
 
@@ -114,6 +114,7 @@ namespace carve {
     Face<ndim>::Face(const std::vector<const vertex_t *> &_vertices,
                      bool delay_recalc) : tagable() {
       vertices = _vertices;
+      edges.resize(nVertices(), NULL);
       if (!delay_recalc && !recalc()) { }
     }
 
@@ -126,6 +127,7 @@ namespace carve {
       vertices.push_back(a);
       vertices.push_back(b);
       vertices.push_back(c);
+      edges.resize(3, NULL);
       if (!delay_recalc && !recalc()) { }
     }
 
@@ -140,6 +142,7 @@ namespace carve {
       vertices.push_back(b);
       vertices.push_back(c);
       vertices.push_back(d);
+      edges.resize(4, NULL);
       if (!delay_recalc && !recalc()) { }
     }
 
@@ -154,8 +157,8 @@ namespace carve {
 
         int da = carve::geom::largestAxis(plane_eqn.N);
 
-        project = getProjector<ndim>(plane_eqn.N.v[da] > 0, da);
-        unproject = getUnprojector<ndim>(plane_eqn.N.v[da] > 0, da);
+        project = getProjector(plane_eqn.N.v[da] > 0, da);
+        unproject = getUnprojector(plane_eqn.N.v[da] > 0, da);
       }
 
       if (edges.size() == n_verts) {
@@ -177,40 +180,22 @@ namespace carve {
       }
 
       int da = carve::geom::largestAxis(plane_eqn.N);
-      project = getProjector<ndim>(false, da);
+      project = getProjector(false, da);
 
       double A = carve::geom2d::signedArea(vertices, projector());
       if ((A < 0.0) ^ (plane_eqn.N.v[da] < 0.0)) {
         plane_eqn.negate();
       }
 
-      project = getProjector<ndim>(plane_eqn.N.v[da] > 0, da);
-      unproject = getUnprojector<ndim>(plane_eqn.N.v[da] > 0, da);
+      project = getProjector(plane_eqn.N.v[da] > 0, da);
+      unproject = getUnprojector(plane_eqn.N.v[da] > 0, da);
 
       return true;
     }
 
     template<unsigned ndim>
     Face<ndim> *Face<ndim>::init(const Face *base, const std::vector<const vertex_t *> &_vertices, bool flipped) {
-      vertices.reserve(_vertices.size());
-
-      if (flipped) {
-        std::copy(_vertices.rbegin(), _vertices.rend(), std::back_insert_iterator<std::vector<const vertex_t *> >(vertices));
-        plane_eqn = -base->plane_eqn;
-      } else {
-        std::copy(_vertices.begin(), _vertices.end(), std::back_insert_iterator<std::vector<const vertex_t *> >(vertices));
-        plane_eqn = base->plane_eqn;
-      }
-
-      aabb.fit(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr());
-      untag();
-
-      int da = carve::geom::largestAxis(plane_eqn.N);
-
-      project = getProjector<ndim>(plane_eqn.N.v[da] > 0, da);
-      unproject = getUnprojector<ndim>(plane_eqn.N.v[da] > 0, da);
-
-      return this;
+      return init(base, _vertices.begin(), _vertices.end(), flipped);
     }
 
     template<unsigned ndim>

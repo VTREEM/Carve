@@ -54,7 +54,6 @@ namespace carve {
     };
 
 
-
     template<unsigned ndim>
     class Face : public tagable {
     public:
@@ -68,14 +67,26 @@ namespace carve {
       typedef carve::geom2d::P2 (*project_t)(const vector_t &);
       typedef vector_t (*unproject_t)(const carve::geom2d::P2 &, const plane_t &);
 
+    protected:
       std::vector<const vertex_t *> vertices; // pointer into polyhedron.vertices
       std::vector<const edge_t *> edges; // pointer into polyhedron.edges
+
+      project_t getProjector(bool positive_facing, int axis);
+      unproject_t getUnprojector(bool positive_facing, int axis);
+
+    public:
+      typedef typename std::vector<const vertex_t *>::iterator vertex_iter_t;
+      typedef typename std::vector<const vertex_t *>::const_iterator const_vertex_iter_t;
+
+      typedef typename std::vector<const edge_t *>::iterator edge_iter_t;
+      typedef typename std::vector<const edge_t *>::const_iterator const_edge_iter_t;
 
       obj_t *owner;
 
       aabb_t aabb;
       plane_t plane_eqn;
       int manifold_id;
+      int group_id;
 
       project_t project;
       unproject_t unproject;
@@ -93,14 +104,38 @@ namespace carve {
 
       bool recalc();
 
+      template<typename iter_t>
+      Face *init(const Face *base, iter_t vbegin, iter_t vend, bool flipped);
       Face *init(const Face *base, const std::vector<const vertex_t *> &_vertices, bool flipped);
-      Face *create(const std::vector<const vertex_t *> &_vertices, bool flipped) const {
-        return (new Face)->init(this, _vertices, flipped);
-      }
-      Face *clone() const {
-        return (new Face)->init(this, vertices, false);
-      }
+
+      template<typename iter_t>
+      Face *create(iter_t vbegin, iter_t vend, bool flipped) const;
+      Face *create(const std::vector<const vertex_t *> &_vertices, bool flipped) const;
+
+      Face *clone(bool flipped = false) const;
       void invert();
+
+      void getVertexLoop(std::vector<const vertex_t *> &loop) const;
+
+      const vertex_t *&vertex(size_t idx);
+      const vertex_t *vertex(size_t idx) const;
+      size_t nVertices() const;
+
+      vertex_iter_t vbegin() { return vertices.begin(); }
+      vertex_iter_t vend() { return vertices.end(); }
+      const_vertex_iter_t vbegin() const { return vertices.begin(); }
+      const_vertex_iter_t vend() const { return vertices.end(); }
+
+      std::vector<carve::geom::vector<2> > projectedVertices() const;
+
+      const edge_t *&edge(size_t idx);
+      const edge_t *edge(size_t idx) const;
+      size_t nEdges() const;
+
+      edge_iter_t ebegin() { return edges.begin(); }
+      edge_iter_t eend() { return edges.end(); }
+      const_edge_iter_t ebegin() const { return edges.begin(); }
+      const_edge_iter_t eend() const { return edges.end(); }
 
       bool containsPoint(const vector_t &p) const;
       bool containsPointInProjection(const vector_t &p) const;
@@ -108,15 +143,13 @@ namespace carve {
                                          vector_t &intersection) const;
       IntersectionClass lineSegmentIntersection(const carve::geom::linesegment<ndim> &line,
                                                 vector_t &intersection) const;
-      vector_t centroid() const {
-        vector_t c;
-        carve::geom::centroid(vertices.begin(), vertices.end(), vec_adapt_vertex_ptr(), c);
-        return c;
-      }
+      vector_t centroid() const;
 
       p2_adapt_project<ndim> projector() const {
         return p2_adapt_project<ndim>(project);
       }
+
+      void swap(Face<ndim> &other);
     };
 
 
