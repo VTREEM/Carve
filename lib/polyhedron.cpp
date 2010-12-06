@@ -220,8 +220,7 @@ namespace {
   struct order_faces {
     bool operator()(const carve::poly::Polyhedron::face_t * const &a,
                     const carve::poly::Polyhedron::face_t * const &b) const {
-      return std::lexicographical_compare(a->vertices.begin(), a->vertices.end(),
-                                          b->vertices.begin(), b->vertices.end());
+      return std::lexicographical_compare(a->vbegin(), a->vend(), b->vbegin(), b->vend());
     }
   };
 
@@ -322,9 +321,9 @@ namespace carve {
       // work out how many faces/edges each vertex is connected to, in
       // order to save on array reallocs.
       for (unsigned i = 0; i < faces.size(); ++i) {
-        std::vector<const vertex_t *> &v = faces[i].vertices;
-        for (unsigned j = 0; j < v.size(); j++) {
-          vertex_face_count[vertexToIndex_fast(v[j])]++;
+        face_t &f = faces[i];
+        for (unsigned j = 0; j < f.nVertices(); j++) {
+          vertex_face_count[vertexToIndex_fast(f.vertex(j))]++;
         }
       }
 
@@ -345,10 +344,8 @@ namespace carve {
       // record connectivity from vertex to faces.
       for (size_t i = 0; i < faces.size(); ++i) {
         face_t &f = faces[i];
-        std::vector<const vertex_t *> &v = f.vertices;
-
-        for (unsigned j = 0; j < v.size(); j++) {
-          size_t vi = vertexToIndex_fast(v[j]);
+        for (unsigned j = 0; j < f.nVertices(); j++) {
+          size_t vi = vertexToIndex_fast(f.vertex(j));
           connectivity.vertex_to_face[vi].push_back(&f);
         }
       }
@@ -459,7 +456,8 @@ namespace carve {
             edge_face_pairs.push_back(NULL);
             edge_face_pairs.push_back(j->face);
           }
-          // group edges based upon the closed-face sets which are incident to them.
+
+          // group edges based upon the closed-face sets that are incident to them.
           std::vector<int> tag;
           tag.reserve(ef_closed.fwd.size() + ef_closed.rev.size());
           for (std::list<FV>::const_iterator j = ef_closed.fwd.begin(); j != ef_closed.fwd.end(); ++j) {
@@ -542,15 +540,11 @@ namespace carve {
       // forward and reverse directions.
       for (unsigned i = 0; i < faces.size(); ++i) {
         face_t &f = faces[i];
-        std::vector<const vertex_t *> &v = f.vertices;
-
-        for (unsigned j = 0; j < v.size() - 1; j++) {
-          eci.ef_map.record(v[j], v[j+1], &f, j);
+        for (unsigned j = 0; j < f.nVertices() - 1; j++) {
+          eci.ef_map.record(f.vertex(j), f.vertex(j+1), &f, j);
         }
-        eci.ef_map.record(v.back(), v.front(), &f, v.size() - 1);
+        eci.ef_map.record(f.vertex(f.nVertices()-1), f.vertex(0), &f, f.nVertices()-1);
 
-        f.edges.clear();
-        f.edges.resize(v.size(), NULL);
         f.manifold_id = -1;
       }
     }
@@ -582,24 +576,24 @@ namespace carve {
         if (fwd.size()) {
           face_t *f = fwd.front().face;
           size_t v = fwd.front().vertex;
-          v1 = f->vertices[v];
-          v2 = f->vertices[(v+1) % f->vertices.size()];
+          v1 = f->vertex(v);
+          v2 = f->vertex((v+1) % f->nVertices());
 	} else { 
           face_t *f = rev.front().face;
           size_t v = rev.front().vertex;
-          v2 = f->vertices[v];
-          v1 = f->vertices[(v+1) % f->vertices.size()];
+          v2 = f->vertex(v);
+          v1 = f->vertex((v+1) % f->nVertices());
         }
 
         edges.push_back(edge_t(v1, v2, this));
         ef.edge = &edges.back();
 
         for (std::list<FV>::const_iterator j = fwd.begin(); j != fwd.end(); ++j) {
-          (*j).face->edges[(*j).vertex] = &edges.back();
+          (*j).face->edge((*j).vertex) = &edges.back();
         }
 
         for (std::list<FV>::const_iterator j = rev.begin(); j != rev.end(); ++j) {
-          (*j).face->edges[(*j).vertex] = &edges.back();
+          (*j).face->edge((*j).vertex) = &edges.back();
         }
       }
 
@@ -666,7 +660,7 @@ namespace carve {
         int m_id = faces[i].manifold_id;
         if (embedding.find(m_id) == embedding.end()) {
           carve::geom2d::P2 pv;
-          if (!carve::geom2d::pickContainedPoint(faces[i].vertices, faces[i].projector(), pv)) continue;
+          if (!carve::geom2d::pickContainedPoint(faces[i].projectedVertices(), pv)) continue;
           carve::geom3d::Vector v = carve::poly::face::unproject(faces[i], pv);
           if (emb_test(this, embedding, v, m_id) && embedding.size() == MCOUNT) {
             carve::Timing::stop();
@@ -749,7 +743,7 @@ namespace carve {
         if (i == faces.size()) break;
 
         to_mark.push_back(&faces[i]);
-        min_vertex = faces[i].vertices[0];
+        min_vertex = faces[i].vertex(0);
 
         bool is_closed = true;
 
@@ -760,18 +754,18 @@ namespace carve {
           if (f->manifold_id == -1) {
             f->manifold_id = m_id;
 
-            const vertex_t *v = f->vertices[0];
-            for (size_t j = 1; j < f->vertices.size(); ++j) {
-              if (f->vertices[j]->v < v->v) {
-                v = f->vertices[j];
+            const vertex_t *v = f->vertex(0);
+            for (size_t j = 1; j < f->nVertices(); ++j) {
+              if (f->vertex(j)->v < v->v) {
+                v = f->vertex(j);
               }
             }
             if (v->v < min_vertex->v) {
               min_vertex = v;
             }
 
-            for (size_t j = 0; j < f->edges.size(); ++j) {
-              face_t *g = const_cast<face_t *>(connectedFace(f, f->edges[j]));
+            for (size_t j = 0; j < f->nEdges(); ++j) {
+              face_t *g = const_cast<face_t *>(connectedFace(f, f->edge(j)));
 
               if (g) {
                 if (g->manifold_id == -1) to_mark.push_back(g);
@@ -986,8 +980,8 @@ namespace carve {
       for (size_t i = 0, il = faces.size(); i != il; ++i) {
         face_t &f = faces[i];
 
-        for (size_t j = 0, jl = f.vertices.size(); j != jl; ++j) {
-          vmap[f.vertices[j]] = NULL;
+        for (size_t j = 0, jl = f.nVertices(); j != jl; ++j) {
+          vmap[f.vertex(j)] = NULL;
         }
       }
 
@@ -1004,8 +998,8 @@ namespace carve {
       for (size_t i = 0, il = faces.size(); i != il; ++i) {
         face_t &f = faces[i];
 
-        for (size_t j = 0, jl = f.vertices.size(); j != jl; ++j) {
-          f.vertices[j] = vmap[f.vertices[j]];
+        for (size_t j = 0, jl = f.nVertices(); j != jl; ++j) {
+          f.vertex(j) = vmap[f.vertex(j)];
         }
       }
     }
@@ -1400,14 +1394,12 @@ namespace carve {
              i = faces.begin(), e = faces.end(); i != e; ++i) {
         o << "  F@" << &(*i) << " {" << std::endl;
         o << "    vertices {" << std::endl;
-        for (std::vector<const vertex_t *>::const_iterator
-               j = (*i).vertices.begin(), je = (*i).vertices.end(); j != je; ++j) {
+        for (face_t::const_vertex_iter_t j = (*i).vbegin(), je = (*i).vend(); j != je; ++j) {
           o << "      V@" << (*j) << std::endl;
         }
         o << "    }" << std::endl;
         o << "    edges {" << std::endl;
-        for (std::vector<const edge_t *>::const_iterator
-               j = (*i).edges.begin(), je = (*i).edges.end(); j != je; ++j) {
+        for (face_t::const_edge_iter_t j = (*i).ebegin(), je = (*i).eend(); j != je; ++j) {
           o << "      E@" << (*j) << std::endl;
         }
         carve::geom::plane<3> p = (*i).plane_eqn;
@@ -1429,23 +1421,23 @@ namespace carve {
       orderVertices();
       for (size_t i = 0; i < faces.size(); i++) {
         face_t &f = faces[i];
-        size_t j = std::distance(f.vertices.begin(),
-                                 std::min_element(f.vertices.begin(),
-                                                  f.vertices.end()));
+        size_t j = std::distance(f.vbegin(),
+                                 std::min_element(f.vbegin(),
+                                                  f.vend()));
         if (j) {
           {
             std::vector<const vertex_t *> temp;
-            temp.reserve(f.vertices.size());
-            std::copy(f.vertices.begin() + j, f.vertices.end(),       std::back_inserter(temp));
-            std::copy(f.vertices.begin(),     f.vertices.begin() + j, std::back_inserter(temp));
-            temp.swap(f.vertices);
+            temp.reserve(f.nVertices());
+            std::copy(f.vbegin() + j, f.vend(),       std::back_inserter(temp));
+            std::copy(f.vbegin(),     f.vbegin() + j, std::back_inserter(temp));
+            std::copy(temp.begin(),   temp.end(),     f.vbegin());
           }
           {
             std::vector<const edge_t *> temp;
-            temp.reserve(f.vertices.size());
-            std::copy(f.edges.begin() + j, f.edges.end(),       std::back_inserter(temp));
-            std::copy(f.edges.begin(),     f.edges.begin() + j, std::back_inserter(temp));
-            temp.swap(f.edges);
+            temp.reserve(f.nEdges());
+            std::copy(f.ebegin() + j, f.eend(),       std::back_inserter(temp));
+            std::copy(f.ebegin(),     f.ebegin() + j, std::back_inserter(temp));
+            std::copy(temp.begin(),   temp.end(),     f.ebegin());
           }
         }
       }
@@ -1459,8 +1451,6 @@ namespace carve {
       for (size_t i = 0; i < faces.size(); ++i) sorted_faces.push_back(*face_ptrs[i]);
       std::swap(faces, sorted_faces);
     }
-
-
 
   }
 }
