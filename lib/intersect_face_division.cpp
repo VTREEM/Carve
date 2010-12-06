@@ -212,7 +212,7 @@ namespace {
     Graph graph;
 
 #if defined(CARVE_DEBUG)
-    std::cerr << "splitFace()" << " face=" << face << " face->vertices.size()=" << face->vertices.size() << " edges.size()=" << edges.size() << std::endl;
+    std::cerr << "splitFace()" << " face=" << face << " face->nVertices()=" << face->nVertices() << " edges.size()=" << edges.size() << std::endl;
 #endif
 
     for (carve::csg::V2Set::const_iterator
@@ -746,16 +746,16 @@ namespace {
 
     // XXX: assumes that face->edges is in the same order as
     // face->vertices. (Which it is)
-    for (size_t j = 0, je = face->vertices.size(); j < je; ++j) {
-      base_loop.push_back(carve::csg::map_vertex(data.vmap, face->vertices[j]));
+    for (size_t j = 0, je = face->nVertices(); j < je; ++j) {
+      base_loop.push_back(carve::csg::map_vertex(data.vmap, face->vertex(j)));
 
-      const poly_t::edge_t *e = face->edges[j];
+      const poly_t::edge_t *e = face->edge(j);
       carve::csg::detail::EVVMap::const_iterator ev = data.divided_edges.find(e);
 
       if (ev != data.divided_edges.end()) {
         const std::vector<const poly_t::vertex_t *> &ev_vec = ((*ev).second);
 
-        if (e->v1 == face->vertices[j]) {
+        if (e->v1 == face->vertex(j)) {
           // edge is forward;
           for (size_t k = 0, ke = ev_vec.size(); k < ke;) {
             base_loop.push_back(ev_vec[k++]);

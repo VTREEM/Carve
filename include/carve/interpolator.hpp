@@ -25,37 +25,35 @@
 namespace carve {
   namespace interpolate {
 
-    template<typename T, typename adapt_t>
-    std::vector<double> polyInterpolate(const std::vector<T> &points, adapt_t adapt, const carve::geom2d::P2 &v) {
+    std::vector<double> polyInterpolate(const std::vector<carve::geom2d::P2> &s,
+                                        const carve::geom2d::P2 &v) {
       // see hormann et al. 2006
-      const size_t SZ = points.size();
-      std::vector<carve::geom2d::P2> s;
+      const size_t SZ = s.size();
       std::vector<double> r;
       std::vector<double> A;
       std::vector<double> D;
 
       std::vector<double> result;
 
-      s.resize(SZ);
       r.resize(SZ);
       A.resize(SZ);
       D.resize(SZ);
 
       result.resize(SZ, 0.0);
 
-      for (size_t i = 0; i < SZ; ++i) s[i] = adapt(points[i]) - v;
-
       for (size_t i = 0; i < SZ; ++i) {
         size_t i2 = (i + 1) % SZ;
+        carve::geom2d::P2 si = s[i] - v;
+        carve::geom2d::P2 si2 = s[i2] - v;
 
-        r[i] = sqrt(dot(s[i], s[i]));
-        A[i] = cross(s[i], s[i2]) / 2.0;
-        D[i] = dot(s[i], s[i2]);
+        r[i] = sqrt(dot(si, si));
+        A[i] = cross(si, si2) / 2.0;
+        D[i] = dot(si, si2);
         if (fabs(r[i]) < 1e-16) {
           result[i] = 1.0;
           return result;
         } else if (fabs(A[i]) < 1e-16 && D[i] < 0.0) {
-          double r2 = sqrt(dot(s[i2], s[i2]));
+          double r2 = sqrt(dot(si2, si2));
           result[i2] = r[i] / (r[i] + r2);
           result[i] = r2 / (r[i] + r2);
           return result;
@@ -82,48 +80,74 @@ namespace carve {
         result[i] /= w_sum;
       }
 
-      carve::geom2d::P2 test;
-      for (size_t i = 0; i < SZ; ++i) {
-        test = test + result[i] * s[i];
-      }
+//       carve::geom2d::P2 test;
+//       for (size_t i = 0; i < SZ; ++i) {
+//         test = test + result[i] * s[i];
+//       }
 
       return result;
     }
 
-    std::vector<double> polyInterpolate(const std::vector<carve::geom2d::P2> &points, const carve::geom2d::P2 &v) {
-      return polyInterpolate(points, carve::geom2d::p2_adapt_ident(), v);
-    }
-
-    template<typename T,
+    template<typename iter_t,
              typename adapt_t,
              typename val_t,
              typename mod_t>
-    val_t interp(const std::vector<T> &poly,
+    val_t interp(iter_t begin,
+                 iter_t end,
                  adapt_t adapt,
                  const std::vector<val_t> &vals,
                  double x,
                  double y,
                  mod_t mod = mod_t()) {
-      std::vector<double> weight = polyInterpolate(poly, adapt, carve::geom::VECTOR(x, y));
+      std::vector<carve::geom2d::P2> s;
+      s.reserve(std::distance(begin, end));
+      std::transform(begin, end, std::back_inserter(s), adapt);
+      std::vector<double> weight = polyInterpolate(s, carve::geom::VECTOR(x, y));
+
       val_t v;
-      for (size_t z = 0; z < poly.size(); z++) {
+      for (size_t z = 0; z < weight.size(); z++) {
         v += weight[z] * vals[z];
       }
 
       return mod(v);
     }
 
-    template<typename T,
+    template<typename iter_t,
              typename adapt_t,
              typename val_t>
-    val_t interp(const std::vector<T> &poly,
+    val_t interp(iter_t begin,
+                 iter_t end,
                  adapt_t adapt,
                  const std::vector<val_t> &vals,
                  double x,
                  double y) {
-      return interp(poly, adapt, vals, x, y, identity_t<val_t>());
+      return interp(begin, end, adapt, vals, x, y, identity_t<val_t>());
+    }
+    
+    template<typename vertex_t,
+             typename adapt_t,
+             typename val_t,
+             typename mod_t>
+    val_t interp(const std::vector<vertex_t> &poly,
+                 adapt_t adapt,
+                 const std::vector<val_t> &vals,
+                 double x,
+                 double y,
+                 mod_t mod = mod_t()) {
+      return interp(poly.begin(), poly.end(), adapt, vals, x, y, mod);
     }
 
+    template<typename vertex_t,
+             typename adapt_t,
+             typename val_t>
+    val_t interp(const std::vector<vertex_t> &poly,
+                 adapt_t adapt,
+                 const std::vector<val_t> &vals,
+                 double x,
+                 double y) {
+      return interp(poly.begin(), poly.end(), adapt, vals, x, y, identity_t<val_t>());
+    }
+    
     template<typename val_t,
              typename mod_t>
     val_t interp(const std::vector<carve::geom2d::P2> &poly,
@@ -131,7 +155,14 @@ namespace carve {
                  double x,
                  double y,
                  mod_t mod = mod_t()) {
-      return interp(poly, carve::geom2d::p2_adapt_ident(), vals, x, y, mod);
+      std::vector<double> weight = polyInterpolate(poly, carve::geom::VECTOR(x, y));
+
+      val_t v;
+      for (size_t z = 0; z < weight.size(); z++) {
+        v += weight[z] * vals[z];
+      }
+
+      return mod(v);
     }
 
     template<typename val_t>
@@ -139,10 +170,8 @@ namespace carve {
                  const std::vector<val_t> &vals,
                  double x,
                  double y) {
-      return interp(poly, carve::geom2d::p2_adapt_ident(), vals, x, y, identity_t<val_t>());
+      return interp(poly, vals, x, y, identity_t<val_t>());
     }
-
-
 
     class Interpolator {
     public:
@@ -214,23 +243,24 @@ namespace carve {
                                bool flipped) {
         std::vector<attr_t> vertex_attrs;
         attrvmap_t base_attrs;
-        vertex_attrs.reserve(orig_face->vertices.size());
+        vertex_attrs.reserve(orig_face->nVertices());
 
-        for (size_t i = 0; i < orig_face->vertices.size(); ++i) {
+        for (size_t i = 0; i < orig_face->nVertices(); ++i) {
           typename attrmap_t::const_iterator a = attrs.find(std::make_pair(orig_face, i));
           if (a == attrs.end()) return;
           vertex_attrs.push_back((*a).second);
-          base_attrs[orig_face->vertices[i]] = vertex_attrs.back();
+          base_attrs[orig_face->vertex(i)] = vertex_attrs.back();
         }
 
-        for (size_t i = 0; i < new_face->vertices.size(); ++i) {
-          const carve::poly::Polyhedron::vertex_t *vertex = new_face->vertices[i];
+        for (size_t i = 0; i < new_face->nVertices(); ++i) {
+          const carve::poly::Polyhedron::vertex_t *vertex = new_face->vertex(i);
           typename attrvmap_t::const_iterator b = base_attrs.find(vertex);
           if (b != base_attrs.end()) {
             attrs[std::make_pair(new_face, i)] = (*b).second;
           } else {
-            carve::geom2d::P2 p = carve::poly::face::project(orig_face, new_face->vertices[i]->v);
-            attr_t attr = interp(orig_face->vertices,
+            carve::geom2d::P2 p = carve::poly::face::project(orig_face, new_face->vertex(i)->v);
+            attr_t attr = interp(orig_face->vbegin(),
+                                 orig_face->vend(),
                                  orig_face->projector(),
                                  vertex_attrs,
                                  p.x,

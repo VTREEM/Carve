@@ -205,8 +205,8 @@ namespace carve {
         Intersections::const_iterator i = find(a);
         if (i == end()) return false;
         if (i->second.find(f) != i->second.end()) return true;
-        for (size_t j = 0; j < f->edges.size(); ++j) if (i->second.find(f->edges[j]) != i->second.end()) return true;
-        for (size_t j = 0; j < f->vertices.size(); ++j) if (i->second.find(f->vertices[j]) != i->second.end()) return true;
+        for (size_t j = 0; j < f->nEdges(); ++j) if (i->second.find(f->edge(j)) != i->second.end()) return true;
+        for (size_t j = 0; j < f->nVertices(); ++j) if (i->second.find(f->vertex(j)) != i->second.end()) return true;
         return false;
       }
 

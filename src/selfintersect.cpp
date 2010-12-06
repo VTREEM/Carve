@@ -307,6 +307,7 @@ int triangle_triangle_intersection_2d(const vec3 tri_a[3], const vec3 tri_b[3]) 
 }
 
 bool line_segment_triangle_test(const vec3 tri[3], const vec3 &a, const vec3 &b) {
+  // XXX this test is correct with exact predicates, but fails for nearly-coplanar inputs with inexact predicates. a 2d projection test would be useful in this case.
   int o[3];
   int c[3];
 
@@ -477,29 +478,26 @@ int main(int argc, char **argv) {
   for (size_t f = 0; f < poly->faces.size(); ++f) {
     std::vector<const carve::poly::Polyhedron::face_t *> near_faces;
     poly->findFacesNear(poly->faces[f].aabb, near_faces);
-    std::cerr << "f=" << f << " n(near)=" << near_faces.size();
-    for (size_t f2 = 0; f2 < near_faces.size(); ++f2) {
-      const carve::poly::Polyhedron::face_t *fa = &poly->faces[f];
-      const carve::poly::Polyhedron::face_t *fb = near_faces[f2];
-      if (fa == fb) continue;
-      if (fa->aabb.intersects(fb->aabb)) {
-        if (fa->vertices.size() == 3 && fb->vertices.size() == 3) {
-          vec3 tri_a[3]; tri_a[0] = fa->vertices[0]->v; tri_a[1] = fa->vertices[1]->v; tri_a[2] = fa->vertices[2]->v;
-          vec3 tri_b[3]; tri_b[0] = fb->vertices[0]->v; tri_b[1] = fb->vertices[1]->v; tri_b[2] = fb->vertices[2]->v;
+    const carve::poly::Polyhedron::face_t *fa = &poly->faces[f];
+    vec3 tri_a[3]; tri_a[0] = fa->vertex(0)->v; tri_a[1] = fa->vertex(1)->v; tri_a[2] = fa->vertex(2)->v;
 
-          // std::cerr << "testing... " << tri_a[0] << "," << tri_a[1] << "," << tri_a[2] << " against "<< tri_b[0] << "," << tri_b[1] << "," << tri_b[2] << std::endl;
+    for (size_t f2 = 0; f2 < near_faces.size(); ++f2) {
+      const carve::poly::Polyhedron::face_t *fb = near_faces[f2];
+      if (fa >= fb) continue;
+      if (fa->aabb.intersects(fb->aabb)) {
+        if (fa->nVertices() == 3 && fb->nVertices() == 3) {
+          vec3 tri_b[3]; tri_b[0] = fb->vertex(0)->v; tri_b[1] = fb->vertex(1)->v; tri_b[2] = fb->vertex(2)->v;
+
           switch (tripair_intersection(tri_a, tri_b)) {
             case 0:
               break;
             case 1:
-              std::cerr << ".";
               break;
             case 2:
-              std::cerr << "|";
               break;
             case 3: {
+              std::cerr << "intersection: " << poly->faceToIndex_fast(fa) << " - " << poly->faceToIndex_fast(fb) << std::endl;
               static int c = 0;
-              std::cerr << "*";
               std::ostringstream fn;
               fn << "intersection-" << c++ << ".ply";
               std::cerr << fn.str().c_str() << std::endl;
@@ -524,14 +522,12 @@ end_header\n";
               outf << "\
 3 0 1 2\n\
 3 5 4 3\n";
-              if (c > 6) return 1;
               break;
             }
           }
         }
       }
     }
-    std::cerr << std::endl;
   }
 
   return 0;

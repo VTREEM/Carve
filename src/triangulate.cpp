@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
   size_t N = 0;
   for (size_t i = 0; i < poly->faces.size(); ++i) {
     carve::poly::Face<3> &f = poly->faces[i];
-    N += f.vertices.size() - 2;
+    N += f.nVertices() - 2;
   }
   out_faces.reserve(N);
 
@@ -155,16 +155,19 @@ int main(int argc, char **argv) {
     carve::poly::Face<3> &f = poly->faces[i];
     std::vector<carve::triangulate::tri_idx> result;
 
-    carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
+    std::vector<const carve::poly::Polyhedron::vertex_t *> vloop;
+    f.getVertexLoop(vloop);
+
+    carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), vloop, result);
     if (options.improve) {
-      carve::triangulate::improve(carve::poly::p2_adapt_project<3>(f.project), f.vertices, result);
+      carve::triangulate::improve(carve::poly::p2_adapt_project<3>(f.project), vloop, result);
     }
 
     for (size_t j = 0; j < result.size(); ++j) {
       out_faces.push_back(carve::poly::Face<3>(
-            &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].a])],
-            &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].b])],
-            &out_vertices[poly->vertexToIndex_fast(f.vertices[result[j].c])]
+            &out_vertices[poly->vertexToIndex_fast(vloop[result[j].a])],
+            &out_vertices[poly->vertexToIndex_fast(vloop[result[j].b])],
+            &out_vertices[poly->vertexToIndex_fast(vloop[result[j].c])]
             ));
     }
   }

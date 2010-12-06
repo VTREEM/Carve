@@ -39,8 +39,8 @@ namespace carve {
 
           size_t n_tris = 0;
           for (size_t f = 0; f < faces.size(); ++f) {
-            CARVE_ASSERT(faces[f]->vertices.size() >= 3);
-            n_tris += faces[f]->vertices.size() - 2;
+            CARVE_ASSERT(faces[f]->nVertices() >= 3);
+            n_tris += faces[f]->nVertices() - 2;
           }
 
           out_faces.reserve(n_tris);
@@ -48,24 +48,27 @@ namespace carve {
           for (size_t f = 0; f < faces.size(); ++f) {
             poly::Polyhedron::face_t *face = faces[f];
 
-            if (face->vertices.size() == 3) {
+            if (face->nVertices() == 3) {
               out_faces.push_back(face);
               continue;
             }
 
             std::vector<triangulate::tri_idx> result;
 
-            triangulate::triangulate(face->projector(), face->vertices, result);
+            std::vector<const poly::Polyhedron::vertex_t *> vloop;
+            face->getVertexLoop(vloop);
+
+            triangulate::triangulate(face->projector(), vloop, result);
             if (with_improvement) {
-              triangulate::improve(face->projector(), face->vertices, result);
+              triangulate::improve(face->projector(), vloop, result);
             }
 
             std::vector<const poly::Polyhedron::vertex_t *> fv;
             fv.resize(3);
             for (size_t i = 0; i < result.size(); ++i) {
-              fv[0] = face->vertices[result[i].a];
-              fv[1] = face->vertices[result[i].b];
-              fv[2] = face->vertices[result[i].c];
+              fv[0] = vloop[result[i].a];
+              fv[1] = vloop[result[i].b];
+              fv[2] = vloop[result[i].c];
               out_faces.push_back(face->create(fv, false));
             }
             delete face;
@@ -106,16 +109,16 @@ namespace carve {
 
         for (size_t f = 0; f < faces.size(); ++f) {
           poly::Polyhedron::face_t *face = faces[f];
-          if (face->vertices.size() != 3) {
+          if (face->nVertices() != 3) {
             out_faces.push_back(face);
           } else {
             triangulate::tri_idx tri;
             for (size_t i = 0; i < 3; ++i) {
               size_t v = 0;
-              vert_map_t::iterator j = vert_map.find(face->vertices[i]);
+              vert_map_t::iterator j = vert_map.find(face->vertex(i));
               if (j == vert_map.end()) {
                 v = vert_map.size();
-                vert_map[face->vertices[i]] = v;
+                vert_map[face->vertex(i)] = v;
               } else {
                 v = (*j).second;
               }
@@ -191,12 +194,12 @@ namespace carve {
 
         for (size_t f = 0; f < faces.size(); ++f) {
           poly::Polyhedron::face_t *face = faces[f];
-          if (face->vertices.size() != 3) {
+          if (face->nVertices() != 3) {
             out_faces.push_back(face);
           } else {
-            recordEdge(face->vertices[0], face->vertices[1], face, edge_map);
-            recordEdge(face->vertices[1], face->vertices[2], face, edge_map);
-            recordEdge(face->vertices[2], face->vertices[0], face, edge_map);
+            recordEdge(face->vertex(0), face->vertex(1), face, edge_map);
+            recordEdge(face->vertex(1), face->vertex(2), face, edge_map);
+            recordEdge(face->vertex(2), face->vertex(0), face, edge_map);
           }
         }
 

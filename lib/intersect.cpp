@@ -936,8 +936,8 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
         // determine whether the midpoint of the implied edge is contained in face_a and face_b
 
 #if defined(CARVE_DEBUG)
-        std::cerr << "face_a->vertices.size() = " << face_a->vertices.size() << " face_a->containsPointInProjection(c) = " << face_a->containsPointInProjection(c) << std::endl;
-        std::cerr << "face_b->vertices.size() = " << face_b->vertices.size() << " face_b->containsPointInProjection(c) = " << face_b->containsPointInProjection(c) << std::endl;
+        std::cerr << "face_a->nVertices() = " << face_a->nVertices() << " face_a->containsPointInProjection(c) = " << face_a->containsPointInProjection(c) << std::endl;
+        std::cerr << "face_b->nVertices() = " << face_b->nVertices() << " face_b->containsPointInProjection(c) = " << face_b->containsPointInProjection(c) << std::endl;
 #endif
 
         if (face_a->containsPointInProjection(c) && face_b->containsPointInProjection(c)) {

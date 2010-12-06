@@ -63,11 +63,11 @@ bool carve::csg::Intersections::intersectsFace(const carve::poly::Polyhedron::ve
     for (a = (*i).second.begin(), b = (*i).second.end(); a != b; ++a) {
       switch ((*a).first.obtype) {
       case IObj::OBTYPE_VERTEX: {
-        if (std::find(f->vertices.begin(), f->vertices.end(), (*a).first.vertex) != f->vertices.end()) return true;
+        for (size_t j = 0; j < f->nVertices(); ++j) if (f->vertex(j) == (*a).first.vertex) return true;
         break;
       }
       case carve::csg::IObj::OBTYPE_EDGE: {
-        if (std::find(f->edges.begin(), f->edges.end(), (*a).first.edge) != f->edges.end()) return true;
+        for (size_t j = 0; j < f->nEdges(); ++j) if (f->edge(j) == (*a).first.edge) return true;
         break;
       }
       case carve::csg::IObj::OBTYPE_FACE: {

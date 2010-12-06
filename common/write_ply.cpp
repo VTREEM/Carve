@@ -81,13 +81,13 @@ namespace {
         r(_r), f(NULL), i(0), data_type(_data_type), max_length(_max_length) {
     }
     virtual void begin() { f = r.curr(); i = 0; }
-    virtual int length() { return f->vertices.size(); }
+    virtual int length() { return f->nVertices(); }
 
     virtual bool isList() { return true; }
     virtual gloop::stream::Type dataType() { return data_type; }
     virtual int maxLength() { return max_length; }
 
-    virtual size_t value() { return static_cast<const carve::poly::Polyhedron *>(f->owner)->vertexToIndex_fast(f->vertices[i++]); }
+    virtual size_t value() { return static_cast<const carve::poly::Polyhedron *>(f->owner)->vertexToIndex_fast(f->vertex(i++)); }
   };
 
 
@@ -131,7 +131,7 @@ namespace {
 
   void setup(gloop::stream::model_writer &file, const carve::poly::Polyhedron *poly) {
     size_t face_max = 0;
-    for (size_t i = 0; i < poly->faces.size(); ++i) face_max = std::max(face_max, poly->faces[i].vertices.size());
+    for (size_t i = 0; i < poly->faces.size(); ++i) face_max = std::max(face_max, poly->faces[i].nVertices());
 
     file.newBlock("polyhedron");
     poly_vertex *vi = new poly_vertex(poly->vertices);

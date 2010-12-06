@@ -64,8 +64,8 @@ namespace carve {
 
       for (size_t i = 0; i < faces.size(); ++i) {
         face_t &f = faces[i];
-        for (size_t j = 0; j < f.vertices.size(); ++j) {
-          f.vertices[j] = vmap[vertexToIndex_fast(f.vertices[j])];
+        for (size_t j = 0; j < f.nVertices(); ++j) {
+          f.vertex(j) = vmap[vertexToIndex_fast(f.vertex(j))];
         }
       }
       for (size_t i = 0; i < edges.size(); ++i) {

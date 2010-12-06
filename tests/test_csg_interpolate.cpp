@@ -76,14 +76,14 @@ void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a, bool
   glBegin(GL_TRIANGLES);
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
     poly_t::face_t &f = poly->faces[i];
-    if (f.vertices.size() == 3) {
+    if (f.nVertices() == 3) {
       glNormal3dv(f.plane_eqn.N.v);
       glColor(fv_colours.getAttribute(&f, 0, cdefault));
-      glVertex(f.vertices[0]->v);
+      glVertex(f.vertex(0)->v);
       glColor(fv_colours.getAttribute(&f, 1, cdefault));
-      glVertex(f.vertices[1]->v);
+      glVertex(f.vertex(1)->v);
       glColor(fv_colours.getAttribute(&f, 2, cdefault));
-      glVertex(f.vertices[2]->v);
+      glVertex(f.vertex(2)->v);
     }
   }
   glEnd();
@@ -93,9 +93,9 @@ void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a, bool
 
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
     poly_t::face_t &f = poly->faces[i];
-    if (f.vertices.size() != 3) {
-      vc.resize(f.vertices.size());
-      for (size_t j = 0; j < f.vertices.size(); ++j) {
+    if (f.nVertices() != 3) {
+      vc.resize(f.nVertices());
+      for (size_t j = 0; j < f.nVertices(); ++j) {
         vc[j] = fv_colours.getAttribute(&f, j, cdefault);
       }
       drawColourFace(&poly->faces[i], vc, offset);

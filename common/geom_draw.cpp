@@ -273,9 +273,9 @@ void drawColourFace(carve::poly::Face<3> *face, const std::vector<cRGBA> &vc, bo
   gluTessBeginContour(tess);
 
   std::vector<std::pair<carve::geom3d::Vector, cRGBA> > v;
-  v.resize(face->vertices.size());
-  for (size_t i = 0, l = face->vertices.size(); i != l; ++i) {
-    v[i] = std::make_pair(g_scale * (face->vertices[i]->v + g_translation), vc[i]);
+  v.resize(face->nVertices());
+  for (size_t i = 0, l = face->nVertices(); i != l; ++i) {
+    v[i] = std::make_pair(g_scale * (face->vertex(i)->v + g_translation), vc[i]);
     gluTessVertex(tess, (GLdouble *)v[i].first.v, (GLvoid *)&v[i]);
   }
 
@@ -307,9 +307,9 @@ void drawFace(carve::poly::Face<3> *face, cRGBA fc, bool offset) {
   gluTessBeginContour(tess);
 
   std::vector<std::pair<carve::geom3d::Vector, cRGBA> > v;
-  v.resize(face->vertices.size());
-  for (size_t i = 0, l = face->vertices.size(); i != l; ++i) {
-    v[i] = std::make_pair(g_scale * (face->vertices[i]->v + g_translation), fc);
+  v.resize(face->nVertices());
+  for (size_t i = 0, l = face->nVertices(); i != l; ++i) {
+    v[i] = std::make_pair(g_scale * (face->vertex(i)->v + g_translation), fc);
     gluTessVertex(tess, (GLdouble *)v[i].first.v, (GLvoid *)&v[i]);
   }
 
@@ -333,8 +333,8 @@ void drawFaceWireframe(carve::poly::Face<3> *face, bool normal, float r, float g
   glColor4f(r, g, b ,1.0);
   glBegin(GL_POLYGON);
   glColor4f(r, g, b, 0.1f);
-  for (size_t i = 0, l = face->vertices.size(); i != l; ++i) {
-    glVertex(face->vertices[i]);
+  for (size_t i = 0, l = face->nVertices(); i != l; ++i) {
+    glVertex(face->vertex(i));
   }
   glEnd();
 
@@ -343,18 +343,18 @@ void drawFaceWireframe(carve::poly::Face<3> *face, bool normal, float r, float g
   glColor4f(r, g, b ,0.01);
   glBegin(GL_POLYGON);
   glColor4f(r, g, b, 0.01f);
-  for (size_t i = 0, l = face->vertices.size(); i != l; ++i) {
-    glVertex(face->vertices[i]);
+  for (size_t i = 0, l = face->nVertices(); i != l; ++i) {
+    glVertex(face->vertex(i));
   }
   glEnd();
 
   glLineWidth(3.0f);
   glColor4f(1.0, 0.0, 0.0, 1.0);
   glBegin(GL_LINES);
-  for (size_t i = 0, l = face->edges.size(); i != l; ++i) {
-    if (static_cast<const carve::poly::Polyhedron *>(face->owner)->connectedFace(face, face->edges[i]) == NULL) {
-      glVertex(face->edges[i]->v1);
-      glVertex(face->edges[i]->v2);
+  for (size_t i = 0, l = face->nEdges(); i != l; ++i) {
+    if (static_cast<const carve::poly::Polyhedron *>(face->owner)->connectedFace(face, face->edge(i)) == NULL) {
+      glVertex(face->edge(i)->v1);
+      glVertex(face->edge(i)->v2);
     }
   }
   glEnd();
@@ -541,11 +541,11 @@ void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, fl
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
     carve::poly::Face<3> &f = poly->faces[i];
     if (group == -1 || f.manifold_id == group) {
-      if (f.vertices.size() == 3) {
+      if (f.nVertices() == 3) {
         glNormal3dv(f.plane_eqn.N.v);
-        glVertex(f.vertices[0]);
-        glVertex(f.vertices[1]);
-        glVertex(f.vertices[2]);
+        glVertex(f.vertex(0));
+        glVertex(f.vertex(1));
+        glVertex(f.vertex(2));
       }
     }
   }
@@ -554,7 +554,7 @@ void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, fl
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
     carve::poly::Face<3> &f = poly->faces[i];
     if (group == -1 || f.manifold_id == group) {
-      if (f.vertices.size() != 3) {
+      if (f.nVertices() != 3) {
         drawFace(&poly->faces[i], cRGBA(r, g, b, a), false);
       }
     }

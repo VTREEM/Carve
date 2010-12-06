@@ -113,13 +113,13 @@ void drawTexturedPolyhedron(poly_t *poly,
 
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
     poly_t::face_t &f = poly->faces[i];
-    std::vector<vt_t> vc(f.vertices.size());
+    std::vector<vt_t> vc(f.nVertices());
 
     bool textured = true;
-    for (size_t j = 0; j < f.vertices.size(); ++j) {
-      vc[j].x = g_scale * (f.vertices[j]->v.x + g_translation.x);
-      vc[j].y = g_scale * (f.vertices[j]->v.y + g_translation.y);
-      vc[j].z = g_scale * (f.vertices[j]->v.z + g_translation.z);
+    for (size_t j = 0; j < f.nVertices(); ++j) {
+      vc[j].x = g_scale * (f.vertex(j)->v.x + g_translation.x);
+      vc[j].y = g_scale * (f.vertex(j)->v.y + g_translation.y);
+      vc[j].z = g_scale * (f.vertex(j)->v.z + g_translation.z);
 
       if (fv_tex.hasAttribute(&f, j)) {
         tex_t t = fv_tex.getAttribute(&f, j);
@@ -167,10 +167,10 @@ void drawWireframePolyhedron(poly_t *poly) {
     poly_t::face_t &f = poly->faces[i];
 
     glBegin(GL_LINE_LOOP);
-    for (size_t j = 0; j < f.vertices.size(); ++j) {
-      double x = g_scale * (f.vertices[j]->v.x + g_translation.x);
-      double y = g_scale * (f.vertices[j]->v.y + g_translation.y);
-      double z = g_scale * (f.vertices[j]->v.z + g_translation.z);
+    for (size_t j = 0; j < f.nVertices(); ++j) {
+      double x = g_scale * (f.vertex(j)->v.x + g_translation.x);
+      double y = g_scale * (f.vertex(j)->v.y + g_translation.y);
+      double z = g_scale * (f.vertex(j)->v.z + g_translation.z);
       glVertex3d(x, y, z);
     }
     glEnd();
