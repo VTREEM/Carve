@@ -35,6 +35,9 @@ target_link_libraries(extrude     carve_fileformats carve gloop_model)
 add_executable       (convert     convert.cpp)
 target_link_libraries(convert     carve_fileformats carve gloop_model)
 
+add_executable       (close_manifold     close_manifold.cpp)
+target_link_libraries(close_manifold     carve_fileformats carve gloop_model)
+
 add_executable       (selfintersect     selfintersect.cpp)
 target_link_libraries(selfintersect     carve_fileformats carve gloop_model)
 
