@@ -80,6 +80,21 @@ namespace djset {
       }
     }
 
+    void get_index_to_set(std::vector<size_t> &index_set, std::vector<size_t> &set_size) {
+      index_set.clear();
+      index_set.resize(set.size(), n_sets);
+      set_size.clear();
+      set_size.resize(n_sets, 0);
+
+      size_t c = 0;
+      for (size_t i = 0; i < set.size(); ++i) {
+        size_t s = find_set_head(i);
+        if (index_set[s] == n_sets) index_set[s] = c++;
+        index_set[i] = index_set[s];
+        set_size[index_set[s]]++;
+      }
+    }
+
     template<typename in_iter_t, typename out_collection_t>
     void collate(in_iter_t in, out_collection_t &out) {
       std::vector<size_t> set_id(set.size(), n_sets);
