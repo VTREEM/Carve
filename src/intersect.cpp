@@ -55,6 +55,7 @@ struct Options : public opt::Parser {
   bool canonicalize;
   bool from_file;
   bool triangulate;
+  bool no_holes;
 #if !defined(DISABLE_GLU_TRIANGULATOR)
   bool glu_triangulate;
 #endif
@@ -82,6 +83,7 @@ struct Options : public opt::Parser {
     if (o == "--ascii"        || o == "-a") { ascii = true; return; }
     if (o == "--rescale"      || o == "-r") { rescale = true; return; }
     if (o == "--triangulate"  || o == "-t") { triangulate = true; return; }
+    if (o == "--no-holes"     || o == "-n") { no_holes = true; return; }
 #if !defined(DISABLE_GLU_TRIANGULATOR)
     if (o == "--glu"          || o == "-g") { glu_triangulate = true; return; }
 #endif
@@ -154,6 +156,7 @@ struct Options : public opt::Parser {
     vtk = false;
     rescale = false;
     triangulate = false;
+    no_holes = false;
 #if !defined(DISABLE_GLU_TRIANGULATOR)
     glu_triangulate = false;
 #endif
@@ -167,6 +170,7 @@ struct Options : public opt::Parser {
     option("vtk",          'V', false, "Output in .vtk format.");
     option("rescale",      'r', false, "Rescale prior to CSG operations.");
     option("triangulate",  't', false, "Triangulate output.");
+    option("no-holes",     'n', false, "Split faces containing holes.");
 #if !defined(DISABLE_GLU_TRIANGULATOR)
     option("glu",          'g', false, "Use GLU triangulator.");
 #endif
@@ -528,6 +532,8 @@ int main(int argc, char **argv) {
 #if !defined(DISABLE_GLU_TRIANGULATOR)
         }
 #endif
+      } else if (options.no_holes) {
+        csg.hooks.registerHook(new carve::csg::CarveHoleResolver, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
       }
       result = p->eval(csg);
     } catch (carve::exception e) {
