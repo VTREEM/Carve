@@ -54,13 +54,13 @@ surface representing a finite volume represents a hollow solid, and
 such solids are handled correctly during CSG operations.
 
 \begin{figure}
-  \begin{center}\includegraphics[width=3.453in]{polyhedra/shared-vertex.tif}\end{center}
+  \begin{center}\includegraphics[width=3.453in]{polyhedra/shared-vertex.png}\end{center}
   \caption{A polyhedron consisting of two surfaces sharing a vertex}
   \label{fig:polyhedron-shared-vertex}
 \end{figure}
 
 \begin{figure}
-  \begin{center}\includegraphics[width=3.453in]{polyhedra/shared-edge.tif}\end{center}
+  \begin{center}\includegraphics[width=3.453in]{polyhedra/shared-edge.png}\end{center}
   \caption{A polyhedron consisting of two surfaces sharing an edge}
   \label{fig:polyhedron-shared-edge}
 \end{figure}
@@ -72,7 +72,7 @@ A polyhedron may be constructed in a number of ways.
 In the first case (Listing \ref{code:poly-ctor-1}) a vector of faces
 and a vector of vertices is provided. The vertices pointed to by the
 faces in \code{\_faces} must be members of the vector of vertices,
-\code{_vertices}. Ownership is taken of the face and vertex vectors,
+\code{\_vertices}. Ownership is taken of the face and vertex vectors,
 so as to avoid unnecessary copies. On return, both vectors will be
 empty.
 
@@ -235,8 +235,8 @@ enumeration \code{carve::csg::CSG::OP}, which can take the values:
 \begin{table}
   \begin{center}
     \begin{tabular}{m{2.2in}m{3in}}
-      \includegraphics[width=2.167in]{ops/a.tiff} & \vfill Manifold A \vfill \\
-      \includegraphics[width=2.167in]{ops/b.tiff} & Manifold B \\
+      \includegraphics[width=2.167in]{ops/a.png} & \vfill Manifold A \vfill \\
+      \includegraphics[width=2.167in]{ops/b.png} & Manifold B \\
     \end{tabular}
   \end{center}
   \caption{Input polyhedra.}
@@ -246,15 +246,15 @@ enumeration \code{carve::csg::CSG::OP}, which can take the values:
 \begin{table}
   \begin{center}
     \begin{tabular}{m{2.2in}m{3in}}
-      \includegraphics[width=2.167in]{ops/a_union_b.tiff} &
+      \includegraphics[width=2.167in]{ops/a_union_b.png} &
       Operation: Union (A | B) \newline Enumeration: \code{carve::CSG::UNION} \\
-      \includegraphics[width=2.167in]{ops/a_intersection_b.tiff} &
+      \includegraphics[width=2.167in]{ops/a_intersection_b.png} &
       Operation: Intersection (A \& B) \newline Enumeration: \code{carve::CSG::INTERSECTION} \\
-      \includegraphics[width=2.167in]{ops/a_minus_b.tiff} &
+      \includegraphics[width=2.167in]{ops/a_minus_b.png} &
       Operation: Difference (A - B) \newline Enumeration: \code{carve::CSG::A\_MINUS\_B} \\
-      \includegraphics[width=2.167in]{ops/b_minus_a.tiff} &
+      \includegraphics[width=2.167in]{ops/b_minus_a.png} &
       Operation: Difference (B - A) \newline Enumeration: \code{carve::CSG::B\_MINUS\_A} \\
-      \includegraphics[width=2.167in]{ops/a_xor_b.tiff} &
+      \includegraphics[width=2.167in]{ops/a_xor_b.png} &
       Operation: Symmetric Difference (A B) \newline Enumeration: \code{carve::CSG::SYMMETRIC\_DIFFERENCE} \\
     \end{tabular}
   \end{center}
