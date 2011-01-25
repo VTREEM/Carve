@@ -35,15 +35,32 @@ namespace djset {
       elem(size_t p, size_t r) : parent(p), rank(r) {}
       elem() {}
     };
+
     std::vector<elem> set;
     size_t n_sets;
 
   public:
+    djset() : set(), n_sets(0) {
+    }
+
     djset(size_t N) {
       n_sets = N;
       set.reserve(N);
       for (size_t i = 0; i < N; ++i) {
         set.push_back(elem(i,0));
+      }
+    }
+
+    void init(size_t N) {
+      if (N == set.size()) {
+        for (size_t i = 0; i < N; ++i) {
+          set[i] = elem(i,0);
+        }
+        n_sets = N;
+      } else {
+        djset temp(N);
+        std::swap(set, temp.set);
+        std::swap(n_sets, temp.n_sets);
       }
     }
 
