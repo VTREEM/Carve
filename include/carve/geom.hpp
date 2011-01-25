@@ -530,9 +530,9 @@ namespace carve {
     template<unsigned ndim>
     double distance2(const linesegment<ndim> &l, const vector<ndim> &v) {
       vector<ndim> D = l.v2 - l.v1;
-      double t = dot(l.v1 - v, D) / dot(D, D);
-      if (t >= 0.0) return (v - l.v1).length2();
-      if (t <= 1.0) return (v - l.v2).length2();
+      double t = dot(v - l.v1, D) / dot(D, D);
+      if (t <= 0.0) return (v - l.v1).length2();
+      if (t >= 1.0) return (v - l.v2).length2();
       vector<ndim> vc = D * t + l.v1;
       return (v - vc).length2();
     }
