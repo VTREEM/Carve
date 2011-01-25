@@ -196,6 +196,8 @@ namespace carve {
      */
     inline int compareAngles(const Vector &direction, const Vector &base, const Vector &a, const Vector &b) {
       double d1 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, a, b);
+      double d2 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, a);
+      double d3 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, b);
 
       // CASE: a and b are coplanar wrt. direction.
       if (d1 == 0.0) {
@@ -207,18 +209,33 @@ namespace carve {
 
         // a and b point in opposite directions.
         double d2 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, a);
-        // * if d2 > 0.0, a is below plane(direction, base) and is less
+        // * if d2 < 0.0, a is above plane(direction, base) and is less
         //   than b.
         // * if d2 == 0.0 a is coplanar with plane(direction, base) and is
         //   less than b if it points in the same direction as base.
-        // * if d2 < 0.0, a is above plane(direction, base) and is greater
+        // * if d2 > 0.0, a is below plane(direction, base) and is greater
         //   than b.
-        return (d2 > 0.0 || (d2 == 0.0 && dot(a, base) > 0.0)) ? -1 : +1;
+
+        if (d2 == 0.0) { return dot(a, base) > 0.0 ? -1 : +1; }
+        if (d3 == 0.0) { return dot(b, base) > 0.0 ? +1 : -1; }
+        if (d2 < 0.0 && d3 > 0.0) return -1;
+        if (d2 > 0.0 && d3 < 0.0) return +1;
+
+        // both a and b are to one side of plane(direction, base) -
+        // rounding error (if a and b are truly coplanar with
+        // direction, one should be above, and one should be below any
+        // other plane that is not itself coplanar with
+        // plane(direction, a|b) - which would imply d2 and d3 == 0.0).
+
+        // If both are below plane(direction, base) then the one that
+        // points in the same direction as base is greater.
+        // If both are above plane(direction, base) then the one that
+        // points in the same direction as base is lesser.
+        if (d2 > 0.0) { return dot(a, base) > 0.0 ? +1 : -1; }
+        else          { return dot(a, base) > 0.0 ? -1 : +1; }
       }
 
       // CASE: a and b are not coplanar wrt. direction
-      double d2 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, a);
-      double d3 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, b);
 
       if (d2 < 0.0) {
         // if a is above plane(direction,base), then a is less than b if
