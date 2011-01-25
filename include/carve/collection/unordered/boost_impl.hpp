@@ -24,7 +24,7 @@
 
 namespace std {
 
-  template <typename Key, typename T, typename Hash,
+  template <typename Key, typename T, typename Hash = boost::hash<Key>,
             typename Pred = std::equal_to<Key> >
   class unordered_map : public boost::unordered_map<Key, T, Hash, Pred> {
 
@@ -33,7 +33,7 @@ namespace std {
 
   };
 
-  template <typename Value, typename Hash,
+  template <typename Value, typename Hash = boost::hash<Value>,
             typename Pred = std::equal_to<Value> >
   class unordered_set : public boost::unordered_set<Value, Hash, Pred> {
   };
