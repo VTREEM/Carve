@@ -110,6 +110,24 @@ int sign(double d) {
   return (d > 0) ? +1 : (d == 0) ? 0 : -1;
 }
 
+TEST(GeomTest, compareAnglesFailure0) {
+  using namespace carve::geom3d;
+  Vector v_dir  = VECTOR( 0, 0, 1);
+  Vector v_base = VECTOR(-1, 0, 0);
+  Vector v_a = VECTOR( 0.305679278186268776895673, -0.952134538228459503805823, 0);
+  Vector v_b = VECTOR(-0.305679278186268721384522,  0.95213453822845939278352,  0);
+  ASSERT_EQ(compareAngles(v_dir, v_base, v_a, v_b), -1);
+}
+
+TEST(GeomTest, compareAnglesFailure1) {
+  using namespace carve::geom3d;
+  Vector v_dir  = VECTOR(-4.44089209850062616169453e-16,0,1);
+  Vector v_base = VECTOR(-0.952134538228459281761218,-0.305679278186269054451429,-1.40944224917610240079275e-16);
+  Vector v_a    = VECTOR(0.952134538228459281761218,0.305679278186268998940278,-1.06444930801409522585195e-16);
+  Vector v_b    = VECTOR(-0.952134538228459281761218,-0.305679278186269054451429,-1.40944224917610240079275e-16);
+  ASSERT_EQ(compareAngles(v_dir, v_base, v_a, v_b), +1);
+}
+
 TEST(GeomTest, Geom3D) {
   using namespace carve::geom3d;
 
@@ -150,8 +168,8 @@ TEST(GeomTest, Geom3D) {
     Vector b = randomPerpendicularVector(dir);
     double da = antiClockwiseAngle(base, a, dir);
     double db = antiClockwiseAngle(base, b, dir);
-    std::cerr << "dir=" << dir << " base=" << base << " a=" << a << " b=" << b << std::endl;
-    std::cerr << compareAngles(dir, base, a, b) << " " << sign(da - db) << " " << da << " " << db << std::endl;
+    // std::cerr << "dir=" << dir << " base=" << base << " a=" << a << " b=" << b << std::endl;
+    // std::cerr << compareAngles(dir, base, a, b) << " " << sign(da - db) << " " << da << " " << db << std::endl;
     checkInvariance(dir, base, a, b);
   }
 }
