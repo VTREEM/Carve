@@ -23,6 +23,18 @@ include/carve_config.h.in
 include/stamp-h1
 libtool
 
+# cmake generated
+
+CMakeFiles
+
+# debug info
+
+*.dSYM
+
+# regression test results
+
+regression/*/test_*
+
 # produced by compilation
 
 *.la
@@ -31,6 +43,8 @@ libtool
 *.Plo
 *.a
 *.Po
+*.dylib
+*.so
 Makefile.in
 Makefile
 
