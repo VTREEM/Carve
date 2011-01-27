@@ -94,14 +94,12 @@ public:
   virtual void drawFaceLoop(const std::vector<const carve::geom3d::Vector *> &face_loop,
       const carve::geom3d::Vector &normal,
       float r, float g, float b, float a,
-      bool offset = true,
       bool lit = true);
 
   virtual void drawFaceLoop2(const std::vector<const carve::geom3d::Vector *> &face_loop,
       const carve::geom3d::Vector &normal,
       float rF, float gF, float bF, float aF,
       float rB, float gB, float bB, float aB,
-      bool offset = true,
       bool lit = true);
 };
 
@@ -240,42 +238,44 @@ void DebugHooks::drawOctree(const carve::csg::Octree &o) {
 }
 
 static void __stdcall _faceBegin(GLenum type, void *data) {
-  carve::poly::Face<3> *face = static_cast<carve::poly::Face<3> *>(data);
+  carve::mesh::Face<3> *face = static_cast<carve::mesh::Face<3> *>(data);
   glBegin(type);
-  glNormal3f(face->plane_eqn.N.x, face->plane_eqn.N.y, face->plane_eqn.N.z);
-}
-
-static void __stdcall _faceVertex(void *vertex_data, void *data) {
-  std::pair<carve::geom3d::Vector, cRGBA> &vd(*static_cast<std::pair<carve::geom3d::Vector, cRGBA> *>(vertex_data));
-  glColor4f(vd.second.r, vd.second.g, vd.second.b, vd.second.a);
-  glVertex3f(vd.first.x, vd.first.y, vd.first.z);
+  glNormal3f(face->plane.N.x, face->plane.N.y, face->plane.N.z);
 }
 
 static void __stdcall _faceEnd(void *data) {
   glEnd();
 }
 
-void drawColourFace(carve::poly::Face<3> *face, const std::vector<cRGBA> &vc, bool offset) {
-  if (offset) {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(0.5, 0.5);
-  }
+static void __stdcall _normalBegin(GLenum type, void *data) {
+  GLdouble *normal = static_cast<GLdouble *>(data);
+  glBegin(type);
+  glNormal3dv(normal);
+}
 
+static void __stdcall _normalEnd(void *data) {
+  glEnd();
+}
+
+static void __stdcall _colourVertex(void *vertex_data, void *data) {
+  std::pair<carve::geom3d::Vector, cRGBA> &vd(*static_cast<std::pair<carve::geom3d::Vector, cRGBA> *>(vertex_data));
+  glColor4f(vd.second.r, vd.second.g, vd.second.b, vd.second.a);
+  glVertex3f(vd.first.x, vd.first.y, vd.first.z);
+}
+
+void drawColourPoly(const carve::geom3d::Vector &normal, std::vector<std::pair<carve::geom3d::Vector, cRGBA> > &v) {
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   GLUtesselator *tess = gluNewTess();
 
-  gluTessCallback(tess, GLU_TESS_BEGIN_DATA, (GLUTessCallback)_faceBegin);
-  gluTessCallback(tess, GLU_TESS_VERTEX_DATA, (GLUTessCallback)_faceVertex);
-  gluTessCallback(tess,  GLU_TESS_END_DATA, (GLUTessCallback)_faceEnd);
+  gluTessCallback(tess, GLU_TESS_BEGIN_DATA, (GLUTessCallback)_normalBegin);
+  gluTessCallback(tess, GLU_TESS_VERTEX_DATA, (GLUTessCallback)_colourVertex);
+  gluTessCallback(tess,  GLU_TESS_END_DATA, (GLUTessCallback)_normalEnd);
 
-  gluTessBeginPolygon(tess, (void *)face);
+  gluTessBeginPolygon(tess, (void *)(GLdouble *)normal.v);
   gluTessBeginContour(tess);
 
-  std::vector<std::pair<carve::geom3d::Vector, cRGBA> > v;
-  v.resize(face->nVertices());
-  for (size_t i = 0, l = face->nVertices(); i != l; ++i) {
-    v[i] = std::make_pair(g_scale * (face->vertex(i)->v + g_translation), vc[i]);
+  for (size_t i = 0, l = v.size(); i != l; ++i) {
     gluTessVertex(tess, (GLdouble *)v[i].first.v, (GLvoid *)&v[i]);
   }
 
@@ -283,46 +283,29 @@ void drawColourFace(carve::poly::Face<3> *face, const std::vector<cRGBA> &vc, bo
   gluTessEndPolygon(tess);
 
   gluDeleteTess(tess);
-
-  if (offset) {
-    glDisable(GL_POLYGON_OFFSET_FILL);
-  }
 }
 
-void drawFace(carve::poly::Face<3> *face, cRGBA fc, bool offset) {
-  if (offset) {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(0.5, 0.5);
-  }
-
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-  GLUtesselator *tess = gluNewTess();
-
-  gluTessCallback(tess, GLU_TESS_BEGIN_DATA, (GLUTessCallback)_faceBegin);
-  gluTessCallback(tess, GLU_TESS_VERTEX_DATA, (GLUTessCallback)_faceVertex);
-  gluTessCallback(tess,  GLU_TESS_END_DATA, (GLUTessCallback)_faceEnd);
-
-  gluTessBeginPolygon(tess, (void *)face);
-  gluTessBeginContour(tess);
-
+void drawColourFace(carve::mesh::Face<3> *face, const std::vector<cRGBA> &vc) {
   std::vector<std::pair<carve::geom3d::Vector, cRGBA> > v;
   v.resize(face->nVertices());
+  carve::mesh::Edge<3> *e = face->edge;
   for (size_t i = 0, l = face->nVertices(); i != l; ++i) {
-    v[i] = std::make_pair(g_scale * (face->vertex(i)->v + g_translation), fc);
-    gluTessVertex(tess, (GLdouble *)v[i].first.v, (GLvoid *)&v[i]);
+    v[i] = std::make_pair(g_scale * (e->v1()->v + g_translation), vc[i]);
+    e = e->next;
   }
-
-  gluTessEndContour(tess);
-  gluTessEndPolygon(tess);
-
-  gluDeleteTess(tess);
-
-  if (offset) {
-    glDisable(GL_POLYGON_OFFSET_FILL);
-  }
+  drawColourPoly(face->plane.N, v);
 }
 
+void drawFace(carve::mesh::Face<3> *face, cRGBA fc) {
+  std::vector<std::pair<carve::geom3d::Vector, cRGBA> > v;
+  v.resize(face->nVertices());
+  carve::mesh::Edge<3> *e = face->edge;
+  for (size_t i = 0, l = face->nVertices(); i != l; ++i) {
+    v[i] = std::make_pair(g_scale * (e->v1()->v + g_translation), fc);
+    e = e->next;
+  }
+  drawColourPoly(face->plane.N, v);
+}
  
 void drawFaceWireframe(carve::poly::Face<3> *face, bool normal, float r, float g, float b) {
   glDisable(GL_LIGHTING);
@@ -379,7 +362,7 @@ void drawFaceWireframe(carve::poly::Face<3> *face, bool normal) {
   drawFaceWireframe(face, normal, 0,0,0);
 }
 
-void drawFaceNormal(carve::poly::Face<3> *face, float r, float g, float b) {
+void drawFaceNormal(carve::mesh::Face<3> *face, float r, float g, float b) {
   glDisable(GL_LIGHTING);
   glDepthMask(GL_FALSE);
 
@@ -391,14 +374,14 @@ void drawFaceNormal(carve::poly::Face<3> *face, float r, float g, float b) {
   glColor4f(1.0, 1.0, 0.0, 1.0);
   glVertex(face->centroid());
   glColor4f(1.0, 1.0, 0.0, 0.0);
-  glVertex(face->centroid() + 1 / g_scale * face->plane_eqn.N);
+  glVertex(face->centroid() + 1 / g_scale * face->plane.N);
   glEnd();
 
   glDepthMask(GL_TRUE);
   glEnable(GL_LIGHTING);
 }
 
-void drawFaceNormal(carve::poly::Face<3> *face) {
+void drawFaceNormal(carve::mesh::Face<3> *face) {
   drawFaceNormal(face, 0,0,0);
 }
 
@@ -475,13 +458,8 @@ void DebugHooks::drawFaceLoopWireframe(const std::vector<const carve::geom3d::Ve
 void DebugHooks::drawFaceLoop(const std::vector<const carve::geom3d::Vector *> &face_loop,
                               const carve::geom3d::Vector &normal,
                               float r, float g, float b, float a,
-                              bool offset, 
                               bool lit) {
   if (lit) glEnable(GL_LIGHTING); else glDisable(GL_LIGHTING);
-  if (offset) {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(0.5, 0.5);
-  }
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
@@ -509,9 +487,6 @@ void DebugHooks::drawFaceLoop(const std::vector<const carve::geom3d::Vector *> &
 
   gluDeleteTess(tess);
 
-  if (offset) {
-    glDisable(GL_POLYGON_OFFSET_FILL);
-  }
   glEnable(GL_LIGHTING);
 }
 
@@ -519,78 +494,140 @@ void DebugHooks::drawFaceLoop2(const std::vector<const carve::geom3d::Vector *> 
                                const carve::geom3d::Vector &normal,
                                float rF, float gF, float bF, float aF,
                                float rB, float gB, float bB, float aB,
-                               bool offset,
                                bool lit) {
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
-  drawFaceLoop(face_loop, normal, rF, gF, bF, aF, offset, lit);
+  drawFaceLoop(face_loop, normal, rF, gF, bF, aF, lit);
   glCullFace(GL_FRONT);
-  drawFaceLoop(face_loop, normal, rB, gB, bB, aB, offset, lit);
+  drawFaceLoop(face_loop, normal, rB, gB, bB, aB, lit);
   glCullFace(GL_BACK);
 }
 
-void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, float a, bool offset, int group) {
-  if (offset) {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(0.5, 0.5);
-  }
+void drawMesh(carve::mesh::Mesh<3> *mesh, float r, float g, float b, float a) {
   glColor4f(r, g, b, a);
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glBegin(GL_TRIANGLES);
-  for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face<3> &f = poly->faces[i];
-    if (group == -1 || f.manifold_id == group) {
-      if (f.nVertices() == 3) {
-        glNormal3dv(f.plane_eqn.N.v);
-        glVertex(f.vertex(0));
-        glVertex(f.vertex(1));
-        glVertex(f.vertex(2));
-      }
+
+  std::vector<const carve::mesh::Vertex<3> *> v;
+
+  for (size_t i = 0, l = mesh->faces.size(); i != l; ++i) {
+    carve::mesh::Face<3> *f = mesh->faces[i];
+    if (f->nVertices() == 3) {
+      glNormal3dv(f->plane.N.v);
+      f->getVertices(v);
+      glVertex(v[0]->v);
+      glVertex(v[1]->v);
+      glVertex(v[2]->v);
     }
   }
   glEnd();
 
-  for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-    carve::poly::Face<3> &f = poly->faces[i];
-    if (group == -1 || f.manifold_id == group) {
-      if (f.nVertices() != 3) {
-        drawFace(&poly->faces[i], cRGBA(r, g, b, a), false);
-      }
+  for (size_t i = 0, l = mesh->faces.size(); i != l; ++i) {
+    carve::mesh::Face<3> *f = mesh->faces[i];
+    if (f->nVertices() != 3) {
+      drawFace(f, cRGBA(r, g, b, a));
     }
-  }
-
-  if (offset) {
-    glDisable(GL_POLYGON_OFFSET_FILL);
   }
 }
 
-void drawEdges(carve::poly::Polyhedron *poly, double alpha, int group) {
+void drawPolyhedron(carve::mesh::MeshSet<3> *poly, float r, float g, float b, float a, int group) {
+  if (group >= 0) {
+    if ((size_t)group < poly->meshes.size()) {
+      drawMesh(poly->meshes[group], r, g, b, a);
+    }
+  } else {
+    for (size_t i = 0; i < poly->meshes.size(); ++i) {
+      drawMesh(poly->meshes[i], r, g, b, a);
+    }
+  }
+}
+
+double connScale(const carve::mesh::Edge<3> *edge) {
+  double l = 1.0;
+  carve::geom3d::Vector c = edge->face->centroid();
+  const carve::mesh::Edge<3> *e = edge;
+  do {
+    double l2 = carve::geom::distance(carve::geom::linesegment<3>(e->v1()->v, e->v2()->v), c);
+    if (l2 > 1e-5) {
+      l = std::min(l, l2);
+    }
+    e = e->next;
+  } while (e != edge);
+
+  return l;
+}
+
+void drawEdgeConn(const carve::mesh::Edge<3> *edge, float r, float g, float b, float a) {
+    carve::geom3d::Vector base = (edge->v1()->v + edge->v2()->v) / 2;
+
+    double elen = (edge->v1()->v - edge->v2()->v).length();
+
+    carve::geom3d::Vector x1 = (edge->v1()->v - edge->v2()->v) / elen;
+    carve::geom3d::Vector y1 = carve::geom::cross(x1, edge->face->plane.N).normalized();
+    double s1 = connScale(edge);
+
+    carve::geom3d::Vector x2 = (edge->rev->v1()->v - edge->rev->v2()->v).normalized();
+    carve::geom3d::Vector y2 = carve::geom::cross(x2, edge->rev->face->plane.N).normalized();
+    double s2 = connScale(edge->rev);
+
+    double s = std::min(s1, s2);
+
+    x1 *= s; y1 *= s;
+    x2 *= s; y2 *= s;
+
+    glColor4f(r,g,b,a/2);
+    glBegin(GL_TRIANGLE_STRIP);
+    glVertex(base + x1 * .2 + y1 * .4);
+    glVertex(base - x1 * .2 + y1 * .4);
+    glVertex(base + x1 * .1);
+    glVertex(base - x1 * .1);
+    glVertex(base           + y2 * .4);
+    glEnd();
+
+    glColor4f(r,g,b,a);
+    glBegin(GL_LINE_LOOP);
+    glVertex(base + x1 * .2 + y1 * .4);
+    glVertex(base - x1 * .2 + y1 * .4);
+    glVertex(base - x1 * .1);
+    glVertex(base           + y2 * .4);
+    glVertex(base + x1 * .1);
+    glEnd();
+}
+
+void drawEdges(carve::mesh::Mesh<3> *mesh, double alpha) {
+  glColor4f(1.0, 0.0, 0.0, alpha);
   glBegin(GL_LINES);
-  for (size_t i = 0, l = poly->edges.size(); i != l; ++i) {
-    if (group == -1 || poly->edgeOnManifold(&poly->edges[i], group)) {
-      const std::vector<const carve::poly::Polyhedron::face_t *> &ef = poly->connectivity.edge_to_face[i];
-      if (std::find(ef.begin(), ef.end(), (carve::poly::Polyhedron::face_t *)NULL) != ef.end()) {
-        glColor4f(1.0, 1.0, 0.0, alpha);
-      } else if (ef.size() > 2) {
-        glColor4f(0.0, 1.0, 1.0, alpha);
-      } else {
-        glColor4f(1.0, 0.0, 0.0, alpha);
-      }
-      glVertex(poly->edges[i].v1->v);
-      glVertex(poly->edges[i].v2->v);
-    }
+  for (size_t i = 0, l = mesh->closed_edges.size(); i != l; ++i) {
+    carve::mesh::Edge<3> *edge = mesh->closed_edges[i];
+    glVertex(edge->v1()->v);
+    glVertex(edge->v2()->v);
+  }
+  glEnd();
+
+  std::unordered_map<std::pair<const carve::mesh::Vertex<3> *, const carve::mesh::Vertex<3> *>, int> colour;
+
+  for (size_t i = 0, l = mesh->closed_edges.size(); i != l; ++i) {
+    const carve::mesh::Edge<3> *edge = mesh->closed_edges[i];
+    int c = colour[std::make_pair(std::min(edge->v1(), edge->v2()), std::max(edge->v1(), edge->v2()))]++;
+    drawEdgeConn(edge, (c&1) ? 0.0 : 1.0, (c&2) ? 0.0 : 1.0, (c&4) ? 1.0 : 0.0, alpha);
+  }
+
+  glColor4f(1.0, 1.0, 0.0, alpha);
+  glBegin(GL_LINES);
+  for (size_t i = 0, l = mesh->open_edges.size(); i != l; ++i) {
+    carve::mesh::Edge<3> *edge = mesh->open_edges[i];
+    glVertex(edge->v1()->v);
+    glVertex(edge->v2()->v);
   }
   glEnd();
 }
 
-void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool normal, int group) {
+void drawMeshWireframe(carve::mesh::Mesh<3> *mesh, bool normal) {
   if (normal) {
-    for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
-      carve::poly::Face<3> &f = poly->faces[i];
-      if (group == -1 || f.manifold_id == group) {
-        drawFaceNormal(&f);
-      }
+    for (size_t i = 0, l = mesh->faces.size(); i != l; ++i) {
+      carve::mesh::Face<3> *f = mesh->faces[i];
+      drawFaceNormal(f);
     }
   }
 
@@ -598,14 +635,26 @@ void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool normal, int gro
   glDepthMask(GL_FALSE);
   glDisable(GL_DEPTH_TEST);
 
-  drawEdges(poly, 0.2, group);
+  drawEdges(mesh, 0.2);
 
   glEnable(GL_DEPTH_TEST);
 
-  drawEdges(poly, 0.8, group);
+  drawEdges(mesh, 0.8);
 
   glDepthMask(GL_TRUE);
   glEnable(GL_LIGHTING);
+}
+
+void drawPolyhedronWireframe(carve::mesh::MeshSet<3> *poly, bool normal, int group) {
+  if (group >= 0) {
+    if ((size_t)group < poly->meshes.size()) {
+      drawMeshWireframe(poly->meshes[group], normal);
+    }
+  } else {
+    for (size_t i = 0; i < poly->meshes.size(); ++i) {
+      drawMeshWireframe(poly->meshes[i], normal);
+    }
+  }
 }
 
 void installDebugHooks() {

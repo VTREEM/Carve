@@ -95,7 +95,7 @@ bool even(int x, int y, int z) {
 #undef min
 #undef max
 
-GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
+GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
                            std::vector<carve::line::PolylineSet *> &lines,
                            std::vector<carve::point::PointSet *> &points,
                            size_t *listSize,
@@ -108,7 +108,7 @@ GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
 
   if (options.wireframe) N = 2;
 
-  for (size_t p = 0; p < polys.size(); ++p) n += polys[p]->manifold_is_closed.size() * N;
+  for (size_t p = 0; p < polys.size(); ++p) n += polys[p]->meshes.size() * N;
   for (size_t p = 0; p < lines.size(); ++p) n += lines[p]->lines.size() * 2;
   n += points.size();
 
@@ -116,13 +116,13 @@ GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
 
   carve::geom3d::AABB aabb;
   if (polys.size()) {
-    aabb = polys[0]->aabb;
+    aabb = polys[0]->aabb();
   } else if (lines.size()) {
     aabb = lines[0]->aabb;
   } else if (points.size()) {
     aabb = points[0]->aabb;
   }
-  for (size_t p = 0; p < polys.size(); ++p) aabb.unionAABB(polys[p]->aabb);
+  for (size_t p = 0; p < polys.size(); ++p) aabb.unionAABB(polys[p]->aabb());
   for (size_t p = 0; p < lines.size(); ++p) aabb.unionAABB(lines[p]->aabb);
   for (size_t p = 0; p < points.size(); ++p) aabb.unionAABB(points[p]->aabb);
 
@@ -142,15 +142,15 @@ GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
   unsigned list_num = 0;
 
   for (size_t p = 0; p < polys.size(); ++p) {
-    carve::poly::Polyhedron *poly = polys[p];
-    for (unsigned i = 0; i < poly->manifold_is_closed.size(); i++) {
-      if (!poly->manifold_is_closed[i]) {
+    carve::mesh::MeshSet<3> *poly = polys[p];
+    for (unsigned i = 0; i < poly->meshes.size(); i++) {
+      if (!poly->meshes[i]->isClosed()) {
         is_wireframe[list_num] = false;
         glNewList(dlist + list_num++, GL_COMPILE);
         glCullFace(GL_BACK);
-        drawPolyhedron(poly, 0.0f, 0.0f, 0.5f, 1.0f, false, i);
+        drawPolyhedron(poly, 0.0f, 0.0f, 0.5f, 1.0f, i);
         glCullFace(GL_FRONT);
-        drawPolyhedron(poly, 0.0f, 0.0f, 1.0f, 1.0f, false, i);
+        drawPolyhedron(poly, 0.0f, 0.0f, 1.0f, 1.0f, i);
         glCullFace(GL_BACK);
         glEndList();
 
@@ -163,14 +163,14 @@ GLuint genSceneDisplayList(std::vector<carve::poly::Polyhedron *> &polys,
       }
     }
 
-    for (unsigned i = 0; i < poly->manifold_is_closed.size(); i++) {
-      if (poly->manifold_is_closed[i]) {
+    for (unsigned i = 0; i < poly->meshes.size(); i++) {
+      if (poly->meshes[i]->isClosed()) {
         is_wireframe[list_num] = false;
         glNewList(dlist + list_num++, GL_COMPILE);
         glCullFace(GL_BACK);
-        drawPolyhedron(poly, 0.3f, 0.5f, 0.8f, 1.0f, false, i);
+        drawPolyhedron(poly, 0.3f, 0.5f, 0.8f, 1.0f, i);
         glCullFace(GL_FRONT);
-        drawPolyhedron(poly, 1.0f, 0.0f, 0.0f, 1.0f, false, i);
+        drawPolyhedron(poly, 1.0f, 0.0f, 0.0f, 1.0f, i);
         glCullFace(GL_BACK);
         glEndList();
 
@@ -276,8 +276,23 @@ struct TestScene : public Scene {
 
   virtual GLvoid draw() {
     for (unsigned i = 0; i < draw_flags.size(); ++i) {
-      if (draw_flags[i]) glCallList(draw_list_base + i);
+      if (draw_flags[i] && !is_wireframe[i]) glCallList(draw_list_base + i);
     }
+
+    GLfloat proj[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, proj);
+    GLfloat p33 = proj[10];
+    proj[10] += 1e-5;
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(proj);
+
+    for (unsigned i = 0; i < draw_flags.size(); ++i) {
+      if (draw_flags[i] && is_wireframe[i]) glCallList(draw_list_base + i);
+    }
+
+    proj[10] = p33;
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(proj);
   }
 
   TestScene(int argc, char **argv, int n_dlist) : Scene(argc, argv) {
@@ -296,7 +311,7 @@ int main(int argc, char **argv) {
   size_t count = 0;
 
   carve::input::Input inputs;
-  std::vector<carve::poly::Polyhedron *> polys;
+  std::vector<carve::mesh::MeshSet<3> *> polys;
   std::vector<carve::line::PolylineSet *> lines;
   std::vector<carve::point::PointSet *> points;
 
@@ -330,17 +345,30 @@ int main(int argc, char **argv) {
   }
 
   for (std::list<carve::input::Data *>::const_iterator i = inputs.input.begin(); i != inputs.input.end(); ++i) {
-    carve::poly::Polyhedron *p;
+    carve::mesh::MeshSet<3> *p;
     carve::point::PointSet *ps;
     carve::line::PolylineSet *l;
 
-    if ((p = carve::input::Input::create<carve::poly::Polyhedron>(*i)) != NULL)  {
+    if ((p = carve::input::Input::create<carve::mesh::MeshSet<3> >(*i)) != NULL)  {
       polys.push_back(p);
       std::cerr << "loaded polyhedron "
-                << polys.back() << " has " << polys.back()->manifold_is_closed.size()
-                << " manifolds (" << std::count(polys.back()->manifold_is_closed.begin(),
-                                                polys.back()->manifold_is_closed.end(),
-                                                true) << " closed)" << std::endl; 
+                << polys.back() << " has " << polys.back()->meshes.size()
+                << " manifolds (" << std::count_if(polys.back()->meshes.begin(),
+                                                   polys.back()->meshes.end(),
+                                                   carve::mesh::Mesh<3>::IsClosed()) << " closed)" << std::endl; 
+
+      std::cerr << "closed:    ";
+      for (size_t i = 0; i < polys.back()->meshes.size(); ++i) {
+        std::cerr << (polys.back()->meshes[i]->isClosed() ? '+' : '-');
+      }
+      std::cerr << std::endl;
+
+      std::cerr << "negative:  ";
+      for (size_t i = 0; i < polys.back()->meshes.size(); ++i) {
+        std::cerr << (polys.back()->meshes[i]->isNegative() ? '+' : '-');
+      }
+      std::cerr << std::endl;
+
     } else if ((l = carve::input::Input::create<carve::line::PolylineSet>(*i)) != NULL)  {
       lines.push_back(l);
       std::cerr << "loaded polyline set "

@@ -105,7 +105,7 @@ std::string data_path = "../data/";
 struct TestScene : public Scene {
   GLuint draw_list_base;
   std::vector<Option*> draw_flags;
-
+  std::vector<bool> wireframe_flags;
   virtual bool key(unsigned char k, int x, int y) {
     const char *t;
     static const char *l = "1234567890!@#$%^&*()";
@@ -121,10 +121,27 @@ struct TestScene : public Scene {
 
   virtual GLvoid draw() {
     for (int i = 0; i < draw_flags.size(); ++i) {
-      if (draw_flags[i]->isChecked()) {
+      if (draw_flags[i]->isChecked() && !wireframe_flags[i]) {
         glCallList(draw_list_base + i);
       }
     }
+
+    GLfloat proj[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, proj);
+    GLfloat p33 = proj[10];
+    proj[10] += 1e-5;
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(proj);
+
+    for (int i = 0; i < draw_flags.size(); ++i) {
+      if (draw_flags[i]->isChecked() && wireframe_flags[i]) {
+        glCallList(draw_list_base + i);
+      }
+    }
+
+    proj[10] = p33;
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(proj);
 
     if (rays.size()) {
       glBegin(GL_LINES);
@@ -499,6 +516,7 @@ void testCSG(GLuint &dlist, std::list<Input>::const_iterator begin, std::list<In
 
     glNewList(dlist++, GL_COMPILE);
     scene->draw_flags.push_back(group->createOption("Debug data visible", false));
+    scene->wireframe_flags.push_back(true);
     if (a && b) {
       carve::poly::Polyhedron *result = NULL;
       try {
@@ -618,24 +636,27 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
   {
     OptionGroup *group;
     group = scene->createOptionGroup("Result");
-
+    carve::mesh::MeshSet<3> *g_result_mesh = carve::meshFromPolyhedron(g_result, -1);
     scene->draw_flags.push_back(group->createOption("Result visible", true));
+    scene->wireframe_flags.push_back(false);
     glNewList(currentList++, GL_COMPILE);
     if (g_result) {
       glCullFace(GL_BACK);
-      drawPolyhedron(g_result, 0.3f, 0.5f, 0.8f, 1.0f, true);
+      drawPolyhedron(g_result_mesh, 0.3f, 0.5f, 0.8f, 1.0f);
       glCullFace(GL_FRONT);
-      drawPolyhedron(g_result, 0.8f, 0.5f, 0.3f, 1.0f, true);
+      drawPolyhedron(g_result_mesh, 0.8f, 0.5f, 0.3f, 1.0f);
       glCullFace(GL_BACK);
     }
     glEndList();
 
     scene->draw_flags.push_back(group->createOption("Result wireframe", true));
+    scene->wireframe_flags.push_back(true);
     glNewList(currentList++, GL_COMPILE);
     if (g_result) {
-      drawPolyhedronWireframe(g_result);
+      drawPolyhedronWireframe(g_result_mesh);
     }
     glEndList();
+    delete g_result_mesh;
   }
 
   {
@@ -649,28 +670,37 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
       S = 0.5 + fmod((S - 0.37), 0.5);
       cRGB colour = HSV2RGB(H, S, V);
 
+      carve::mesh::MeshSet<3> *poly_mesh = NULL;
+      if (it->poly) poly_mesh = carve::meshFromPolyhedron(it->poly, -1);
+
       count++;
       sprintf(buf, "Input %d wireframe", count);
       scene->draw_flags.push_back(group->createOption(buf, false));
+      scene->wireframe_flags.push_back(true);
       glNewList(currentList++, GL_COMPILE);
-      if (it->poly) drawPolyhedronWireframe(it->poly);
+      if (poly_mesh) {
+        drawPolyhedronWireframe(poly_mesh);
+      }
       glEndList();
 
       sprintf(buf, "Input %d solid", count);
       scene->draw_flags.push_back(group->createOption(buf, false));
+      scene->wireframe_flags.push_back(false);
       glNewList(currentList++, GL_COMPILE);
-      if (it->poly) drawPolyhedron(it->poly, colour.r, colour.g, colour.b, true);
+      if (poly_mesh) drawPolyhedron(poly_mesh, colour.r, colour.g, colour.b, true);
       glEndList();
 
-      if (it->poly->octree.root->is_leaf) {
+      if (it->poly && it->poly->octree.root->is_leaf) {
         sprintf(buf, "Input %d octree (unsplit)", count);
       } else {
         sprintf(buf, "Input %d octree", count);
       }
       scene->draw_flags.push_back(group->createOption(buf, false));
+      scene->wireframe_flags.push_back(true);
       glNewList(currentList++, GL_COMPILE);
       if (it->poly) { drawOctree(it->poly->octree); }
       glEndList();
+      if (poly_mesh) delete poly_mesh;
     }
   }
 }
