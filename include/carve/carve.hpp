@@ -156,6 +156,20 @@ namespace carve {
     typedef T result_type;
     const T &operator()(const T &t) const { return t; }
   };
+
+  template<typename iter_t>
+  inline bool is_sorted(iter_t first, iter_t last) {
+    if (first == last) return true;
+
+    iter_t iter = first;
+    iter_t next = first; ++next;
+    for (; next != last; iter = next, ++next) {
+      if (*next < *iter) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 

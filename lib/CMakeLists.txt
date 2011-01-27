@@ -19,6 +19,7 @@ add_library(carve
             intersect_half_classify_group.cpp
             intersection.cpp
             math.cpp
+            mesh.cpp
             octree.cpp
             pointset.cpp
             polyhedron.cpp

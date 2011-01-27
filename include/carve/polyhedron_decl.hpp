@@ -30,23 +30,32 @@
 
 
 namespace carve {
+  namespace mesh {
+    template<unsigned ndim>
+    class MeshSet;
+  }
+
   namespace poly {
+    class Polyhedron;
+  }
 
-    class EdgeConnectivityInfo;
+  poly::Polyhedron *polyhedronFromMesh(const mesh::MeshSet<3> *, int);
 
-
+  namespace poly {
 
     struct Polyhedron : public Geometry<3> {
     private:
-      Polyhedron(); // not implemented
+      friend Polyhedron *carve::polyhedronFromMesh(const mesh::MeshSet<3> *, int);
+
+      Polyhedron() {
+      }
+
       Polyhedron &operator=(const Polyhedron &); // not implemented
 
       // *** initialization
 
       bool initSpatialIndex();
       void initVertexConnectivity();
-      bool initEdgeConnectivity(const EdgeConnectivityInfo &);
-      void buildEdgeFaceMap(EdgeConnectivityInfo &);
       void setFaceAndVertexOwner();
 
       bool initConnectivity();
