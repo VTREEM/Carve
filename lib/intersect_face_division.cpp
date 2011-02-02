@@ -1524,7 +1524,7 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
   carve::TimingBlock block(FUNC_NAME);
   size_t generated_edges = 0;
   std::vector<const poly_t::vertex_t *> base_loop;
-  std::list<std::vector<const poly_t::vertex_t *> > face_loops, hole_loops;
+  std::list<std::vector<const poly_t::vertex_t *> > face_loops;
   
   for (std::vector<poly_t::face_t >::const_iterator
          i = poly->faces.begin(), e = poly->faces.end();
