@@ -211,10 +211,6 @@ namespace {
                         const carve::csg::VertexIntersections &vi) {
     Graph graph;
 
-#if defined(CARVE_DEBUG)
-    std::cerr << "splitFace()" << " face=" << face << " face->nVertices()=" << face->nVertices() << " edges.size()=" << edges.size() << std::endl;
-#endif
-
     for (carve::csg::V2Set::const_iterator
            i = edges.begin(), e = edges.end();
          i != e;
@@ -225,9 +221,6 @@ namespace {
     }
 
     graph.computeProjection(face);
-#if defined(CARVE_DEBUG)
-    graph.print(std::cerr, &vi);
-#endif
 
     while (!graph.empty()) {
       GraphEdge *edge;
@@ -289,57 +282,17 @@ namespace {
         graph.removeEdge(edge);
         edge = next;
       }
-#if defined(CARVE_DEBUG)
-      std::cerr << "===============================================" << std::endl;
-      graph.print(std::cerr, &vi);
-#endif
-#if defined(CARVE_DEBUG)
-      std::cerr << "signed area of loop: " << carve::geom2d::signedArea(projected) << std::endl;
-#endif
+
       CARVE_ASSERT(edge == start);
+
       if (carve::geom2d::signedArea(projected) < 0) {
-#if defined(CARVE_DEBUG)
-        std::cerr << "output face loop size: " << loop.size() << " : ";
-        for (size_t i = 0; i < loop.size(); ++i) std::cerr << " " << loop[i];
-        std::cerr << std::endl;
-#endif
         face_loops.push_back(std::vector<const poly_t::vertex_t *>());
         face_loops.back().swap(loop);
       } else {
-#if defined(CARVE_DEBUG)
-        std::cerr << "output hole loop size: " << loop.size() << " : ";
-        for (size_t i = 0; i < loop.size(); ++i) std::cerr << " " << loop[i];
-        std::cerr << std::endl;
-#endif
         hole_loops.push_back(std::vector<const poly_t::vertex_t *>());
         hole_loops.back().swap(loop);
       }
     }
-#if defined(CARVE_DEBUG)
-    std::cerr << "===============================================" << std::endl;
-
-    std::cerr << "result: " << face_loops.size() << " face loops (";
-    for (std::list<std::vector<const poly_t::vertex_t *> >::const_iterator i = face_loops.begin(); i != face_loops.end(); ++i) {
-      std::cerr << ((i != face_loops.begin()) ? " " : "") << (*i).size();
-      for (unsigned j = 0; j < (*i).size(); ++j) {
-        if (std::find((*i).begin() + j + 1, (*i).end(), (*i)[j]) != (*i).end()) {
-          std::cerr << "[!]";
-          break;
-        }
-      }
-    }
-    std::cerr << ") " << hole_loops.size() << " hole loops (";
-    for (std::list<std::vector<const poly_t::vertex_t *> >::const_iterator i = hole_loops.begin(); i != hole_loops.end(); ++i) {
-      std::cerr << ((i != hole_loops.begin()) ? " " : "") << (*i).size();
-      for (unsigned j = 0; j < (*i).size(); ++j) {
-        if (std::find((*i).begin() + j + 1, (*i).end(), (*i)[j]) != (*i).end()) {
-          std::cerr << "[!]";
-          break;
-        }
-      }
-    }
-    std::cerr << ")" << std::endl;
-#endif
   }
 
 
