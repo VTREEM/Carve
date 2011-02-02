@@ -781,7 +781,7 @@ namespace {
             }
           }
         }
-        if (paths[j].back()  == base_loop[i]) {
+        if (paths[j].back() == base_loop[i]) {
           if (endpoint_indices[j].edge_idx[1] == N) {
             endpoint_indices[j].edge_idx[1] = i;
           } else {
@@ -890,27 +890,39 @@ namespace {
           double area = carve::geom2d::signedArea(cross[k].path->begin(),
                                                   cross[k].path->end(),
                                                   face->projector());
+#if defined(CARVE_DEBUG)
+          std::cerr << "### k=" << k << " area=" << area << std::endl;
+#endif
           order.push_back(std::make_pair(-area, cross[k].path));
         }
         std::sort(order.begin(), order.end());
         for (size_t k = i; k < j; ++k) {
           cross[k].path = order[k-i].second;
+#if defined(CARVE_DEBUG)
+          std::cerr << "### post-sort k=" << k << " cross[k].path->size()=" << cross[k].path->size() << std::endl;
+#endif
         }
       }
     }
 
     for (size_t i = 0; i < cross.size(); ++i) {
 #if defined(CARVE_DEBUG)
-      std::cerr << "### working on edge: " << cross[i].edge_idx[0] << " - " << cross[i].edge_idx[1] << std::endl;
+      std::cerr << "### i=" << i << " working on edge: " << cross[i].edge_idx[0] << " - " << cross[i].edge_idx[1] << std::endl;
 #endif
       size_t e1_0 = cross[i].edge_idx[0];
       size_t e1_1 = cross[i].edge_idx[1];
       std::vector<const poly_t::vertex_t *> &p1 = *cross[i].path;
+#if defined(CARVE_DEBUG)
+      std::cerr << "###     path size = " << p1.size() << std::endl;
+#endif
 
       out.clear();
 
       if (i < cross.size() - 1 &&
           cross[i+1].edge_idx[1] <= cross[i].edge_idx[1]) {
+#if defined(CARVE_DEBUG)
+        std::cerr << "###     complex case" << std::endl;
+#endif
         // complex case. crossing path with other crossing paths embedded within.
         size_t pos = e1_0;
 
@@ -958,6 +970,20 @@ namespace {
         CARVE_ASSERT(out.size() == loop_size);
       }
       divided_base_loop.push_back(out);
+
+#if defined(CARVE_DEBUG)
+      {
+        std::vector<carve::geom2d::P2> projected;
+        projected.reserve(out.size());
+        for (size_t n = 0; n < out.size(); ++n) {
+          projected.push_back(face->project(out[n]->v));
+        }
+
+        double A = carve::geom2d::signedArea(projected);
+        std::cerr << "### out area=" << A << std::endl;
+        CARVE_ASSERT(A <= 0);
+      }
+#endif
     }
 
     // for each divided base loop, work out which noncrossing paths and
@@ -1011,6 +1037,15 @@ namespace {
           inc.push_back(&loops[j]);
         }
       }
+
+#if defined(CARVE_DEBUG)
+      std::cerr << "### divided base loop:" << i << " inc.size()=" << inc.size() << std::endl;
+      std::cerr << "### inc = [";
+      for (size_t j = 0; j < inc.size(); ++j) {
+        std::cerr << " " << inc[j];
+      }
+      std::cerr << " ]" << std::endl;
+#endif
 
       if (inc.size()) {
         carve::csg::V2Set face_edges;
@@ -1247,6 +1282,55 @@ namespace {
 
 
 
+  template<typename T>
+  std::string ptrstr(const T *ptr) {
+    std::ostringstream s;
+    s << ptr;
+    return s.str().substr(1);
+  }
+
+  void dumpAsGraph(const poly_t::face_t *face,
+                   const std::vector<const poly_t::vertex_t *> &base_loop,
+                   const carve::csg::V2Set &face_edges,
+                   const carve::csg::V2Set &split_edges) {
+    std::map<const poly_t::vertex_t *, carve::geom2d::P2> proj;
+
+    for (size_t i = 0; i < base_loop.size(); ++i) {
+      proj[base_loop[i]] = face->project(base_loop[i]->v);
+    }
+    for (carve::csg::V2Set::iterator i = split_edges.begin(); i != split_edges.end(); ++i) {
+      proj[(*i).first] = face->project((*i).first->v);
+      proj[(*i).second] = face->project((*i).second->v);
+    }
+
+    {
+      carve::geom2d::P2 lo, hi;
+      std::map<const poly_t::vertex_t *, carve::geom2d::P2>::iterator i;
+      i = proj.begin();
+      lo = hi = (*i).second;
+      for (; i != proj.end(); ++i) {
+        lo.x = std::min(lo.x, (*i).second.x); lo.y = std::min(lo.y, (*i).second.y);
+        hi.x = std::max(hi.x, (*i).second.x); hi.y = std::max(hi.y, (*i).second.y);
+      }
+      for (i = proj.begin(); i != proj.end(); ++i) {
+        (*i).second.x = ((*i).second.x - lo.x) / (hi.x - lo.x) * 10;
+        (*i).second.y = ((*i).second.y - lo.y) / (hi.y - lo.y) * 10;
+      }
+    }
+
+    std::cerr << "graph G {\nnode [shape=circle,style=filled,fixedsize=true,width=\".1\",height=\".1\"];\nedge [len=4]\n";
+    for (std::map<const poly_t::vertex_t *, carve::geom2d::P2>::iterator i = proj.begin(); i != proj.end(); ++i) {
+      std::cerr << "   " << ptrstr((*i).first) << " [pos=\"" << (*i).second.x << "," << (*i).second.y << "!\"];\n";
+    }
+    for (carve::csg::V2Set::iterator i = face_edges.begin(); i != face_edges.end(); ++i) {
+      std::cerr << "   " << ptrstr((*i).first) << " -- " << ptrstr((*i).second) << ";\n";
+    }
+    for (carve::csg::V2Set::iterator i = split_edges.begin(); i != split_edges.end(); ++i) {
+      std::cerr << "   " << ptrstr((*i).first) << " -- " << ptrstr((*i).second) << " [color=\"blue\"];\n";
+    }
+    std::cerr << "};\n";
+  }
+
   void generateOneFaceLoop(const poly_t::face_t *face,
                            const carve::csg::detail::Data &data,
                            const carve::csg::VertexIntersections &vertex_intersections,
@@ -1301,6 +1385,10 @@ namespace {
       face_loops.push_back(base_loop);
       return;
     }
+
+#if defined(CARVE_DEBUG)
+    dumpAsGraph(face, base_loop, face_edges, split_edges);
+#endif
 
 #if 0
     // old face splitting method.
@@ -1396,6 +1484,9 @@ namespace {
     } else {
       if (!processCrossingEdges(face, vertex_intersections, hooks, base_loop, paths, loops, face_loops)) {
         // complex case - fall back to old edge tracing code.
+#if defined(CARVE_DEBUG)
+        std::cerr << "### processCrossingEdges failed. Falling back to edge tracing code" << std::endl;
+#endif
         for (V2Set::const_iterator i = split_edges.begin(); i != split_edges.end(); ++i) {
           face_edges.insert(std::make_pair((*i).first, (*i).second));
           face_edges.insert(std::make_pair((*i).second, (*i).first));
@@ -1441,7 +1532,71 @@ size_t carve::csg::CSG::generateFaceLoops(const poly_t *poly,
        ++i) {
     const poly_t::face_t *face = &(*i);
 
+#if defined(CARVE_DEBUG)
+    double in_area = 0.0, out_area = 0.0;
+
+    {
+      std::vector<const poly_t::vertex_t *> base_loop;
+      assembleBaseLoop(face, data, base_loop);
+
+      {
+        std::vector<carve::geom2d::P2> projected;
+        projected.reserve(base_loop.size());
+        for (size_t n = 0; n < base_loop.size(); ++n) {
+          projected.push_back(face->project(base_loop[n]->v));
+        }
+
+        in_area = carve::geom2d::signedArea(projected);
+        std::cerr << "### in_area=" << in_area << std::endl;
+      }
+    }
+#endif
+
     generateOneFaceLoop(face, data, vertex_intersections, hooks, face_loops);
+
+#if defined(CARVE_DEBUG)
+    {
+      V2Set face_edges;
+
+      std::vector<const poly_t::vertex_t *> base_loop;
+      assembleBaseLoop(face, data, base_loop);
+
+      for (size_t j = 0, je = base_loop.size() - 1; j < je; ++j) {
+        face_edges.insert(std::make_pair(base_loop[j+1], base_loop[j]));
+      }
+      face_edges.insert(std::make_pair(base_loop[0], base_loop.back()));
+      for (std::list<std::vector<const poly_t::vertex_t *> >::const_iterator fli = face_loops.begin(); fli != face_loops.end(); ++ fli) {
+
+        {
+          std::vector<carve::geom2d::P2> projected;
+          projected.reserve((*fli).size());
+          for (size_t n = 0; n < (*fli).size(); ++n) {
+            projected.push_back(face->project((*fli)[n]->v));
+          }
+
+          double area = carve::geom2d::signedArea(projected);
+          std::cerr << "### loop_area[" << std::distance((std::list<std::vector<const poly_t::vertex_t *> >::const_iterator)face_loops.begin(), fli) << "]=" << area << std::endl;
+          out_area += area;
+        }
+
+        const std::vector<const poly_t::vertex_t *> &fl = *fli;
+        for (size_t j = 0, je = fl.size() - 1; j < je; ++j) {
+          face_edges.insert(std::make_pair(fl[j], fl[j+1]));
+        }
+        face_edges.insert(std::make_pair(fl.back(), fl[0]));
+      }
+      for (V2Set::const_iterator j = face_edges.begin(); j != face_edges.end(); ++j) {
+        if (face_edges.find(std::make_pair((*j).second, (*j).first)) == face_edges.end()) {
+          std::cerr << "### error: unmatched edge [" << (*j).first << "-" << (*j).second << "]" << std::endl;
+        }
+      }
+      std::cerr << "### out_area=" << out_area << std::endl;
+      if (out_area != in_area) {
+        std::cerr << "### error: area does not match. delta = " << (out_area - in_area) << std::endl;
+        // CARVE_ASSERT(fabs(out_area - in_area) < 1e-5);
+      }
+    }
+#endif
 
     // now record all the resulting face loops.
 #if defined(CARVE_DEBUG)
