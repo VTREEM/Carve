@@ -1014,7 +1014,13 @@ namespace {
       for (size_t j = 0; j < noncross.size(); ++j) {
         if (noncross[j].edge_idx[0] < N) {
           if (noncross[j].path->front() == base_loop[noncross[j].edge_idx[0]]) {
-            test = face->project(noncross[j].path->back()->v);
+            // noncrossing paths may be loops that run from the edge, back to the same vertex.
+            if (noncross[j].path->front() == noncross[j].path->back()) {
+              CARVE_ASSERT(noncross[j].path->size() > 2);
+              test = face->project((*noncross[j].path)[1]->v);
+            } else {
+              test = face->project(noncross[j].path->back()->v);
+            }
           } else {
             test = face->project(noncross[j].path->front()->v);
           }
