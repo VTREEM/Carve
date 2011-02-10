@@ -748,6 +748,9 @@ namespace {
 
 
 
+  // the crossing_data structure holds temporary information regarding
+  // paths, and their relationship to the loop of edges that forms the
+  // face perimeter.
   struct crossing_data {
     std::vector<const poly_t::vertex_t *> *path;
     size_t edge_idx[2];
@@ -755,7 +758,10 @@ namespace {
     crossing_data(std::vector<const poly_t::vertex_t *> *p, size_t e1, size_t e2) : path(p) {
       edge_idx[0] = e1; edge_idx[1] = e2;
     }
+
     bool operator<(const crossing_data &c) const {
+      // the sort order for paths is in order of increasing initial
+      // position on the edge loop, but decreasing final position.
       return edge_idx[0] < c.edge_idx[0] || (edge_idx[0] == c.edge_idx[0] && edge_idx[1] > c.edge_idx[1]);
     }
   };
@@ -781,11 +787,20 @@ namespace {
     // locate endpoints of paths on the base loop.
     for (size_t i = 0; i < N; ++i) {
       for (size_t j = 0; j < paths.size(); ++j) {
+        // test beginning of path.
         if (paths[j].front() == base_loop[i]) {
           if (endpoint_indices[j].edge_idx[0] == N) {
             endpoint_indices[j].edge_idx[0] = i;
           } else {
-            // have to work out which of the duplicated vertices is the right one to attach to.
+            // there is a duplicated vertex in the face perimeter. The
+            // path might attach to either of the duplicate instances
+            // so we have to work out which is the right one to attach
+            // to. We assume it's the index currently being examined,
+            // if the path heads in a direction that's internal to the
+            // angle made by the prior and next edges of the face
+            // perimeter. Otherwise, leave it as the currently
+            // selected index (until another duplicate is found, if it
+            // exists, and is tested).
             const std::vector<const poly_t::vertex_t *> &p = *endpoint_indices[j].path;
             const size_t pN = p.size();
 
@@ -804,11 +819,14 @@ namespace {
             }
           }
         }
+
+        // test end of path.
         if (paths[j].back() == base_loop[i]) {
           if (endpoint_indices[j].edge_idx[1] == N) {
             endpoint_indices[j].edge_idx[1] = i;
           } else {
-            // have to work out which of the duplicated vertices is the right one to attach to.
+            // Work out which of the duplicated vertices is the right
+            // one to attach to, as above.
             const std::vector<const poly_t::vertex_t *> &p = *endpoint_indices[j].path;
             const size_t pN = p.size();
 
@@ -839,7 +857,7 @@ namespace {
 
 
     // divide paths up into those that connect to the base loop in two
-    // places, and those that do not.
+    // places (cross), and those that do not (noncross).
     std::vector<crossing_data> cross, noncross;
     cross.reserve(endpoint_indices.size() + 1);
     noncross.reserve(endpoint_indices.size());
@@ -1158,6 +1176,7 @@ namespace {
     }
 
     // find the endpoints in the graph.
+    // every vertex with number of incident edges != 2 is an endpoint.
     for (detail::VVSMap::const_iterator i = vertex_graph.begin(); i != vertex_graph.end(); ++i) {
       if ((*i).second.size() != 2) {
 #if defined(CARVE_DEBUG)
@@ -1167,6 +1186,7 @@ namespace {
       }
     }
 
+    // every vertex on the perimeter of the face is also an endpoint.
     for (size_t i = 0; i < extra_endpoints.size(); ++i) {
       if (vertex_graph.find(extra_endpoints[i]) != vertex_graph.end()) {
 #if defined(CARVE_DEBUG)
@@ -1218,6 +1238,7 @@ namespace {
 
       temp.push_back(path);
     }
+
     populateVectorFromList(temp, paths);
     temp.clear();
 
@@ -1403,6 +1424,8 @@ namespace {
     // collect the split edges (as long as they're not on the perimeter)
     const detail::FV2SMap::mapped_type &fse = ((*fse_iter).second);
 
+    // split_edges contains all of the edges created by intersections
+    // that aren't part of the perimeter of the face.
     V2Set split_edges;
 
     for (detail::FV2SMap::mapped_type::const_iterator
@@ -1446,6 +1469,7 @@ namespace {
     std::cerr << "### split_edges.size(): " << split_edges.size() << std::endl;
 #endif
     if (split_edges.size() == 1) {
+      // handle the common case of a face that's split by a single edge.
       const poly_t::vertex_t *v1 = split_edges.begin()->first;
       const poly_t::vertex_t *v2 = split_edges.begin()->second;
 
@@ -1482,6 +1506,12 @@ namespace {
     std::vector<std::vector<const poly_t::vertex_t *> > paths;
     std::vector<std::vector<const poly_t::vertex_t *> > loops;
 
+    // Take the split edges and compose them into a set of paths and
+    // loops. Loops are edge paths that do not touch the boundary, or
+    // any other path or loop - they are holes cut out of the centre
+    // of the face. Paths are made up of all the other edge segments,
+    // and start and end at the face perimeter, or where they meet
+    // another path (sometimes both cases will be true).
     composeEdgesIntoPaths(split_edges, base_loop, paths, loops);
 
 #if defined(CARVE_DEBUG)
@@ -1490,9 +1520,12 @@ namespace {
 #endif
 
     if (!paths.size()) {
-      // loops found by composeEdgesIntoPaths() can't touch the boundary, or each other, so we can deal with the no paths case simply.
-      // the hole loops are the loops produced by composeEdgesIntoPaths() oriented so that their signed area wrt. the face is negative.
-      // the face loops are the base loop plus the hole loops, reversed.
+      // Loops found by composeEdgesIntoPaths() can't touch the
+      // boundary, or each other, so we can deal with the no paths
+      // case simply. The hole loops are the loops produced by
+      // composeEdgesIntoPaths() oriented so that their signed area
+      // wrt. the face is negative. The face loops are the base loop
+      // plus the hole loops, reversed.
       face_loops.push_back(base_loop);
 
       for (size_t i = 0; i < loops.size(); ++i) {
