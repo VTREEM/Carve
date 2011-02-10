@@ -25,8 +25,8 @@
 namespace carve {
   namespace interpolate {
 
-    std::vector<double> polyInterpolate(const std::vector<carve::geom2d::P2> &s,
-                                        const carve::geom2d::P2 &v) {
+    static inline std::vector<double> polyInterpolate(const std::vector<carve::geom2d::P2> &s,
+                                                      const carve::geom2d::P2 &v) {
       // see hormann et al. 2006
       const size_t SZ = s.size();
       std::vector<double> r;
