@@ -451,7 +451,7 @@ namespace {
       }
       face_loop_areas.push_back(carve::geom2d::signedArea(face_loops_projected[m]));
       std::sort(face_loops_sorted[m].begin(), face_loops_sorted[m].end(), 
-                carve::index_sort<std::vector<const poly_t::vertex_t *> >(face_loops[m]));
+                carve::make_index_sort(face_loops[m].begin()));
     }
 
     // produce a projection of each hole loop onto a 2D plane, and a
@@ -466,7 +466,7 @@ namespace {
       }
       hole_loop_areas.push_back(carve::geom2d::signedArea(hole_loops_projected[m]));
       std::sort(hole_loops_sorted[m].begin(), hole_loops_sorted[m].end(), 
-                carve::index_sort<std::vector<const poly_t::vertex_t *> >(hole_loops[m]));
+                carve::make_index_sort(hole_loops[m].begin()));
     }
 
     containing_faces.resize(hole_loops.size());

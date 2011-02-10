@@ -88,15 +88,28 @@ namespace carve {
     }
   };
 
-  template<typename T>
+  template<typename iter_t, typename order_t = std::less<typename std::iterator_traits<iter_t>::value_type > >
   struct index_sort {
-    const T &vals;
-    index_sort(const T &_vals) : vals(_vals) {}
+    iter_t base;
+    order_t order;
+    index_sort(const iter_t &_base) : base(_base), order() { }
+    index_sort(const iter_t &_base, const order_t &_order) : base(_base), order(_order) { }
     template<typename U>
     bool operator()(const U &a, const U &b) {
-      return vals[a] < vals[b];
+      return order(*(base + a), *(base + b));
     }
   };
+
+  template<typename iter_t, typename order_t>
+  index_sort<iter_t, order_t> make_index_sort(const iter_t &base, const order_t &order) {
+    return index_sort<iter_t, order_t>(base, order);
+  }
+
+  template<typename iter_t>
+  index_sort<iter_t> make_index_sort(const iter_t &base) {
+    return index_sort<iter_t>(base);
+  }
+
 
   enum RayIntersectionClass {
     RR_DEGENERATE = -2,

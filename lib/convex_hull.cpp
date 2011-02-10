@@ -80,7 +80,7 @@ namespace carve {
   
       std::sort(ordered.begin(),
                 ordered.end(),
-                index_sort<std::vector<std::pair<double, double> > >(angle_dist));
+                make_index_sort(angle_dist.begin()));
 
       std::vector<int> result;
       result.push_back(max_v);
