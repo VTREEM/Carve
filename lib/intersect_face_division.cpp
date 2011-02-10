@@ -50,6 +50,29 @@ namespace {
 
 
 
+  template<typename T>
+  void populateVectorFromList(std::list<T> &l, std::vector<T> &v) {
+    v.clear();
+    v.reserve(l.size());
+    for (typename std::list<T>::iterator i = l.begin(); i != l.end(); ++i) {
+      v.push_back(T());
+      std::swap(*i, v.back());
+    }
+    l.clear();
+  }
+
+  template<typename T>
+  void populateListFromVector(std::vector<T> &v, std::list<T> &l) {
+    l.clear();
+    for (size_t i = 0; i < v.size(); ++i) {
+      l.push_back(T());
+      std::swap(v[i], l.back());
+    }
+    v.clear();
+  }
+
+
+
   struct GraphEdge {
     GraphEdge *next;
     GraphEdge *prev;
@@ -1086,19 +1109,6 @@ namespace {
       }
     }
     return true;
-  }
-
-
-
-  template<typename T>
-  void populateVectorFromList(std::list<T> &l, std::vector<T> &v) {
-    v.clear();
-    v.reserve(l.size());
-    for (typename std::list<T>::iterator i = l.begin(); i != l.end(); ++i) {
-      v.push_back(T());
-      std::swap(*i, v.back());
-    }
-    l.clear();
   }
 
 
