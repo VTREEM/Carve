@@ -644,8 +644,8 @@ namespace carve {
         if (manifold_id != -1 && fa->manifold_id != manifold_id) continue;
 
         std::list<edge_t *>::iterator efwdi, erevi;
-        for (efwdi = efwd.begin(); efwdi != efwd.end() && (*efwdi)->face->id != fa->manifold_id; ++efwdi);
-        for (erevi = erev.begin(); erevi != erev.end() && (*erevi)->face->id != fa->manifold_id; ++erevi);
+        for (efwdi = efwd.begin(); efwdi != efwd.end() && (*efwdi)->face->id != (size_t)fa->manifold_id; ++efwdi);
+        for (erevi = erev.begin(); erevi != erev.end() && (*erevi)->face->id != (size_t)fa->manifold_id; ++erevi);
         CARVE_ASSERT(efwdi != efwd.end() && erevi != erev.end());
 
         (*efwdi)->rev = (*erevi);
