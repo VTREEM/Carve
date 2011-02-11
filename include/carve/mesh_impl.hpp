@@ -186,6 +186,7 @@ namespace carve {
     template<unsigned ndim>
     Edge<ndim>::Edge(vertex_t *_vert, face_t *_face) :
         vert(_vert), face(_face), prev(this), next(this), rev(NULL) {
+      CARVE_ASSERT(face != NULL);
     }
 
 
@@ -196,7 +197,7 @@ namespace carve {
     }
 
     template<unsigned ndim>
-    typename Face<ndim>::aabb_t Face<ndim>::aabb() const {
+    typename Face<ndim>::aabb_t Face<ndim>::getAABB() const {
       aabb_t aabb;
       aabb.fit(edge->begin(), edge->end(), vector_mapping());
       return aabb;

@@ -20,6 +20,7 @@
 #include <carve/carve.hpp>
 
 #include <carve/geom.hpp>
+#include <carve/geom3d.hpp>
 #include <carve/tag.hpp>
 #include <carve/djset.hpp>
 
@@ -256,7 +257,7 @@ namespace carve {
       project_t getProjector(bool positive_facing, int axis);
       unproject_t getUnprojector(bool positive_facing, int axis);
 
-      aabb_t aabb() const;
+      aabb_t getAABB() const;
 
       bool recalc();
 
@@ -532,12 +533,12 @@ namespace carve {
       template<typename iter_t>
       static void create(iter_t begin, iter_t end, std::vector<Mesh<ndim> *> &meshes);
 
-      aabb_t aabb() const {
+      aabb_t getAABB() const {
         aabb_t result;
         if (faces.size()) {
-          result = faces[0]->aabb();
+          result = faces[0]->getAABB();
           for (size_t i = 1; i < faces.size(); ++i) {
-            result.unionAABB(faces[i]->aabb());
+            result.unionAABB(faces[i]->getAABB());
           }
         }
         return result;
@@ -704,12 +705,12 @@ namespace carve {
         carve::mesh::Mesh<3>::create(faces.begin(), faces.end(), meshes);
       }
 
-      aabb_t aabb() const {
+      aabb_t getAABB() const {
         aabb_t result;
         if (meshes.size()) {
-          result = meshes[0]->aabb();
+          result = meshes[0]->getAABB();
           for (size_t i = 1; i < meshes.size(); ++i) {
-            result.unionAABB(meshes[i]->aabb());
+            result.unionAABB(meshes[i]->getAABB());
           }
         }
         return result;
