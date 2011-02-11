@@ -23,6 +23,7 @@
 #include <carve/poly.hpp>
 #include <carve/polyline.hpp>
 #include <carve/pointset.hpp>
+#include <carve/rtree.hpp>
 
 #include "geom_draw.hpp"
 #include "read_ply.hpp"
@@ -95,6 +96,53 @@ bool even(int x, int y, int z) {
 #undef min
 #undef max
 
+template<typename data_t>
+size_t _treeDepth(carve::geom::RTreeNode<3, data_t> *rtree_node) {
+  size_t t = 0;
+  for (carve::geom::RTreeNode<3, data_t> *child = rtree_node->child; child != NULL; child = child->sibling) {
+    t = std::max(t, _treeDepth(child));
+  }
+  return t + 1;
+}
+
+template<typename data_t>
+void _drawNode(carve::geom::RTreeNode<3, data_t> *rtree_node, size_t depth, size_t depth_max) {
+  for (carve::geom::RTreeNode<3, data_t> *child = rtree_node->child; child != NULL; child = child->sibling) {
+    _drawNode(child, depth+1, depth_max);
+  }
+
+  float r = depth / float(depth_max);
+  float H = .7 - r * .2;
+  float S = .4 + r * .6;
+  float V = .2 + r * .8;
+  cRGB col;
+
+  col = HSV2RGB(H, S, V/2);
+  glColor4f(col.r, col.g, col.b, .1 + r * .5);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  drawCube(rtree_node->aabb.min(), rtree_node->aabb.max());
+
+  // col = HSV2RGB(H, S, V);
+  // glColor4f(col.r, col.g, col.b, .1 + r * .25);
+  // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  // drawCube(rtree_node->aabb.min(), rtree_node->aabb.max());
+}
+
+template<typename data_t>
+void drawTree(carve::geom::RTreeNode<3, data_t> *rtree_node) {
+  glDisable(GL_LIGHTING);
+  glDisable(GL_CULL_FACE);
+  glDepthMask(GL_FALSE);
+
+  size_t d = _treeDepth(rtree_node);
+
+  _drawNode(rtree_node, 0, d);
+
+  glDepthMask(GL_TRUE);
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_LIGHTING);
+}
+
 GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
                            std::vector<carve::line::PolylineSet *> &lines,
                            std::vector<carve::point::PointSet *> &points,
@@ -108,7 +156,7 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
 
   if (options.wireframe) N = 2;
 
-  for (size_t p = 0; p < polys.size(); ++p) n += polys[p]->meshes.size() * N;
+  for (size_t p = 0; p < polys.size(); ++p) n += polys[p]->meshes.size() * N + 1;
   for (size_t p = 0; p < lines.size(); ++p) n += lines[p]->lines.size() * 2;
   n += points.size();
 
@@ -116,13 +164,13 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
 
   carve::geom3d::AABB aabb;
   if (polys.size()) {
-    aabb = polys[0]->aabb();
+    aabb = polys[0]->getAABB();
   } else if (lines.size()) {
     aabb = lines[0]->aabb;
   } else if (points.size()) {
     aabb = points[0]->aabb;
   }
-  for (size_t p = 0; p < polys.size(); ++p) aabb.unionAABB(polys[p]->aabb());
+  for (size_t p = 0; p < polys.size(); ++p) aabb.unionAABB(polys[p]->getAABB());
   for (size_t p = 0; p < lines.size(); ++p) aabb.unionAABB(lines[p]->aabb);
   for (size_t p = 0; p < points.size(); ++p) aabb.unionAABB(points[p]->aabb);
 
@@ -182,6 +230,15 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
         }
       }
     }
+
+    typedef carve::geom::RTreeNode<3, carve::mesh::Face<3> *> face_rtree_t;
+    face_rtree_t *tree = face_rtree_t::construct_STR(poly->faceBegin(), poly->faceEnd(), 4, 4);
+    // face_rtree_t *tree = face_rtree_t::construct_TGS(poly->faceBegin(), poly->faceEnd(), 50, 4);
+    is_wireframe[list_num] = true;
+    glNewList(dlist + list_num++, GL_COMPILE);
+    drawTree(tree);
+    glEndList();
+    delete tree;
   }
 
   for (size_t l = 0; l < lines.size(); ++l) {
