@@ -845,20 +845,37 @@ namespace {
     noncross.reserve(endpoint_indices.size());
 
     for (size_t i = 0; i < endpoint_indices.size(); ++i) {
-      if (endpoint_indices[i].edge_idx[0] == endpoint_indices[i].edge_idx[1]) {
-        // in this case, we need to orient the path so that the constructed loop has the right orientation.
-        double area = carve::geom2d::signedArea(endpoint_indices[i].path->begin() + 1,
-                                                endpoint_indices[i].path->end(),
-                                                face->projector());
-        if (area < 0) {
-          std::reverse(endpoint_indices[i].path->begin(), endpoint_indices[i].path->end());
+#if defined(CARVE_DEBUG)
+      std::cerr << "### orienting path: " << i << " endpoints: " << endpoint_indices[i].edge_idx[0] << " - " << endpoint_indices[i].edge_idx[1] << std::endl;
+#endif
+      if (endpoint_indices[i].edge_idx[0] != N && endpoint_indices[i].edge_idx[1] != N) {
+        // Orient each path correctly. Paths should progress from
+        // smaller perimeter index to larger, but if the path starts
+        // and ends at the same perimeter index, then the decision
+        // needs to be made based upon area.
+        if (endpoint_indices[i].edge_idx[0] == endpoint_indices[i].edge_idx[1]) {
+          // The path forms a loop that starts and ends at the same
+          // vertex of the perimeter. In this case, we need to orient
+          // the path so that the constructed loop has the right
+          // signed area.
+          double area = carve::geom2d::signedArea(endpoint_indices[i].path->begin() + 1,
+                                                  endpoint_indices[i].path->end(),
+                                                  face->projector());
+          std::cerr << "HITS THIS CODE - area=" << area << std::endl;
+          if (area < 0) {
+            // XXX: Create test case to check that this is the correct sign for the area.
+            std::reverse(endpoint_indices[i].path->begin(), endpoint_indices[i].path->end());
+          }
+        } else {
+          if (endpoint_indices[i].edge_idx[0] > endpoint_indices[i].edge_idx[1]) {
+            std::swap(endpoint_indices[i].edge_idx[0], endpoint_indices[i].edge_idx[1]);
+            std::reverse(endpoint_indices[i].path->begin(), endpoint_indices[i].path->end());
+          }
         }
-      } else if (endpoint_indices[i].edge_idx[0] > endpoint_indices[i].edge_idx[1]) {
-        std::swap(endpoint_indices[i].edge_idx[0], endpoint_indices[i].edge_idx[1]);
-        std::reverse(endpoint_indices[i].path->begin(), endpoint_indices[i].path->end());
       }
 
-      if (endpoint_indices[i].edge_idx[1] != N &&
+      if (endpoint_indices[i].edge_idx[0] != N &&
+          endpoint_indices[i].edge_idx[1] != N &&
           endpoint_indices[i].edge_idx[0] != endpoint_indices[i].edge_idx[1]) {
         cross.push_back(endpoint_indices[i]);
       } else {
@@ -1202,8 +1219,8 @@ namespace {
       temp.push_back(path);
     }
     populateVectorFromList(temp, paths);
-
     temp.clear();
+
     // now only loops should remain in the graph.
     while (vertex_graph.size()) {
       detail::VVSMap::iterator p = vertex_graph.begin();
