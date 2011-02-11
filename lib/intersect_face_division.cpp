@@ -1009,6 +1009,11 @@ namespace {
 #endif
     }
 
+    if (!noncross.size() && !loops.size()) {
+      populateListFromVector(divided_base_loop, face_loops_out);
+      return true;
+    }
+
     // for each divided base loop, work out which noncrossing paths and
     // loops are part of it. use the old algorithm to combine these into
     // the divided base loop. if none, the divided base loop is just
