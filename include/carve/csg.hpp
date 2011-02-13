@@ -404,7 +404,8 @@ namespace carve {
         INTERSECTION,           /**< in a and b. */
         A_MINUS_B,              /**< in a, but not b. */
         B_MINUS_A,              /**< in b, but not a. */
-        SYMMETRIC_DIFFERENCE    /**< in a or b, but not both. */
+        SYMMETRIC_DIFFERENCE,   /**< in a or b, but not both. */
+        ALL                     /**< all split faces from a and b */
       };
 
       /**

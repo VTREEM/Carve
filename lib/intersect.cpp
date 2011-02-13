@@ -1506,27 +1506,21 @@ void carve::csg::CSG::slice(const poly_t *a,
   for (carve::csg::FLGroupList::iterator
          i = a_loops_grouped.begin(), e = a_loops_grouped.end();
        i != e; ++i) {
-    carve::csg::FaceLoopList &fl = ((*i).face_loops);
-    std::vector<poly_t::face_t > faces;
-    faces.reserve(fl.size());
-    for (FaceLoop *f = fl.head; f; f = f->next) {
-      faces.push_back(poly_t::face_t());
-      faces.back().init(f->orig_face, f->vertices, false);
-    }
-    a_sliced.push_back(new poly_t(faces));
+    Collector *all = makeCollector(ALL, a, b);
+    all->collect(&*i, hooks);
+    a_sliced.push_back(all->done(hooks));
+
+    delete all;
   }
 
   for (carve::csg::FLGroupList::iterator
          i = b_loops_grouped.begin(), e = b_loops_grouped.end();
        i != e; ++i) {
-    carve::csg::FaceLoopList &fl = ((*i).face_loops);
-    std::vector<poly_t::face_t > faces;
-    faces.reserve(fl.size());
-    for (FaceLoop *f = fl.head; f; f = f->next) {
-      faces.push_back(poly_t::face_t());
-      faces.back().init(f->orig_face, f->vertices, false);
-    }
-    b_sliced.push_back(new poly_t(faces));
+    Collector *all = makeCollector(ALL, a, b);
+    all->collect(&*i, hooks);
+    b_sliced.push_back(all->done(hooks));
+
+    delete all;
   }
   if (shared_edges_ptr != NULL) {
     std::list<poly_t *> result_list;

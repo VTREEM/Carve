@@ -240,9 +240,7 @@ namespace carve {
                              bool poly_a,
                              FaceClass face_class,
                              CSG::Hooks &hooks) {
-          if (poly_a && face_class == FACE_OUT) {
-            FWD(orig_face, vertices, normal, poly_a, face_class, hooks);
-          }
+          FWD(orig_face, vertices, normal, poly_a, face_class, hooks);
         }
       };
 
