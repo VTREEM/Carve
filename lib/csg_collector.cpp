@@ -234,6 +234,11 @@ namespace carve {
         }
         virtual ~AllCollector() {
         }
+        virtual void collect(FaceLoopGroup *grp, CSG::Hooks &hooks) {
+          for (FaceLoop *f = grp->face_loops.head; f; f = f->next) {
+            FWD(f->orig_face, f->vertices, f->orig_face->plane_eqn.N, f->orig_face->owner == src_a, FACE_OUT, hooks);
+          }
+        }
         virtual void collect(const poly_t::face_t *orig_face,
                              const std::vector<const poly_t::vertex_t *> &vertices,
                              carve::geom3d::Vector normal,
@@ -366,6 +371,7 @@ namespace carve {
       case CSG::A_MINUS_B:            return new AMinusBCollector(poly_a, poly_b);
       case CSG::B_MINUS_A:            return new BMinusACollector(poly_a, poly_b);
       case CSG::SYMMETRIC_DIFFERENCE: return new SymmetricDifferenceCollector(poly_a, poly_b);
+      case CSG::ALL:                  return new AllCollector(poly_a, poly_b);
       }
       return NULL;
     }
