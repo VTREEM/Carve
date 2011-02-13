@@ -32,6 +32,10 @@
 #  include <iostream>
 #endif
 
+#if defined CARVE_USE_EXACT_PREDICATES
+#  include <carve/shewchuk_predicates.hpp>
+#endif
+
 namespace carve {
   namespace geom2d {
 
@@ -63,6 +67,11 @@ namespace carve {
      *         zero, if c is colinear with a->b.
      *         negative, if c to the right of a->b.
      */
+#if defined CARVE_USE_EXACT_PREDICATES
+    inline double orient2d(const P2 &a, const P2 &b, const P2 &c) {
+      return shewchuk::orient2d(a.v, b.v, c.v);
+    }
+#else
     inline double orient2d(const P2 &a, const P2 &b, const P2 &c) {
       double acx = a.x - c.x;
       double bcx = b.x - c.x;
@@ -70,6 +79,7 @@ namespace carve {
       double bcy = b.y - c.y;
       return acx * bcy - acy * bcx;
     }
+#endif
 
     /** 
      * \brief Determine whether p is internal to the anticlockwise

@@ -26,6 +26,8 @@
 #include <carve/rtree.hpp>
 #include <carve/geom3d.hpp>
 
+#include <carve/exact.hpp>
+
 // #include <surpac_tri_tri_intersection.hpp>
 
 #include "opts.hpp"
@@ -391,14 +393,86 @@ bool bounding_box_overlap(const vec3 tri_a[3], const vec3 tri_b[3]) {
   return true;
 }
 
+void extent(double a, double b, double c, double &lo, double &hi) {
+  if (a < b && b < c) { lo = a; hi = c; return; }
+  if (a < c && c < b) { lo = a; hi = b; return; }
+
+  if (b < c && c < a) { lo = b; hi = a; return; }
+  if (b < a && a < c) { lo = b; hi = c; return; }
+
+  if (c < a && a < b) { lo = c; hi = b; return; }
+  if (c < b && b < a) { lo = c; hi = b; return; }
+}
+
+template<unsigned dim>
+bool axis_test(const vec3 tri_a[3], const vec3 tri_b[3]) {
+  double a_lo, a_hi, b_lo, b_hi;
+  extent(tri_a[0].v[dim], tri_a[1].v[dim], tri_a[2].v[dim], a_lo, a_hi);
+  extent(tri_b[0].v[dim], tri_b[1].v[dim], tri_b[2].v[dim], b_lo, b_hi);
+  return a_hi < b_lo || b_hi < a_lo;
+}
+
+// returns true if no intersection, based upon axis testing.
+bool sat_bbox(const vec3 tri_a[3], const vec3 tri_b[3]) {
+  return axis_test<0>(tri_a, tri_b) || axis_test<1>(tri_a, tri_b) || axis_test<2>(tri_a, tri_b);
+}
+
+int orient3d_inexact(const vec3 &a, const vec3 &b, const vec3 &c, const vec3 &d) {
+  vec3 ad = a - d;
+  vec3 bd = b - d;
+  vec3 cd = c - d;
+  
+  double bdxcdy = bd.x * cd.y;
+  double cdxbdy = cd.x * bd.y;
+  
+  double cdxady = cd.x * ad.y;
+  double adxcdy = ad.x * cd.y;
+  
+  double adxbdy = ad.x * bd.y;
+  double bdxady = bd.x * ad.y;
+  
+  double det =
+    ad.z * (bdxcdy - cdxbdy) +
+    bd.z * (cdxady - adxcdy) +
+    cd.z * (adxbdy - bdxady);
+  
+  double permanent =
+    (fabs(bdxcdy) + fabs(cdxbdy)) * fabs(ad.z) +
+    (fabs(cdxady) + fabs(adxcdy)) * fabs(bd.z) +
+    (fabs(adxbdy) + fabs(bdxady)) * fabs(cd.z);
+
+  double errbound = 0.0; // shewchuk::robust.o3derrboundA * permanent;
+
+  if ((det > errbound) || (-det > errbound)) {
+    return det;
+  }
+
+  return 0.0;
+}
+
+// returns true if no intersection, based upon normal testing.
+bool sat_normal(const vec3 tri_a[3], const vec3 tri_b[3]) {
+  double v, lo, hi;
+  lo = hi = carve::geom3d::orient3d(tri_a[0], tri_a[1], tri_a[2], tri_b[0]);
+  v = carve::geom3d::orient3d(tri_a[0], tri_a[1], tri_a[2], tri_b[1]);
+  lo = std::min(lo, v); hi = std::max(hi, v);
+  v = carve::geom3d::orient3d(tri_a[0], tri_a[1], tri_a[2], tri_b[2]);
+  lo = std::min(lo, v); hi = std::max(hi, v);
+  return lo > 0.0 || hi < 0.0;
+}
+
+
+// returns true if no intersection, based upon edge^a_i and edge^b_j separating axis.
+bool sat_edge(const vec3 tri_a[3], const vec3 tri_b[3], unsigned i, unsigned j) {
+}
+
+
 // 0 = not intersecting
 // 1 = shared vertex
 // 2 = shared edge
 // 3 = intersecting
 int tripair_intersection(const vec3 tri_a[3], const vec3 tri_b[3]) {
-  if (!bounding_box_overlap(tri_a, tri_b)) {
-    return 0;
-  }
+  if (sat_bbox(tri_a, tri_b)) return 0;
 
   {
     size_t ia, ib;

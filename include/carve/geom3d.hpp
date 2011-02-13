@@ -31,6 +31,10 @@
 #  include <iostream>
 #endif
 
+#if defined CARVE_USE_EXACT_PREDICATES
+#  include <carve/shewchuk_predicates.hpp>
+#endif
+
 namespace carve {
   namespace geom3d {
 
@@ -119,14 +123,21 @@ namespace carve {
     // return: +ve = d is below a,b,c
     //         -ve = d is above a,b,c
     //           0 = d is on a,b,c
-    static inline double orient3d(const carve::geom3d::Vector &a,
-        const carve::geom3d::Vector &b,
-        const carve::geom3d::Vector &c,
-        const carve::geom3d::Vector &d) {
+#if defined CARVE_USE_EXACT_PREDICATES
+    inline double orient3d(const Vector &a,
+                           const Vector &b,
+                           const Vector &c,
+                           const Vector &d) {
+      return shewchuk::orient3d(a.v, b.v, c.v, d.v);
+    }
+#else
+    inline double orient3d(const Vector &a,
+                           const Vector &b,
+                           const Vector &c,
+                           const Vector &d) {
       return dotcross((a - d), (b - d), (c - d));
     }
-
-
+#endif
 
     // Volume of a tetrahedron described by 4 points. Will be
     // positive if the anticlockwise normal of a,b,c is oriented out

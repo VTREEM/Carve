@@ -26,7 +26,8 @@ add_library(carve
             polyline.cpp
             tag.cpp
             timing.cpp
-            triangulator.cpp)
+            triangulator.cpp
+            shewchuk_predicates.cpp)
 
 set_target_properties(carve PROPERTIES
                       VERSION   "${carve_VERSION_MAJOR}.${carve_VERSION_MINOR}.${carve_VERSION_PATCH}"

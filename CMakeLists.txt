@@ -18,6 +18,7 @@ option(CARVE_SYSTEM_BOOST                "Compile with system installed boost"  
 option(CARVE_BOOST_COLLECTIONS           "Compile with boost collections"                    ON)
 option(CARVE_DEBUG                       "Compile in debug code"                             OFF)
 option(CARVE_DEBUG_WRITE_PLY_DATA        "Write geometry output during debug"                OFF)
+option(CARVE_USE_EXACT_PREDICATES        "Use Shewchuk's exact predicates, where possible"   OFF)
 option(CARVE_INTERSECT_GLU_TRIANGULATOR  "Include support for GLU triangulator in intersect" OFF)
 
 if (MSVC)
