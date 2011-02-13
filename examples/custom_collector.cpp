@@ -155,16 +155,22 @@ int main(int argc, char **argv) {
   TestScene *scene = new TestScene(argc, argv, 3);
 
   glNewList(scene->draw_list_base + 0, GL_COMPILE);
-  drawPolyhedron(a, .4, .6, .8, 1.0, false);
+  carve::mesh::MeshSet<3> *a_mesh = carve::meshFromPolyhedron(a, -1);
+  drawPolyhedron(a_mesh, .4, .6, .8, 1.0, false);
+  delete a_mesh;
   glEndList();
 
   glNewList(scene->draw_list_base + 1, GL_COMPILE);
-  drawPolyhedron(b, .8, .6, .4, 1.0, false);
+  carve::mesh::MeshSet<3> *b_mesh = carve::meshFromPolyhedron(b, -1);
+  drawPolyhedron(b_mesh, .8, .6, .4, 1.0, false);
+  delete b_mesh;
   glEndList();
 
   glNewList(scene->draw_list_base + 2, GL_COMPILE);
-  drawPolyhedron(c, .2, .2, .8, 1.0, true);
-  drawPolyhedronWireframe(c);
+  carve::mesh::MeshSet<3> *c_mesh = carve::meshFromPolyhedron(c, -1);
+  drawPolyhedron(c_mesh, .2, .2, .8, 1.0, true);
+  drawPolyhedronWireframe(c_mesh);
+  delete c_mesh;
   glEndList();
 
   scene->run();

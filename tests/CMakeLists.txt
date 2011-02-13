@@ -29,6 +29,10 @@ cxx_test(geom2d_unittest gtest_main)
 target_link_libraries(geom2d_unittest carve)
 cxx_test(geom3d_unittest gtest_main)
 target_link_libraries(geom3d_unittest carve)
+
+cxx_test(mesh_unittest gtest_main)
+target_link_libraries(mesh_unittest carve carve_fileformats gloop_model)
+
 # not committed yet.
 # cxx_test(exact_unittest gtest_main)
 # target_link_libraries(exact_unittest carve)

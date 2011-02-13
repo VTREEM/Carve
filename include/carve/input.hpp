@@ -19,6 +19,7 @@
 
 #include <carve/carve.hpp>
 #include <carve/poly.hpp>
+#include <carve/mesh.hpp>
 #include <carve/polyline.hpp>
 #include <carve/pointset.hpp>
 
@@ -128,6 +129,10 @@ namespace carve {
       carve::poly::Polyhedron *create() const {
         return new carve::poly::Polyhedron(points, faceCount, faceIndices);
       }
+
+      carve::mesh::MeshSet<3> *createMesh() const {
+        return new carve::mesh::MeshSet<3>(points, faceCount, faceIndices);
+      }
     };
 
 
@@ -213,6 +218,13 @@ namespace carve {
         return NULL;
       }
     };
+
+    template<>
+    inline carve::mesh::MeshSet<3> *Input::create(Data *d) {
+      PolyhedronData *p = dynamic_cast<PolyhedronData *>(d);
+      if (p == NULL) return NULL;
+      return p->createMesh();
+    }
 
     template<>
     inline carve::poly::Polyhedron *Input::create(Data *d) {

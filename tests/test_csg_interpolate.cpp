@@ -61,19 +61,13 @@ static inline void glColor(const cRGBA &c) {
 
 carve::interpolate::FaceVertexAttr<cRGBA> fv_colours;
 
-void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a, bool offset) {
-  if (offset) {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(0.5, 0.5);
-  }
-
+void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a) {
   cRGBA cdefault = cRGBA(r, g, b);
   glColor(cdefault);
 
-  std::vector<cRGBA> vc;
-
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glBegin(GL_TRIANGLES);
+
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
     poly_t::face_t &f = poly->faces[i];
     if (f.nVertices() == 3) {
@@ -87,18 +81,16 @@ void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a, bool
     }
   }
   glEnd();
-  if (offset) {
-    glDisable(GL_POLYGON_OFFSET_FILL);
-  }
 
+  std::vector<std::pair<carve::geom3d::Vector, cRGBA> > v;
   for (size_t i = 0, l = poly->faces.size(); i != l; ++i) {
     poly_t::face_t &f = poly->faces[i];
     if (f.nVertices() != 3) {
-      vc.resize(f.nVertices());
-      for (size_t j = 0; j < f.nVertices(); ++j) {
-        vc[j] = fv_colours.getAttribute(&f, j, cdefault);
+      v.resize(f.nVertices());
+      for (size_t i = 0, l = f.nVertices(); i != l; ++i) {
+        v[i] = std::make_pair(g_scale * (f.vertex(i)->v + g_translation), fv_colours.getAttribute(&f, i, cdefault));
       }
-      drawColourFace(&poly->faces[i], vc, offset);
+      drawColourPoly(f.plane_eqn.N, v);
     }
   }
 }
@@ -207,13 +199,15 @@ int main(int argc, char **argv) {
   glEndList();
 
   glNewList(scene->draw_list_base + 1, GL_COMPILE);
-  drawColourPolyhedron(a, .6, .6, .6, 1.0, false);
+  drawColourPolyhedron(a, .6, .6, .6, 1.0);
   glEndList();
+
   glNewList(scene->draw_list_base + 2, GL_COMPILE);
-  drawColourPolyhedron(b, .6, .6, .6, 1.0, false);
+  drawColourPolyhedron(b, .6, .6, .6, 1.0);
   glEndList();
+
   glNewList(scene->draw_list_base + 3, GL_COMPILE);
-  drawColourPolyhedron(c, .6, .6, .6, 1.0, false);
+  drawColourPolyhedron(c, .6, .6, .6, 1.0);
   glEndList();
 
   scene->draw_flags[0] = false;

@@ -98,11 +98,15 @@ int main(int argc, char **argv) {
   TestScene *scene = new TestScene(argc, argv, 6);
 
   glNewList(scene->draw_list_base + 0, GL_COMPILE);
-  drawPolyhedron(a, .4, .6, .8, 1.0, false);
+  carve::mesh::MeshSet<3> *a_mesh = carve::meshFromPolyhedron(a, -1);
+  drawPolyhedron(a_mesh, .4, .6, .8, 1.0);
+  delete a_mesh;
   glEndList();
 
   glNewList(scene->draw_list_base + 1, GL_COMPILE);
-  drawPolyhedron(b, .8, .6, .4, 1.0, false);
+  carve::mesh::MeshSet<3> *b_mesh = carve::meshFromPolyhedron(b, -1);
+  drawPolyhedron(b_mesh, .8, .6, .4, 1.0);
+  delete b_mesh;
   glEndList();
 
   glNewList(scene->draw_list_base + 2, GL_COMPILE);
@@ -112,7 +116,9 @@ int main(int argc, char **argv) {
       float r  = n & 1 ? .3 : .7;
       float g  = n & 2 ? .3 : .7;
       float b  = n & 4 ? .3 : .7;
-      drawPolyhedron((*i), r, g, b, 1.0, true);
+      carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron(*i, -1);
+      drawPolyhedron(mesh, r, g, b, 1.0, true);
+      delete mesh;
       ++n;
     }
   }
@@ -122,7 +128,9 @@ int main(int argc, char **argv) {
   {
     int n = 0;
     for (std::list<carve::poly::Polyhedron *>::iterator i = a_sliced.begin(); i != a_sliced.end(); ++i) {
-      drawPolyhedronWireframe((*i));
+      carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron(*i, -1);
+      drawPolyhedronWireframe(mesh);
+      delete mesh;
       ++n;
     }
   }
@@ -135,7 +143,9 @@ int main(int argc, char **argv) {
       float r  = n & 1 ? .3 : .7;
       float g  = n & 2 ? .3 : .7;
       float b  = n & 4 ? .3 : .7;
-      drawPolyhedron((*i), r, g, b, 1.0, true);
+      carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron(*i, -1);
+      drawPolyhedron(mesh, r, g, b, 1.0, true);
+      delete mesh;
       ++n;
     }
   }
@@ -145,7 +155,9 @@ int main(int argc, char **argv) {
   {
     int n = 0;
     for (std::list<carve::poly::Polyhedron *>::iterator i = b_sliced.begin(); i != b_sliced.end(); ++i) {
-      drawPolyhedronWireframe((*i));
+      carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron(*i, -1);
+      drawPolyhedronWireframe(mesh);
+      delete mesh;
       ++n;
     }
   }

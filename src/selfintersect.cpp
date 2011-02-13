@@ -22,6 +22,8 @@
 #include <carve/csg.hpp>
 #include <carve/csg_triangulator.hpp>
 #include <carve/poly.hpp>
+#include <carve/mesh.hpp>
+#include <carve/rtree.hpp>
 #include <carve/geom3d.hpp>
 
 // #include <surpac_tri_tri_intersection.hpp>
@@ -456,55 +458,74 @@ int tripair_intersection(const vec3 tri_a[3], const vec3 tri_b[3]) {
 
 int main(int argc, char **argv) {
   options.parse(argc, argv);
-  carve::poly::Polyhedron *poly;
+
+  carve::input::Input inputs;
 
   if (options.file == "-") {
-    poly = readPLY(std::cin);
+    readPLY(std::cin, inputs);
   } else if (endswith(options.file, ".ply")) {
-    poly = readPLY(options.file);
+    readPLY(options.file, inputs);
   } else if (endswith(options.file, ".vtk")) {
-    poly = readVTK(options.file);
+    readVTK(options.file, inputs);
   } else if (endswith(options.file, ".obj")) {
-    poly = readOBJ(options.file);
+    readOBJ(options.file, inputs);
   }
 
+  carve::mesh::MeshSet<3> *poly;
+  for (std::list<carve::input::Data *>::const_iterator i = inputs.input.begin(); i != inputs.input.end(); ++i) {
+    poly = inputs.create<carve::mesh::MeshSet<3> >(*i);
+    if (poly) break;
+  }
   if (poly == NULL) {
-   //  std::cerr << "failed to load polyhedron" << std::endl;
+    std::cerr << "failed to load polyhedron" << std::endl;
     exit(1);
   }
 
- //  std::cerr << "poly aabb = " << poly->aabb << std::endl;
+  typedef carve::geom::RTreeNode<3, carve::mesh::Face<3> *> face_rtree_t;
+  face_rtree_t *tree = face_rtree_t::construct_STR(poly->faceBegin(), poly->faceEnd(), 4, 4);
 
-  for (size_t f = 0; f < poly->faces.size(); ++f) {
-    std::vector<const carve::poly::Polyhedron::face_t *> near_faces;
-    poly->findFacesNear(poly->faces[f].aabb, near_faces);
-    const carve::poly::Polyhedron::face_t *fa = &poly->faces[f];
-    vec3 tri_a[3]; tri_a[0] = fa->vertex(0)->v; tri_a[1] = fa->vertex(1)->v; tri_a[2] = fa->vertex(2)->v;
+  for (carve::mesh::MeshSet<3>::FaceIter f = poly->faceBegin(); f != poly->faceEnd(); ++f) {
+    carve::mesh::MeshSet<3>::face_t *fa = *f;
+    if (fa->nVertices() != 3) continue;
+
+    vec3 tri_a[3];
+    tri_a[0] = fa->edge->vert->v;
+    tri_a[1] = fa->edge->next->vert->v;
+    tri_a[2] = fa->edge->next->next->vert->v;
+
+    std::vector<const carve::mesh::MeshSet<3>::face_t *> near_faces;
+    tree->search(fa->getAABB(), std::back_inserter(near_faces));
+    // std::cerr << "XXX " << near_faces.size() << std::endl;
 
     for (size_t f2 = 0; f2 < near_faces.size(); ++f2) {
-      const carve::poly::Polyhedron::face_t *fb = near_faces[f2];
-      if (fa >= fb) continue;
-      if (fa->aabb.intersects(fb->aabb)) {
-        if (fa->nVertices() == 3 && fb->nVertices() == 3) {
-          vec3 tri_b[3]; tri_b[0] = fb->vertex(0)->v; tri_b[1] = fb->vertex(1)->v; tri_b[2] = fb->vertex(2)->v;
+      const carve::mesh::MeshSet<3>::face_t *fb = near_faces[f2];
+      if (fb->nVertices() != 3) continue;
 
-          switch (tripair_intersection(tri_a, tri_b)) {
-            case 0:
-              break;
-            case 1:
-              break;
-            case 2:
-              break;
-            case 3: {
-              std::cerr << "intersection: " << poly->faceToIndex_fast(fa) << " - " << poly->faceToIndex_fast(fb) << std::endl;
-              static int c = 0;
-              std::ostringstream fn;
-              fn << "intersection-" << c++ << ".ply";
-              std::cerr << fn.str().c_str() << std::endl;
-              std::ofstream outf(fn.str().c_str());
-              outf << "\
-ply\n\
-format ascii 1.0\n\
+      if (fa >= fb) continue;
+
+      vec3 tri_b[3];
+      tri_b[0] = fb->edge->vert->v;
+      tri_b[1] = fb->edge->next->vert->v;
+      tri_b[2] = fb->edge->next->next->vert->v;
+
+      if (fa->getAABB().intersects(fb->getAABB())) {
+        switch (tripair_intersection(tri_a, tri_b)) {
+        case 0:
+          break;
+        case 1:
+          break;
+        case 2:
+          break;
+        case 3: {
+          std::cerr << "intersection: " << fa << " - " << fb << std::endl;
+          static int c = 0;
+          std::ostringstream fn;
+          fn << "intersection-" << c++ << ".ply";
+          std::cerr << fn.str().c_str() << std::endl;
+          std::ofstream outf(fn.str().c_str());
+          outf << "\
+ply\n              \
+format ascii 1.0\n \
 element vertex 6\n\
 property double x\n\
 property double y\n\
@@ -512,19 +533,18 @@ property double z\n\
 element face 2\n\
 property list uchar uchar vertex_indices\n\
 end_header\n";
-              outf << std::setprecision(30);
-              outf << tri_a[0].x << " " << tri_a[0].y << " " << tri_a[0].z << "\n";
-              outf << tri_a[1].x << " " << tri_a[1].y << " " << tri_a[1].z << "\n";
-              outf << tri_a[2].x << " " << tri_a[2].y << " " << tri_a[2].z << "\n";
-              outf << tri_b[0].x << " " << tri_b[0].y << " " << tri_b[0].z << "\n";
-              outf << tri_b[1].x << " " << tri_b[1].y << " " << tri_b[1].z << "\n";
-              outf << tri_b[2].x << " " << tri_b[2].y << " " << tri_b[2].z << "\n";
-              outf << "\
+          outf << std::setprecision(30);
+          outf << tri_a[0].x << " " << tri_a[0].y << " " << tri_a[0].z << "\n";
+          outf << tri_a[1].x << " " << tri_a[1].y << " " << tri_a[1].z << "\n";
+          outf << tri_a[2].x << " " << tri_a[2].y << " " << tri_a[2].z << "\n";
+          outf << tri_b[0].x << " " << tri_b[0].y << " " << tri_b[0].z << "\n";
+          outf << tri_b[1].x << " " << tri_b[1].y << " " << tri_b[1].z << "\n";
+          outf << tri_b[2].x << " " << tri_b[2].y << " " << tri_b[2].z << "\n";
+          outf << "\
 3 0 1 2\n\
 3 5 4 3\n";
-              break;
-            }
-          }
+          break;
+        }
         }
       }
     }

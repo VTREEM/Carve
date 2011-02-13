@@ -34,149 +34,11 @@
 
 #include <algorithm>
 
+#include <carve/mesh.hpp>
+
 #include BOOST_INCLUDE(random.hpp)
 
 namespace {
-
-
-
-  struct FV {
-    carve::poly::Polyhedron::face_t *face;
-    size_t vertex;
-    FV(carve::poly::Polyhedron::face_t *f, size_t v) : face(f), vertex(v) { }
-  };
-
-
-
-  struct EdgeFaces {
-    std::list<FV> fwd, rev;
-    carve::poly::Polyhedron::edge_t *edge;
-  };
-
-
-
-  struct EdgeFaceMap {
-    std::unordered_map<std::pair<const carve::poly::Polyhedron::vertex_t *,
-                                 const carve::poly::Polyhedron::vertex_t *>,
-                       size_t,
-                       carve::poly::hash_vertex_ptr> index_map;
-    std::vector<EdgeFaces> edge_faces;
-
-    void sizeHint(size_t n_faces, size_t n_vertices) {
-#if defined(UNORDERED_COLLECTIONS_SUPPORT_RESIZE)
-      index_map.resize(n_faces + n_vertices); // approximately, for a single closed manifold.
-#endif
-      edge_faces.reserve(n_faces + n_vertices);
-    }
-
-    void record(const carve::poly::Polyhedron::vertex_t *v1,
-                const carve::poly::Polyhedron::vertex_t *v2,
-                carve::poly::Polyhedron::face_t *f,
-                size_t i) {
-      if (v1 < v2) {
-        size_t &x = index_map[std::make_pair(v1, v2)];
-        if (x == 0) {
-          edge_faces.push_back(EdgeFaces());
-          x = edge_faces.size();
-        }
-        edge_faces[x-1].fwd.push_back(FV(f, i));
-      } else {
-        size_t &x = index_map[std::make_pair(v2, v1)];
-        if (x == 0) {
-          edge_faces.push_back(EdgeFaces());
-          x = edge_faces.size();
-        }
-        edge_faces[x-1].rev.push_back(FV(f, i));
-      }
-    }
-  };
-
-
-
-  // Interestingly, for one set of inserts and a number of complete
-  // traversals, a map seems to be faster than an unordered_map. This
-  // may apply in other places.
-
-  struct FaceOrder {
-    double ang;
-    const FV *fv;
-    bool fwd;
-
-    FaceOrder(double _ang, const FV *_fv, bool _fwd) : ang(_ang), fv(_fv), fwd(_fwd) { }
-  };
-
-
-
-  inline bool operator<(const FaceOrder &a, const FaceOrder &b) { 
-    return a.ang < b.ang || (a.ang == b.ang && a.fwd && !b.fwd); 
-  }
-
-
-
-  inline std::ostream &operator<<(std::ostream &o, const FaceOrder &a) {
-    o << (a.fwd ? "+" : "-") << " " << a.ang << " " << a.fv;
-    return o;
-  }
-
-
-
-  bool makeFacePairs(const EdgeFaces &ef,
-                     carve::poly::Polyhedron::edge_t *e,
-                     std::vector<const carve::poly::Polyhedron::face_t *> &edge_face_pairs) {
-    static carve::TimingName FUNC_NAME("static Polyhedron makeFacePairs()");
-    carve::TimingBlock block(FUNC_NAME);
-    
-    edge_face_pairs.clear();
-
-    carve::geom3d::Vector evec = (e->v2->v - e->v1->v).normalized();
-    std::vector<FaceOrder> sorted_faces;
-
-    carve::geom3d::Vector base;
-
-    base = ef.fwd.front().face->plane_eqn.N;
-
-    for (std::list<FV>::const_iterator
-           f_i = ef.fwd.begin(), f_e = ef.fwd.end(); f_i != f_e; ++f_i) {
-      double ang = carve::geom3d::antiClockwiseAngle((*f_i).face->plane_eqn.N, base, evec);
-      if (ang == 0.0 && f_i != ef.fwd.begin()) ang = M_TWOPI + carve::EPSILON;
-      sorted_faces.push_back(FaceOrder(ang, &(*f_i), true));
-    }
-    for (std::list<FV>::const_iterator
-           f_i = ef.rev.begin(), f_e = ef.rev.end(); f_i != f_e; ++f_i) {
-      double ang = carve::geom3d::antiClockwiseAngle(-(*f_i).face->plane_eqn.N, base, evec);
-      if (ang == 0.0) ang = M_TWOPI + carve::EPSILON;
-      sorted_faces.push_back(FaceOrder(ang, &(*f_i), false));
-    }
-    std::sort(sorted_faces.begin(), sorted_faces.end());
-
-    for (unsigned i = 0; i < sorted_faces.size();) {
-      if (!sorted_faces[i].fwd) {
-        const FV &fv2 = (*(sorted_faces[i++].fv));
-
-        edge_face_pairs.push_back(NULL);
-        edge_face_pairs.push_back(fv2.face);
-        // std::cerr << "face pair: " << NULL << " " << fv2.face << std::endl;
-      } else if (i == sorted_faces.size() - 1 || sorted_faces[i + 1].fwd) {
-        const FV &fv1 = (*(sorted_faces[i++].fv));
-
-        edge_face_pairs.push_back(fv1.face);
-        edge_face_pairs.push_back(NULL);
-        // std::cerr << "face pair: " << fv1.face << " " << NULL << std::endl;
-      } else {
-        const FV &fv1 = (*(sorted_faces[i++].fv));
-        const FV &fv2 = (*(sorted_faces[i++].fv));
-
-        edge_face_pairs.push_back(fv1.face);
-        edge_face_pairs.push_back(fv2.face);
-        // std::cerr << "face pair: " << fv1.face << " " << fv2.face << std::endl;
-      }
-    }
-
-    return true;
-  }
-
-
-
   bool emb_test(carve::poly::Polyhedron *poly,
                 std::map<int, std::set<int> > &embedding,
                 carve::geom3d::Vector v,
@@ -209,14 +71,6 @@ namespace {
 
 
 
-  struct order_ef_first_vertex {
-    bool operator()(const EdgeFaces *a, const EdgeFaces *b) const {
-      return a->edge->v1 < b->edge->v1;
-    }
-  };
-
-
-
   struct order_faces {
     bool operator()(const carve::poly::Polyhedron::face_t * const &a,
                     const carve::poly::Polyhedron::face_t * const &b) const {
@@ -232,12 +86,6 @@ namespace {
 
 namespace carve {
   namespace poly {
-
-
-
-    struct EdgeConnectivityInfo {
-      EdgeFaceMap ef_map;
-    };
 
 
 
@@ -353,253 +201,131 @@ namespace carve {
 
 
 
-    bool Polyhedron::initEdgeConnectivity(const EdgeConnectivityInfo &eci) {
-      static carve::TimingName FUNC_NAME("static Polyhedron initEdgeConnectivity()");
-      carve::TimingBlock block(FUNC_NAME);
-
-      const std::vector<EdgeFaces> &ef = eci.ef_map.edge_faces;
-
-      // pair up incident faces for each edge.
-      bool is_ok = true;
-      bool complex = false;
-      carve::djset::djset face_groups(faces.size());
-      std::vector<bool> face_open(faces.size(), false);
-
-      connectivity.edge_to_face.resize(edges.size());
-
-      // simple edges
-      for (size_t i = 0; i < ef.size(); ++i) {
-        const std::list<FV> &fwd_faces = ef[i].fwd;
-        const std::list<FV> &rev_faces = ef[i].rev;
-
-        edge_t *edge = ef[i].edge;
-        size_t edge_index = edgeToIndex_fast(edge);
-        std::vector<const face_t *> &edge_face_pairs = connectivity.edge_to_face[edge_index];
-        edge_face_pairs.clear();
-
-        if (rev_faces.size() == 0) {
-          for (std::list<FV>::const_iterator j = fwd_faces.begin(); j != fwd_faces.end(); ++j) {
-            face_open[faceToIndex_fast(j->face)] = true;
-            edge_face_pairs.push_back(j->face);
-            edge_face_pairs.push_back(NULL);
-          }
-        } else if (fwd_faces.size() == 0) {
-          for (std::list<FV>::const_iterator j = rev_faces.begin(); j != rev_faces.end(); ++j) {
-            face_open[faceToIndex_fast(j->face)] = true;
-            edge_face_pairs.push_back(NULL);
-            edge_face_pairs.push_back(j->face);
-          }
-        } else if (fwd_faces.size() == 1 && rev_faces.size() == 1) {
-          edge_face_pairs.push_back(fwd_faces.front().face);
-          edge_face_pairs.push_back(rev_faces.front().face);
-          face_groups.merge_sets(faceToIndex_fast(fwd_faces.front().face),
-                                 faceToIndex_fast(rev_faces.front().face));
-        } else {
-          complex = true;
-        }
-      }
-
-      if (!complex) return is_ok;
-
-      // propagate openness of each face set to all members of the set.
-      for (size_t i = 0; i < faces.size(); ++i) {
-        if (face_open[i]) face_open[face_groups.find_set_head(i)] = true;
-      }
-
-      for (size_t i = 0; i < faces.size(); ++i) {
-        face_open[i] = face_open[face_groups.find_set_head(i)];
-      }
-
-      // complex edges.
-      std::map<std::vector<int>, std::list<EdgeFaces> > grouped_ef;
-
-      for (size_t i = 0; is_ok && i < ef.size(); ++i) {
-        const std::list<FV> &fwd_faces = ef[i].fwd;
-        const std::list<FV> &rev_faces = ef[i].rev;
-
-        edge_t *edge = ef[i].edge;
-        size_t edge_index = edgeToIndex_fast(edge);
-        std::vector<const face_t *> &edge_face_pairs = connectivity.edge_to_face[edge_index];
-
-        if (!edge_face_pairs.size()) {
-          const EdgeFaces &ef_old = ef[i];
-
-          EdgeFaces ef_closed;
-          EdgeFaces ef_open;
-
-          ef_open.edge = ef_old.edge;
-          ef_closed.edge = ef_old.edge;
-
-          // group faces into those that form part of an open surface and those that form a closed surface.
-          for (std::list<FV>::const_iterator j = ef_old.fwd.begin(); j != ef_old.fwd.end(); ++j) {
-            if (face_open[faceToIndex_fast(j->face)]) {
-              ef_open.fwd.push_back(*j);
-            } else {
-              ef_closed.fwd.push_back(*j);
-            }
-          }
-
-          for (std::list<FV>::const_iterator j = ef_old.rev.begin(); j != ef_old.rev.end(); ++j) {
-            if (face_open[faceToIndex_fast(j->face)]) {
-              ef_open.rev.push_back(*j);
-            } else {
-              ef_closed.rev.push_back(*j);
-            }
-          }
-
-          // make open edge connectivity entries for any open surface faces.
-          for (std::list<FV>::const_iterator j = ef_open.fwd.begin(); j != ef_open.fwd.end(); ++j) {
-            edge_face_pairs.push_back(j->face);
-            edge_face_pairs.push_back(NULL);
-          }
-          for (std::list<FV>::const_iterator j = ef_open.rev.begin(); j != ef_open.rev.end(); ++j) {
-            edge_face_pairs.push_back(NULL);
-            edge_face_pairs.push_back(j->face);
-          }
-
-          // group edges based upon the closed-face sets that are incident to them.
-          std::vector<int> tag;
-          tag.reserve(ef_closed.fwd.size() + ef_closed.rev.size());
-          for (std::list<FV>::const_iterator j = ef_closed.fwd.begin(); j != ef_closed.fwd.end(); ++j) {
-            tag.push_back(+face_groups.find_set_head(faceToIndex_fast(j->face)) + 1);
-          }
-          for (std::list<FV>::const_iterator j = ef_closed.rev.begin(); j != ef_closed.rev.end(); ++j) {
-            tag.push_back(-face_groups.find_set_head(faceToIndex_fast(j->face)) - 1);
-          }
-          std::sort(tag.begin(), tag.end());
-
-          // normalise tag to remove edge direction effects.
-          std::vector<int> revtag = tag;
-          std::reverse(revtag.begin(), revtag.end());
-          std::transform(revtag.begin(), revtag.end(), revtag.begin(), std::negate<int>());
-
-          if (!std::lexicographical_compare(tag.begin(), tag.end(), revtag.begin(), revtag.end())) {
-            std::swap(tag, revtag);
-          }
-
-          grouped_ef[tag].push_back(ef_closed);
-        }
-      }
-
-
-      // std::cerr << "grouped ef tags:" << std::endl;
-      for (std::map<std::vector<int>, std::list<EdgeFaces> > ::iterator i = grouped_ef.begin(); i != grouped_ef.end(); ++i) {
-        const std::vector<int> &tag = (*i).first;
-
-        // std::cerr << "tag.size() == " << tag.size() << std::endl;
-        // for (size_t j = 0; j < tag.size(); ++j) {
-        //   std::cerr << "  " << tag[j];
-        // }
-        // std::cerr << std::endl;
-
-        std::vector<EdgeFaces *> efp;
-        efp.reserve((*i).second.size());
-        carve::djset::djset efp_group((*i).second.size());
-        std::map<const vertex_t *, std::vector<int> > vec_ef;
-
-        for (std::list<EdgeFaces>::iterator j = (*i).second.begin(); j != (*i).second.end(); ++j) {
-          EdgeFaces &ef = *j;
-          vec_ef[ef.edge->v1].push_back(efp.size());
-          vec_ef[ef.edge->v2].push_back(efp.size());
-          efp.push_back(&ef);
-        }
-
-        for (std::map<const vertex_t *, std::vector<int> >::iterator j = vec_ef.begin(); j != vec_ef.end(); ++j) {
-          if ((*j).second.size() == 2) {
-            efp_group.merge_sets((*j).second[0], (*j).second[1]);
-          }
-        }
-
-        std::vector<std::vector<EdgeFaces *> > grouped;
-        efp_group.collate(efp.begin(), grouped);
-
-        for (size_t j = 0; j < grouped.size(); ++j) {
-          std::vector<EdgeFaces *> grp = grouped[j];
-          for (size_t k = 0; k < grp.size(); ++k) {
-            EdgeFaces &ef = *grp[k];
-
-            edge_t *edge = ef.edge;
-            size_t edge_index = edgeToIndex_fast(edge);
-            std::vector<const face_t *> &edge_face_pairs = connectivity.edge_to_face[edge_index];
-
-            if (!makeFacePairs(ef, edge, edge_face_pairs)) {
-              is_ok = false;
-            }
-          }
-        }
-      }
-
-      return is_ok;
-    }
-
-
-
-    void Polyhedron::buildEdgeFaceMap(EdgeConnectivityInfo &eci) {
-      // make a mapping from pairs of vertices denoting edges to pairs
-      // of <face,vertex index> that incorporate this edge in the
-      // forward and reverse directions.
-      for (unsigned i = 0; i < faces.size(); ++i) {
-        face_t &f = faces[i];
-        for (unsigned j = 0; j < f.nVertices() - 1; j++) {
-          eci.ef_map.record(f.vertex(j), f.vertex(j+1), &f, j);
-        }
-        eci.ef_map.record(f.vertex(f.nVertices()-1), f.vertex(0), &f, f.nVertices()-1);
-
-        f.manifold_id = -1;
-      }
-    }
-
-
-
     bool Polyhedron::initConnectivity() {
       static carve::TimingName FUNC_NAME("Polyhedron::initConnectivity()");
       carve::TimingBlock block(FUNC_NAME);
 
-      EdgeConnectivityInfo eci;
-      eci.ef_map.sizeHint(faces.size(), vertices.size());
-      bool is_ok = true;
+      // temporary measure: initialize connectivity by creating a
+      // half-edge mesh, and then converting back.
 
-      buildEdgeFaceMap(eci);
+      std::vector<mesh::Vertex<3> > vertex_storage;
+      vertex_storage.reserve(vertices.size());
+      for (size_t i = 0; i < vertices.size(); ++i) {
+        vertex_storage.push_back(mesh::Vertex<3>(vertices[i].v));
+      }
 
-      // now we know how many edges this polyhedron has.
+      std::vector<mesh::Face<3> *> mesh_faces;
+      std::unordered_map<const mesh::Face<3> *, size_t> face_map;
+      {
+        std::vector<mesh::Vertex<3> *> vert_ptrs;
+        for (size_t i = 0; i < faces.size(); ++i) {
+          const face_t &src = faces[i];
+          vert_ptrs.clear();
+          vert_ptrs.reserve(src.nVertices());
+          for (size_t j = 0; j < src.nVertices(); ++j) {
+            size_t vi = vertexToIndex_fast(src.vertex(j));
+            vert_ptrs.push_back(&vertex_storage[vi]);
+          }
+          mesh::Face<3> *face = new mesh::Face<3>(vert_ptrs.begin(), vert_ptrs.end());
+          mesh_faces.push_back(face);
+          face_map[face] = i;
+        }
+      }
+
+      std::vector<mesh::Mesh<3> *> meshes;
+      mesh::Mesh<3>::create(mesh_faces.begin(), mesh_faces.end(), meshes);
+      mesh::MeshSet<3> *meshset = new mesh::MeshSet<3>(vertex_storage, meshes);
+
+      manifold_is_closed.resize(meshset->meshes.size());
+      manifold_is_negative.resize(meshset->meshes.size());
+
+      std::unordered_map<std::pair<size_t, size_t>, std::list<mesh::Edge<3> *> > edge_map;
+      mesh::Vertex<3> *Vbase = &meshset->vertex_storage[0];
+      for (size_t m = 0; m < meshset->meshes.size(); ++m) {
+        mesh::Mesh<3> *mesh = meshset->meshes[m];
+        manifold_is_closed[m] = mesh->isClosed();
+        for (size_t f = 0; f < mesh->faces.size(); ++f) {
+          mesh::Face<3> *src = mesh->faces[f];
+          mesh::Edge<3> *e = src->edge;
+          faces[face_map[src]].manifold_id = m;
+          do {
+            edge_map[std::make_pair(e->v1() - Vbase, e->v2() - Vbase)].push_back(e);
+            e = e->next;
+          } while (e != src->edge);
+        }
+      }
+
+      size_t n_edges = 0;
+      for (std::unordered_map<std::pair<size_t, size_t>, std::list<mesh::Edge<3> *> >::iterator i = edge_map.begin(); i != edge_map.end(); ++i) {
+        if ((*i).first.first < (*i).first.second || edge_map.find(std::make_pair((*i).first.second, (*i).first.first)) == edge_map.end()) {
+          n_edges++;
+        }
+      }
+
       edges.clear();
-      edges.reserve(eci.ef_map.edge_faces.size());
-
-      // make an edge object for each entry in ef_map.
-      for (size_t i = 0; i < eci.ef_map.edge_faces.size(); ++i) {
-        EdgeFaces &ef = eci.ef_map.edge_faces[i];
-        const std::list<FV> &fwd = ef.fwd;
-        const std::list<FV> &rev = ef.rev;
-
-        const vertex_t *v1, *v2;
-
-        if (fwd.size()) {
-          face_t *f = fwd.front().face;
-          size_t v = fwd.front().vertex;
-          v1 = f->vertex(v);
-          v2 = f->vertex((v+1) % f->nVertices());
-	} else { 
-          face_t *f = rev.front().face;
-          size_t v = rev.front().vertex;
-          v2 = f->vertex(v);
-          v1 = f->vertex((v+1) % f->nVertices());
-        }
-
-        edges.push_back(edge_t(v1, v2, this));
-        ef.edge = &edges.back();
-
-        for (std::list<FV>::const_iterator j = fwd.begin(); j != fwd.end(); ++j) {
-          (*j).face->edge((*j).vertex) = &edges.back();
-        }
-
-        for (std::list<FV>::const_iterator j = rev.begin(); j != rev.end(); ++j) {
-          (*j).face->edge((*j).vertex) = &edges.back();
+      edges.reserve(n_edges);
+      for (std::unordered_map<std::pair<size_t, size_t>, std::list<mesh::Edge<3> *> >::iterator i = edge_map.begin(); i != edge_map.end(); ++i) {
+        if ((*i).first.first < (*i).first.second || edge_map.find(std::make_pair((*i).first.second, (*i).first.first)) == edge_map.end()) {
+          edges.push_back(edge_t(&vertices[(*i).first.first], &vertices[(*i).first.second], this));
         }
       }
 
       initVertexConnectivity();
 
-      return initEdgeConnectivity(eci);
+      for (size_t f = 0; f < faces.size(); ++f) {
+        face_t &face = faces[f];
+        size_t N = face.nVertices();
+        for (size_t v = 0; v < N; ++v) {
+          size_t v1i = vertexToIndex_fast(face.vertex(v));
+          size_t v2i = vertexToIndex_fast(face.vertex((v+1)%N));
+          std::vector<const edge_t *> found_edge;
+
+          CARVE_ASSERT(is_sorted(connectivity.vertex_to_edge[v1i].begin(), connectivity.vertex_to_edge[v1i].end()));
+          CARVE_ASSERT(is_sorted(connectivity.vertex_to_edge[v2i].begin(), connectivity.vertex_to_edge[v2i].end()));
+
+          std::set_intersection(connectivity.vertex_to_edge[v1i].begin(), connectivity.vertex_to_edge[v1i].end(),
+                                connectivity.vertex_to_edge[v2i].begin(), connectivity.vertex_to_edge[v2i].end(),
+                                std::back_inserter(found_edge));
+
+          CARVE_ASSERT(found_edge.size() == 1);
+
+          face.edge(v) = found_edge[0];
+        }
+      }
+
+      connectivity.edge_to_face.resize(edges.size());
+
+      for (size_t i = 0; i < edges.size(); ++i) {
+        size_t v1i = vertexToIndex_fast(edges[i].v1);
+        size_t v2i = vertexToIndex_fast(edges[i].v2);
+        std::list<mesh::Edge<3> *> &efwd = edge_map[std::make_pair(v1i, v2i)];
+        std::list<mesh::Edge<3> *> &erev = edge_map[std::make_pair(v1i, v2i)];
+
+        for (std::list<mesh::Edge<3> *>::iterator j = efwd.begin(); j != efwd.end(); ++j) {
+          mesh::Edge<3> *edge = *j;
+          if (face_map.find(edge->face) != face_map.end()) {
+            connectivity.edge_to_face[i].push_back(&faces[face_map[edge->face]]);
+            if (edge->rev == NULL) {
+              connectivity.edge_to_face[i].push_back(NULL);
+            } else {
+              connectivity.edge_to_face[i].push_back(&faces[face_map[edge->rev->face]]);
+            }
+          }
+        }
+        for (std::list<mesh::Edge<3> *>::iterator j = erev.begin(); j != erev.end(); ++j) {
+          mesh::Edge<3> *edge = *j;
+          if (face_map.find(edge->face) != face_map.end()) {
+            if (edge->rev == NULL) {
+              connectivity.edge_to_face[i].push_back(NULL);
+              connectivity.edge_to_face[i].push_back(&faces[face_map[edge->face]]);
+            }
+          }
+        }
+      }
+
+      delete meshset;
+
+      return true;
     }
 
 
@@ -721,86 +447,6 @@ namespace carve {
 
 
 
-    bool Polyhedron::markManifolds() {
-      static carve::TimingName FUNC_NAME("Polyhedron::markManifolds()");
-
-      carve::TimingBlock block(FUNC_NAME);
-
-      std::vector<face_t *> to_mark;
-      size_t i = 0;
-      int m_id = 0;
-      int closed_manifold_count = 0;
-
-      const vertex_t *min_vertex = NULL;
-      std::set<const face_t *> min_faces;
-
-      manifold_is_closed.clear();
-      manifold_is_negative.clear();
-
-      while (1) {
-
-        while (i < faces.size() && faces[i].manifold_id != -1) ++i;
-        if (i == faces.size()) break;
-
-        to_mark.push_back(&faces[i]);
-        min_vertex = faces[i].vertex(0);
-
-        bool is_closed = true;
-
-        while (to_mark.size()) {
-          face_t *f = to_mark.back();
-          to_mark.pop_back();
-
-          if (f->manifold_id == -1) {
-            f->manifold_id = m_id;
-
-            const vertex_t *v = f->vertex(0);
-            for (size_t j = 1; j < f->nVertices(); ++j) {
-              if (f->vertex(j)->v < v->v) {
-                v = f->vertex(j);
-              }
-            }
-            if (v->v < min_vertex->v) {
-              min_vertex = v;
-            }
-
-            for (size_t j = 0; j < f->nEdges(); ++j) {
-              face_t *g = const_cast<face_t *>(connectedFace(f, f->edge(j)));
-
-              if (g) {
-                if (g->manifold_id == -1) to_mark.push_back(g);
-              } else {
-                is_closed = false;
-              }
-            }
-          }
-        }
-
-        vertexToFaces(min_vertex, set_inserter(min_faces));
-
-        double max_abs_x = 0.0;
-        for (std::set<const face_t *>::iterator i = min_faces.begin(); i != min_faces.end(); ++i) {
-          if (fabs((*i)->plane_eqn.N.x) > fabs(max_abs_x)) max_abs_x = (*i)->plane_eqn.N.x;
-        }
-
-        manifold_is_closed.push_back(is_closed);
-        manifold_is_negative.push_back(is_closed && max_abs_x > 0.0);
-#if defined(CARVE_DEBUG)
-        std::cerr << "{manifold: " << m_id << (manifold_is_negative.back() ? " is" : " is not") << " negative}" << std::endl;
-#endif
-        if (is_closed) closed_manifold_count++;
-        ++m_id;
-      }
-
-#if defined(CARVE_DEBUG)
-      std::cerr << "polyhedron " << this << " has " << m_id << " manifolds (" << closed_manifold_count << " closed)" << std::endl;
-#endif
-
-      return true;
-    }
-
-
-
     bool Polyhedron::init() {
       static carve::TimingName FUNC_NAME("Polyhedron::init()");
       carve::TimingBlock block(FUNC_NAME);
@@ -811,11 +457,9 @@ namespace carve {
       connectivity.vertex_to_face.clear();
       connectivity.edge_to_face.clear();
 
-      // if (!orderVertices()) return false;
       if (!initConnectivity()) return false;
       if (!initSpatialIndex()) return false;
-      if (!markManifolds()) return false;
-      // if (!calcManifoldEmbedding()) return false;
+
       return true;
     }
 

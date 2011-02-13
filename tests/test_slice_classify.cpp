@@ -103,11 +103,16 @@ int main(int argc, char **argv) {
   TestScene *scene = new TestScene(argc, argv, 6);
 
   glNewList(scene->draw_list_base + 0, GL_COMPILE);
-  drawPolyhedron(a, .4, .6, .8, 1.0, false);
+
+  carve::mesh::MeshSet<3> *a_mesh = carve::meshFromPolyhedron(a, -1);
+  drawPolyhedron(a_mesh, .4, .6, .8, 1.0);
+  delete a_mesh;
   glEndList();
 
   glNewList(scene->draw_list_base + 1, GL_COMPILE);
-  drawPolyhedron(b, .8, .6, .4, 1.0, false);
+  carve::mesh::MeshSet<3> *b_mesh = carve::meshFromPolyhedron(b, -1);
+  drawPolyhedron(b_mesh, .8, .6, .4, 1.0);
+  delete b_mesh;
   glEndList();
 
   glNewList(scene->draw_list_base + 2, GL_COMPILE);
@@ -121,7 +126,9 @@ int main(int argc, char **argv) {
       case carve::csg::FACE_ON_ORIENT_OUT:  r = 1.0; g = 1.0; b = 0.0; break;
       case carve::csg::FACE_ON_ORIENT_IN:   r = 0.0; g = 1.0; b = 1.0; break;
       }
-      drawPolyhedron((*i).second, r, g, b, 1.0, true);
+      carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron((*i).second, -1);
+      drawPolyhedron(mesh, r, g, b, 1.0, true);
+      delete mesh;
       ++n;
     }
   }
@@ -138,7 +145,9 @@ int main(int argc, char **argv) {
       case carve::csg::FACE_ON_ORIENT_OUT:  r = 0.7; g = 0.7; b = 0.3; break;
       case carve::csg::FACE_ON_ORIENT_IN:   r = 0.3; g = 0.7; b = 0.7; break;
       }
-      drawPolyhedronWireframe((*i).second);
+      carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron((*i).second, -1);
+      drawPolyhedronWireframe(mesh);
+      delete mesh;
       ++n;
     }
   }

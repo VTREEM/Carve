@@ -20,18 +20,19 @@
 #include <carve/carve.hpp>
 
 #include <carve/vector.hpp>
-#include <carve/poly.hpp>
+#include <carve/mesh.hpp>
 
 #include <carve/octree_decl.hpp>
 #include <carve/octree_impl.hpp>
 
 #include "rgb.hpp"
 
-void drawPolyhedronWireframe(carve::poly::Polyhedron *poly, bool normal = true, int group = -1);
-void drawPolyhedron(carve::poly::Polyhedron *poly, float r, float g, float b, float a, bool offset = false, int group = -1);
+void drawPolyhedronWireframe(carve::mesh::MeshSet<3> *poly, bool normal = true, int group = -1);
+void drawPolyhedron(carve::mesh::MeshSet<3> *poly, float r, float g, float b, float a, int group = -1);
 
-void drawFace(carve::poly::Face<3> *face, cRGBA fc, bool offset);
-void drawColourFace(carve::poly::Face<3> *face, const std::vector<cRGBA> &vc, bool offset);
+void drawColourPoly(const carve::geom3d::Vector &normal, std::vector<std::pair<carve::geom3d::Vector, cRGBA> > &v);
+void drawColourFace(carve::mesh::Face<3> *face, const std::vector<cRGBA> &vc);
+void drawFace(carve::mesh::Face<3> *face, cRGBA fc);
 
 void installDebugHooks();
 void drawCube(const carve::geom3d::Vector &, const carve::geom3d::Vector &);
