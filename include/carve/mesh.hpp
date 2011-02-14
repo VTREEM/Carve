@@ -254,6 +254,16 @@ namespace carve {
       project_t project;
       unproject_t unproject;
 
+    private:
+      Face &operator=(const Face &other);
+
+    protected:
+      Face(const Face &other) :
+        edge(NULL), n_edges(other.n_edges), mesh(NULL), id(other.id),
+        plane(other.plane), project(other.project), unproject(other.unproject) {
+      }
+
+    public:
       project_t getProjector(bool positive_facing, int axis);
       unproject_t getUnprojector(bool positive_facing, int axis);
 
@@ -302,7 +312,7 @@ namespace carve {
         v /= n_edges;
         return v;
       }
-
+      
       Face(vertex_t *a, vertex_t *b, vertex_t *c) : edge(NULL), n_edges(0), mesh(NULL) {
         init(a, b, c);
         recalc();
@@ -317,6 +327,30 @@ namespace carve {
       Face(iter_t begin, iter_t end) : edge(NULL), n_edges(0), mesh(NULL) {
         init(begin, end);
         recalc();
+      }
+
+      Face *clone(const vertex_t *old_base, vertex_t *new_base, std::unordered_map<const edge_t *, edge_t *> &edge_map) const {
+        Face *r = new Face(*this);
+
+        edge_t *e = edge;
+        edge_t *r_p = NULL;
+        edge_t *r_e;
+        do {
+          r_e = new edge_t(e->vert - old_base + new_base, r);
+          edge_map[e] = r_e;
+          if (r_p) {
+            r_p->next = r_e;
+            r_e->prev = r_p;
+          } else {
+            r->edge = r_e;
+          }
+          r_p = r_e;
+          e = e->next;
+        } while (e != edge);
+        r_e->next = r->edge;
+        r->edge->prev = r_e;
+
+        return r;
       }
 
       ~Face() {
@@ -521,11 +555,26 @@ namespace carve {
       std::vector<face_t *> faces;
       std::vector<edge_t *> open_edges;
       std::vector<edge_t *> closed_edges;
-
       bool is_negative;
-
       meshset_t *meshset;
 
+    protected:
+      Mesh(std::vector<face_t *> &_faces,
+           std::vector<edge_t *> &_open_edges,
+           std::vector<edge_t *> &_closed_edges,
+           bool _is_negative) {
+        std::swap(faces, _faces);
+        std::swap(open_edges, _open_edges);
+        std::swap(closed_edges, _closed_edges);
+        is_negative = _is_negative;
+        meshset = NULL;
+        
+        for (size_t i = 0; i < faces.size(); ++i) {
+          faces[i]->mesh = this;
+        }
+      }
+
+    public:
       Mesh(std::vector<face_t *> &_faces);
 
       ~Mesh();
@@ -556,6 +605,30 @@ namespace carve {
         bool operator()(const Mesh &mesh) const { return mesh.isClosed(); }
         bool operator()(const Mesh *mesh) const { return mesh->isClosed(); }
       };
+
+      Mesh *clone(const vertex_t *old_base, vertex_t *new_base) const {
+        std::vector<face_t *> r_faces;
+        std::vector<edge_t *> r_open_edges;
+        std::vector<edge_t *> r_closed_edges;
+        std::unordered_map<const edge_t *, edge_t *> edge_map;
+
+        r_faces.reserve(faces.size());
+        r_open_edges.reserve(r_open_edges.size());
+        r_closed_edges.reserve(r_closed_edges.size());
+
+        for (size_t i = 0; i < faces.size(); ++i) {
+          r_faces.push_back(faces[i]->clone(old_base, new_base, edge_map));
+        }
+        for (size_t i = 0; i < closed_edges.size(); ++i) {
+          r_closed_edges.push_back(edge_map[closed_edges[i]]);
+          r_closed_edges.back()->rev = edge_map[closed_edges[i]->rev];
+        }
+        for (size_t i = 0; i < open_edges.size(); ++i) {
+          r_open_edges.push_back(edge_map[open_edges[i]]);
+        }
+
+        return new Mesh(r_faces, r_open_edges, r_closed_edges, is_negative);
+      }
     };
 
     template<unsigned ndim>
@@ -587,6 +660,7 @@ namespace carve {
       std::vector<vertex_t> vertex_storage;
       std::vector<mesh_t *> meshes;
 
+    public:
       struct FaceIter : public std::iterator<std::random_access_iterator_tag, face_t *> {
         typedef std::iterator<std::random_access_iterator_tag, face_t *> super;
         const MeshSet<ndim> *obj;
@@ -720,6 +794,10 @@ namespace carve {
               std::vector<mesh_t *> &_meshes) {
         vertex_storage.swap(_vertex_storage);
         meshes.swap(_meshes);
+
+        for (size_t i = 0; i < meshes.size(); ++i) {
+          meshes[i]->meshset = this;
+        }
       }
 
       // This constructor consolidates and rewrites vertex pointers in
@@ -760,6 +838,15 @@ namespace carve {
             } while (edge != face->edge);
           }
         }
+      }
+
+      MeshSet *clone() const {
+        std::vector<vertex_t> r_vertex_storage = vertex_storage;
+        std::vector<mesh_t *> r_meshes;
+        for (size_t i = 0; i < meshes.size(); ++i) {
+          r_meshes.push_back(meshes[i]->clone(&vertex_storage[0], &r_vertex_storage[0]));
+        }
+        return new MeshSet(r_vertex_storage, r_meshes);
       }
 
       ~MeshSet() {
