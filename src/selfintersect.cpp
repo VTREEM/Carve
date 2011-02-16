@@ -524,8 +524,8 @@ int main(int argc, char **argv) {
           std::cerr << fn.str().c_str() << std::endl;
           std::ofstream outf(fn.str().c_str());
           outf << "\
-ply\n              \
-format ascii 1.0\n \
+ply\n\
+format ascii 1.0\n\
 element vertex 6\n\
 property double x\n\
 property double y\n\
