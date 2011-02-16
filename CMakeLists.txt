@@ -11,6 +11,7 @@ set(carve_VERSION_PATCH 0)
 
 set(CARVE_VERSION ${carve_VERSION_MAJOR}.${carve_VERSION_MINOR}.${carve_VERSION_PATCH})
 
+option(BUILD_COVERAGE             "Compile with gcov"                   OFF)
 option(BUILD_SHARED_LIBS          "Compile libcarve as shared"          ON)
 option(CARVE_WITH_GUI             "Compile gui code"                    ON)
 option(CARVE_SYSTEM_BOOST         "Compile with system installed boost" ON)
@@ -19,6 +20,16 @@ option(CARVE_DEBUG                "Compile in debug code"               OFF)
 option(CARVE_DEBUG_WRITE_PLY_DATA "Write geometry output during debug"  OFF)
 
 
+
+if (BUILD_COVERAGE)
+  set(BUILD_SHARED_LIBS OFF)
+  set(CMAKE_BUILD_TYPE DEBUG)
+  IF (CMAKE_COMPILER_IS_GNUCC)
+    SET(CMAKE_C_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
+    SET(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage -lgcov")
+  ENDIF()
+endif(BUILD_COVERAGE)
 
 if(WIN32)
   set(BUILD_SHARED_LIBS OFF) # until everything is exported
@@ -116,3 +127,16 @@ add_subdirectory(common)
 add_subdirectory(src) 
 add_subdirectory(examples) 
 add_subdirectory(tests) 
+
+
+include(CTest)
+
+if(BUILD_TESTING)
+  ENABLE_TESTING()
+
+  # ADD_TEST(exact_unittest    ${carve_BINARY_DIR}/tests/exact_unittest)
+  # ADD_TEST(shewchuk_unittest ${carve_BINARY_DIR}/tests/shewchuk_unittest)
+  ADD_TEST(geom2d_unittest   ${carve_BINARY_DIR}/tests/geom2d_unittest)
+  ADD_TEST(geom3d_unittest   ${carve_BINARY_DIR}/tests/geom3d_unittest)
+  ADD_TEST(mesh_unittest     ${carve_BINARY_DIR}/tests/mesh_unittest)
+endif(BUILD_TESTING)
