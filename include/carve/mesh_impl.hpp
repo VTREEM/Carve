@@ -400,5 +400,67 @@ namespace carve {
 
 
 
+    template<unsigned ndim>
+    MeshSet<ndim>::FaceIter::FaceIter(const MeshSet<ndim> *_obj, size_t _mesh, size_t _face) : obj(_obj), mesh(_mesh), face(_face) {
+    }
+
+
+
+    template<unsigned ndim>
+    void MeshSet<ndim>::FaceIter::fwd(size_t n) {
+      if (mesh < obj->meshes.size()) {
+        face += n;
+        while (face >= obj->meshes[mesh]->faces.size()) {
+          face -= obj->meshes[mesh++]->faces.size();
+          if (mesh == obj->meshes.size()) { face = 0; break; }
+        }
+      }
+    }
+
+
+
+    template<unsigned ndim>
+    void MeshSet<ndim>::FaceIter::rev(size_t n) {
+      while (n > face) {
+        n -= face;
+        if (mesh == 0) { face = 0; return; }
+        face = obj->meshes[--mesh]->faces.size() - 1;
+      }
+      face -= n;
+    }
+
+
+
+    template<unsigned ndim>
+    void MeshSet<ndim>::FaceIter::adv(int n) {
+      if (n > 0) {
+        fwd((size_t)n);
+      } else if (n < 0) {
+        rev((size_t)-n);
+      }
+    }
+
+
+
+    template<unsigned ndim>
+    typename MeshSet<ndim>::FaceIter::super::difference_type MeshSet<ndim>::FaceIter::operator-(const FaceIter &other) const {
+      CARVE_ASSERT(obj == other.obj);
+      if (mesh == other.mesh) return face - other.face;
+
+      size_t m = 0;
+      for (size_t i = std::min(mesh, other.mesh) + 1; i < std::max(mesh, other.mesh); ++i) {
+        m += obj->meshes[i]->faces.size();
+      }
+
+      if (mesh < other.mesh) {
+        return -(obj->meshes[mesh]->faces.size() - face +
+                 m +
+                 other.face);
+      } else {
+        return +(obj->meshes[other.mesh]->faces.size() - other.face +
+                 m +
+                 face);
+      }
+    }
   }
 }
