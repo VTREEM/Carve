@@ -143,6 +143,8 @@ namespace carve {
       face_t *face;
       Edge *prev, *next, *rev;
 
+      Edge *collapse();
+
       // Remove this edge from its containing edge loop. disconnect
       // rev links. The rev links of the previous edge also change, as
       // its successor vertex changes.
@@ -295,16 +297,7 @@ namespace carve {
         return n_edges;
       }
 
-      vector_t centroid() const {
-        vector_t v;
-        edge_t *e = edge;
-        do {
-          v += e->vert->v;
-          e = e->next;
-        } while(e != edge);
-        v /= n_edges;
-        return v;
-      }
+      vector_t centroid() const;
       
       Face(vertex_t *a, vertex_t *b, vertex_t *c) : edge(NULL), n_edges(0), mesh(NULL) {
         init(a, b, c);
@@ -322,28 +315,14 @@ namespace carve {
         recalc();
       }
 
-      Face *clone(const vertex_t *old_base, vertex_t *new_base, std::unordered_map<const edge_t *, edge_t *> &edge_map) const {
-        Face *r = new Face(*this);
+      Face *clone(const vertex_t *old_base, vertex_t *new_base, std::unordered_map<const edge_t *, edge_t *> &edge_map) const;
 
+      void remove() {
         edge_t *e = edge;
-        edge_t *r_p = NULL;
-        edge_t *r_e;
         do {
-          r_e = new edge_t(e->vert - old_base + new_base, r);
-          edge_map[e] = r_e;
-          if (r_p) {
-            r_p->next = r_e;
-            r_e->prev = r_p;
-          } else {
-            r->edge = r_e;
-          }
-          r_p = r_e;
+          if (e->rev) e->rev->rev = NULL;
           e = e->next;
         } while (e != edge);
-        r_e->next = r->edge;
-        r->edge->prev = r_e;
-
-        return r;
       }
 
       ~Face() {
@@ -409,49 +388,9 @@ namespace carve {
               edge_dir(_edge_dir),
               base_dir(_base_dir) {
             }
-            bool operator()(const EdgeOrderData &a, const EdgeOrderData &b) const {
-              int v = carve::geom3d::compareAngles(edge_dir, base_dir, a.face_dir, b.face_dir);
-              double da = carve::geom3d::antiClockwiseAngle(base_dir, a.face_dir, edge_dir);
-              double db = carve::geom3d::antiClockwiseAngle(base_dir, b.face_dir, edge_dir);
-              int v0 = v;
-              v = 0;
-              if (da < db) v = -1;
-              if (db < da) v = +1;
-              if (v0 != v) {
-                std::cerr << "v0= " << v0 << " v= " << v << " da= " << da << " db= " << db << "  " << edge_dir << " " << base_dir << " " << a.face_dir << b.face_dir << std::endl;
-              }
-              if (v < 0) return true;
-              if (v == 0) {
-                if (a.is_reversed && !b.is_reversed) return true;
-                if (a.is_reversed == b.is_reversed) {
-                  return a.group_id < b.group_id;
-                }
-              }
-              return false;
-            }
+            bool operator()(const EdgeOrderData &a, const EdgeOrderData &b) const;
           };
         };
-
-        template<typename iter_t>
-        void initEdges(iter_t begin, iter_t end) {
-          size_t c = 0;
-          for (iter_t i = begin; i != end; ++i) {
-            face_t *face = *i;
-            CARVE_ASSERT(face->mesh == NULL); // for the moment, can only insert a face into a mesh once.
-
-            face->id = c++;
-            edge_t *e = face->edge;
-            do {
-              edges[vpair_t(e->v1(), e->v2())].push_back(e);
-              e = e->next;
-              if (e->rev) { e->rev->rev = NULL; e->rev = NULL; }
-            } while (e != face->edge);
-          }
-
-          face_groups.init(c);
-          is_open.clear();
-          is_open.resize(c, false);
-        }
 
         void extractConnectedEdges(std::vector<const vertex_t *>::iterator begin,
                                    std::vector<const vertex_t *>::iterator end,
@@ -493,6 +432,27 @@ namespace carve {
         void construct();
 
         template<typename iter_t>
+        void initEdges(iter_t begin, iter_t end) {
+          size_t c = 0;
+          for (iter_t i = begin; i != end; ++i) {
+            face_t *face = *i;
+            CARVE_ASSERT(face->mesh == NULL); // for the moment, can only insert a face into a mesh once.
+
+            face->id = c++;
+            edge_t *e = face->edge;
+            do {
+              edges[vpair_t(e->v1(), e->v2())].push_back(e);
+              e = e->next;
+              if (e->rev) { e->rev->rev = NULL; e->rev = NULL; }
+            } while (e != face->edge);
+          }
+
+          face_groups.init(c);
+          is_open.clear();
+          is_open.resize(c, false);
+        }
+
+        template<typename iter_t>
         void build(iter_t begin, iter_t end, std::vector<Mesh<3> *> &meshes) {
           // work out what set each face belongs to, and then construct
           // mesh instances for each set of faces.
@@ -528,6 +488,8 @@ namespace carve {
       };
     }
 
+
+
     // A Mesh is a connected set of faces. It may be open (some edges
     // have NULL rev members), or closed. On destruction, a Mesh
     // should free its Faces (which will in turn free Edges, but not
@@ -555,17 +517,7 @@ namespace carve {
       Mesh(std::vector<face_t *> &_faces,
            std::vector<edge_t *> &_open_edges,
            std::vector<edge_t *> &_closed_edges,
-           bool _is_negative) {
-        std::swap(faces, _faces);
-        std::swap(open_edges, _open_edges);
-        std::swap(closed_edges, _closed_edges);
-        is_negative = _is_negative;
-        meshset = NULL;
-        
-        for (size_t i = 0; i < faces.size(); ++i) {
-          faces[i]->mesh = this;
-        }
-      }
+           bool _is_negative);
 
     public:
       Mesh(std::vector<face_t *> &_faces);
@@ -576,14 +528,7 @@ namespace carve {
       static void create(iter_t begin, iter_t end, std::vector<Mesh<ndim> *> &meshes);
 
       aabb_t getAABB() const {
-        aabb_t result;
-        if (faces.size()) {
-          result = faces[0]->getAABB();
-          for (size_t i = 1; i < faces.size(); ++i) {
-            result.unionAABB(faces[i]->getAABB());
-          }
-        }
-        return result;
+        return aabb_t(faces.begin(), faces.end());
       }
 
       bool isClosed() const {
@@ -599,44 +544,22 @@ namespace carve {
         bool operator()(const Mesh *mesh) const { return mesh->isClosed(); }
       };
 
-      Mesh *clone(const vertex_t *old_base, vertex_t *new_base) const {
-        std::vector<face_t *> r_faces;
-        std::vector<edge_t *> r_open_edges;
-        std::vector<edge_t *> r_closed_edges;
-        std::unordered_map<const edge_t *, edge_t *> edge_map;
+      struct IsNegative {
+        bool operator()(const Mesh &mesh) const { return mesh.isNegative(); }
+        bool operator()(const Mesh *mesh) const { return mesh->isNegative(); }
+      };
 
-        r_faces.reserve(faces.size());
-        r_open_edges.reserve(r_open_edges.size());
-        r_closed_edges.reserve(r_closed_edges.size());
+      void cacheEdges();
 
-        for (size_t i = 0; i < faces.size(); ++i) {
-          r_faces.push_back(faces[i]->clone(old_base, new_base, edge_map));
-        }
-        for (size_t i = 0; i < closed_edges.size(); ++i) {
-          r_closed_edges.push_back(edge_map[closed_edges[i]]);
-          r_closed_edges.back()->rev = edge_map[closed_edges[i]->rev];
-        }
-        for (size_t i = 0; i < open_edges.size(); ++i) {
-          r_open_edges.push_back(edge_map[open_edges[i]]);
-        }
+      void calcOrientation();
 
-        return new Mesh(r_faces, r_open_edges, r_closed_edges, is_negative);
+      void recalc() {
+        for (size_t i = 0; i < faces.size(); ++i) faces[i]->recalc();
+        calcOrientation();
       }
+
+      Mesh *clone(const vertex_t *old_base, vertex_t *new_base) const;
     };
-
-    template<unsigned ndim>
-    template<typename iter_t>
-    void Mesh<ndim>::create(iter_t begin, iter_t end, std::vector<Mesh<ndim> *> &meshes) {
-      meshes.clear();
-    }
-
-    template<>
-    template<typename iter_t>
-    void Mesh<3>::create(iter_t begin, iter_t end, std::vector<Mesh<3> *> &meshes) {
-      detail::FaceStitcher().create(begin, end, meshes);
-    }
-
-
 
     // A MeshSet manages vertex storage, and a collection of meshes.
     // It should be easy to turn a vertex pointer into its index in
@@ -705,107 +628,37 @@ namespace carve {
       FaceIter faceBegin() { return FaceIter(this, 0, 0); }
       FaceIter faceEnd() { return FaceIter(this, meshes.size(), 0); }
 
+      aabb_t getAABB() const {
+        return aabb_t(meshes.begin(), meshes.end());
+      }
+
+      template<typename func_t>
+      void transform(func_t func) {
+        for (size_t i = 0; i < vertex_storage.size(); ++i) {
+          vertex_storage[i].v = func(vertex_storage[i].v);
+        }
+        for (size_t i = 0; i < meshes.size(); ++i) {
+          meshes[i]->recalc();
+        }
+      }
+
       MeshSet(const std::vector<typename vertex_t::vector_t> &points,
               size_t n_faces,
-              const std::vector<int> &face_indices) {
-        vertex_storage.reserve(points.size());
-        std::vector<face_t *> faces;
-        faces.reserve(n_faces);
-        for (size_t i = 0; i < points.size(); ++i) {
-          vertex_storage.push_back(vertex_t(points[i]));
-        }
-
-        std::vector<carve::mesh::Vertex<3> *> v;
-        size_t p = 0;
-        for (size_t i = 0; i < n_faces; ++i) {
-          const size_t N = face_indices[p++];
-          v.clear();
-          v.reserve(N);
-          for (size_t j = 0; j < N; ++j) {
-            v.push_back(&vertex_storage[face_indices[p++]]);
-          }
-          faces.push_back(new carve::mesh::Face<3>(v.begin(), v.end()));
-        }
-        CARVE_ASSERT(p == face_indices.size());
-        carve::mesh::Mesh<3>::create(faces.begin(), faces.end(), meshes);
-      }
-
-      aabb_t getAABB() const {
-        aabb_t result;
-        if (meshes.size()) {
-          result = meshes[0]->getAABB();
-          for (size_t i = 1; i < meshes.size(); ++i) {
-            result.unionAABB(meshes[i]->getAABB());
-          }
-        }
-        return result;
-      }
+              const std::vector<int> &face_indices);
 
       MeshSet(std::vector<vertex_t> &_vertex_storage,
-              std::vector<mesh_t *> &_meshes) {
-        vertex_storage.swap(_vertex_storage);
-        meshes.swap(_meshes);
-
-        for (size_t i = 0; i < meshes.size(); ++i) {
-          meshes[i]->meshset = this;
-        }
-      }
+              std::vector<mesh_t *> &_meshes);
 
       // This constructor consolidates and rewrites vertex pointers in
       // each mesh, repointing them to local storage.
-      MeshSet(std::vector<mesh_t *> &_meshes) {
-        meshes.swap(_meshes);
-        std::unordered_map<vertex_t *, size_t> vert_idx;
+      MeshSet(std::vector<mesh_t *> &_meshes);
 
-        for (size_t m = 0; m < meshes.size(); ++m) {
-          mesh_t *mesh = meshes[m];
-          CARVE_ASSERT(mesh->meshset == NULL);
-          mesh->meshset = this;
-          for (size_t f = 0; f < mesh->faces.size(); ++f) {
-            face_t *face = mesh->faces[f];
-            edge_t *edge = face->edge;
-            do {
-              vert_idx[edge->vert] = 0;
-              edge = edge->next;
-            } while (edge != face->edge);
-          }
-        }
+      MeshSet *clone() const;
 
-        vertex_storage.reserve(vert_idx.size());
-        for (typename std::unordered_map<vertex_t *, size_t>::iterator i = vert_idx.begin(); i != vert_idx.end(); ++i) {
-          (*i).second = vertex_storage.size();
-          vertex_storage.push_back(*(*i).first);
-        }
-
-        for (size_t m = 0; m < meshes.size(); ++m) {
-          mesh_t *mesh = meshes[m];
-          for (size_t f = 0; f < mesh->faces.size(); ++f) {
-            face_t *face = mesh->faces[f];
-            edge_t *edge = face->edge;
-            do {
-              size_t i = vert_idx[edge->vert];
-              edge->vert = &vertex_storage[i];
-              edge = edge->next;
-            } while (edge != face->edge);
-          }
-        }
-      }
-
-      MeshSet *clone() const {
-        std::vector<vertex_t> r_vertex_storage = vertex_storage;
-        std::vector<mesh_t *> r_meshes;
-        for (size_t i = 0; i < meshes.size(); ++i) {
-          r_meshes.push_back(meshes[i]->clone(&vertex_storage[0], &r_vertex_storage[0]));
-        }
-        return new MeshSet(r_vertex_storage, r_meshes);
-      }
-
-      ~MeshSet() {
-        for (size_t i = 0; i < meshes.size(); ++i) {
-          delete meshes[i];
-        }
-      }
+      ~MeshSet();
     };
+
+
 
   }
   mesh::MeshSet<3> *meshFromPolyhedron(const poly::Polyhedron *, int manifold_id);

@@ -92,7 +92,62 @@ namespace {
 namespace carve {
   namespace mesh {
 
+
+
+    template<unsigned ndim>
+    typename Face<ndim>::project_t Face<ndim>::getProjector(bool positive_facing, int axis) {
+      return NULL;
+    }
+
+
+
+    template<>
+    Face<3>::project_t Face<3>::getProjector(bool positive_facing, int axis) {
+      return project_tab[positive_facing ? 1 : 0][axis];
+    }
+
+
+
+    template<unsigned ndim>
+    typename Face<ndim>::unproject_t Face<ndim>::getUnprojector(bool positive_facing, int axis) {
+      return NULL;
+    }
+
+
+
+    template<>
+    Face<3>::unproject_t Face<3>::getUnprojector(bool positive_facing, int axis) {
+      return unproject_tab[positive_facing ? 1 : 0][axis];
+    }
+
+
+
     namespace detail {
+
+
+
+      bool FaceStitcher::EdgeOrderData::Cmp::operator()(const EdgeOrderData &a, const EdgeOrderData &b) const {
+        int v = carve::geom3d::compareAngles(edge_dir, base_dir, a.face_dir, b.face_dir);
+        double da = carve::geom3d::antiClockwiseAngle(base_dir, a.face_dir, edge_dir);
+        double db = carve::geom3d::antiClockwiseAngle(base_dir, b.face_dir, edge_dir);
+        int v0 = v;
+        v = 0;
+        if (da < db) v = -1;
+        if (db < da) v = +1;
+        if (v0 != v) {
+          std::cerr << "v0= " << v0 << " v= " << v << " da= " << da << " db= " << db << "  " << edge_dir << " " << base_dir << " " << a.face_dir << b.face_dir << std::endl;
+        }
+        if (v < 0) return true;
+        if (v == 0) {
+          if (a.is_reversed && !b.is_reversed) return true;
+          if (a.is_reversed == b.is_reversed) {
+            return a.group_id < b.group_id;
+          }
+        }
+        return false;
+      }
+
+
 
       void FaceStitcher::matchSimpleEdges() {
         // join faces that share an edge, where no other faces are incident.
@@ -119,13 +174,19 @@ namespace carve {
         }
       }
 
+
+
       size_t FaceStitcher::faceGroupID(const Face<3> *face) {
         return face_groups.find_set_head(face->id);
       }
 
+
+
       size_t FaceStitcher::faceGroupID(const Edge<3> *edge) {
         return face_groups.find_set_head(edge->face->id);
       }
+
+
 
       void FaceStitcher::orderForwardAndReverseEdges(std::vector<std::vector<Edge<3> *> > &efwd,
                                                      std::vector<std::vector<Edge<3> *> > &erev,
@@ -157,6 +218,8 @@ namespace carve {
         }
       }
 
+
+
       void FaceStitcher::edgeIncidentGroups(const vpair_t &e,
                                             const edge_map_t &all_edges,
                                             std::pair<std::set<size_t>, std::set<size_t> > &groups) {
@@ -179,6 +242,8 @@ namespace carve {
         }
       }
 
+
+
       void FaceStitcher::buildEdgeGraph(const edge_map_t &all_edges) {
         for (edge_map_t::const_iterator i = all_edges.begin();
              i != all_edges.end();
@@ -186,6 +251,8 @@ namespace carve {
           edge_graph[(*i).first.first].insert((*i).first.second);
         }
       }
+
+
 
       void FaceStitcher::extractPath(std::vector<const vertex_t *> &path) {
         path.clear();
@@ -260,6 +327,8 @@ namespace carve {
       done:;
       }
 
+
+
       void FaceStitcher::removePath(const std::vector<const vertex_t *> &path) {
         for (size_t i = 1; i < path.size() - 1; ++i) {
           edge_graph.erase(path[i]);
@@ -276,6 +345,8 @@ namespace carve {
         }
       }
 
+
+
       void FaceStitcher::reorder(std::vector<EdgeOrderData> &ordering,
                                  size_t grp) {
         if (!ordering[0].is_reversed && ordering[0].group_id == grp) return;
@@ -291,12 +362,16 @@ namespace carve {
         }
       }
 
+
+
       struct lt_second {
         template<typename pair_t>
         bool operator()(const pair_t &a, const pair_t &b) const {
           return a.second < b.second;
         }
       };
+
+
 
       void FaceStitcher::fuseEdges(std::vector<Edge<3> *> &fwd,
                                    std::vector<Edge<3> *> &rev) {
@@ -307,12 +382,16 @@ namespace carve {
         }
       }
 
+
+
       void FaceStitcher::joinGroups(std::vector<std::vector<Edge<3> *> > &efwd,
                                     std::vector<std::vector<Edge<3> *> > &erev,
                                     size_t fwd_grp,
                                     size_t rev_grp) {
         fuseEdges(efwd[fwd_grp], erev[rev_grp]);
       }
+
+
 
       void FaceStitcher::matchOrderedEdges(const std::vector<std::vector<EdgeOrderData> >::iterator begin,
                                            const std::vector<std::vector<EdgeOrderData> >::iterator end,
@@ -364,6 +443,8 @@ namespace carve {
           }
         }
       }
+
+
 
       void FaceStitcher::resolveOpenEdges() {
         // Remove open regions of mesh. Doing this may make additional
@@ -436,6 +517,8 @@ namespace carve {
           }
         }
       }
+
+
 
       void FaceStitcher::extractConnectedEdges(std::vector<const vertex_t *>::iterator begin,
                                                std::vector<const vertex_t *>::iterator end,
@@ -510,6 +593,8 @@ namespace carve {
       done:;
       }
 
+
+
       void FaceStitcher::construct() {
         matchSimpleEdges();
         if (!complex_edges.size()) return;
@@ -543,41 +628,6 @@ namespace carve {
         }
       }
     }
-
-
-
-
-    template<unsigned ndim>
-    typename Face<ndim>::project_t Face<ndim>::getProjector(bool positive_facing, int axis) {
-      return NULL;
-    }
-
-
-
-    template<>
-    Face<3>::project_t Face<3>::getProjector(bool positive_facing, int axis) {
-      return project_tab[positive_facing ? 1 : 0][axis];
-    }
-
-
-
-    template<unsigned ndim>
-    typename Face<ndim>::unproject_t Face<ndim>::getUnprojector(bool positive_facing, int axis) {
-      return NULL;
-    }
-
-
-
-    template<>
-    Face<3>::unproject_t Face<3>::getUnprojector(bool positive_facing, int axis) {
-      return unproject_tab[positive_facing ? 1 : 0][axis];
-    }
-
-    template class Vertex<3>;
-    template class Edge<3>;
-    template class Face<3>;
-    template class Mesh<3>;
-    template class MeshSet<3>;
   }
 
 
@@ -815,3 +865,18 @@ namespace carve {
 
 
 
+// explicit instantiation for 2D case.
+// XXX: do not compile because of a missing definition for fitPlane in the 2d case.
+
+// template class carve::mesh::Vertex<2>;
+// template class carve::mesh::Edge<2>;
+// template class carve::mesh::Face<2>;
+// template class carve::mesh::Mesh<2>;
+// template class carve::mesh::MeshSet<2>;
+
+// explicit instantiation for 3D case.
+template class carve::mesh::Vertex<3>;
+template class carve::mesh::Edge<3>;
+template class carve::mesh::Face<3>;
+template class carve::mesh::Mesh<3>;
+template class carve::mesh::MeshSet<3>;
