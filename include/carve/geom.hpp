@@ -303,6 +303,29 @@ namespace carve {
 
 
 
+    // ========================================================================
+    template<int base, int power> struct __pow__          { enum { val = __pow__<base, power >> 1>::val * __pow__<base, power - (power >> 1)>::val }; };
+    template<int base>            struct __pow__<base, 1> { enum { val = base }; };
+    template<int base>            struct __pow__<base, 0> { enum { val = 1 }; };
+
+    template<unsigned base, unsigned ndigits>
+    struct quantize {
+      typedef __pow__<base, ndigits> fac;
+
+      double operator()(double in) {
+        return rint(in * fac::val) / fac::val;
+      }
+
+      template<unsigned ndim>
+      vector<ndim> operator()(const vector<ndim> &in) {
+        vector<ndim> r(NOINIT);
+        assign_op(r, in, *this);
+        return r;
+      }
+    };
+
+
+
   }
 }
 
