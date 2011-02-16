@@ -71,6 +71,7 @@ namespace carve {
     public:
       typedef carve::geom::vector<ndim> vector_t;
       typedef MeshSet<ndim> owner_t;
+      typedef carve::geom::aabb<ndim> aabb_t;
 
       carve::geom::vector<ndim> v;
 
@@ -78,6 +79,10 @@ namespace carve {
       }
 
       Vertex() : tagable(), v() {
+      }
+
+      aabb_t getAABB() const {
+        return aabb_t(v, carve::geom::vector<ndim>::ZERO());
       }
     };
 
