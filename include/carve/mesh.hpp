@@ -182,22 +182,11 @@ namespace carve {
       const vertex_t *v1() const { return vert; }
       const vertex_t *v2() const { return next->vert; }
 
-      Edge *perimNext() const {
-        if (rev) return NULL;
-        Edge *e = next;
-        while(e->rev) {
-          e = e->rev->next;
-        }
-        return e;
+      Edge *perimNext() const;
+      Edge *perimPrev() const;
+
       }
 
-      Edge *perimPrev() const {
-        if (rev) return NULL;
-        Edge *e = prev;
-        while(e->rev) {
-          e = e->rev->prev;
-        }
-        return e;
       }
 
       Edge(vertex_t *_vert, face_t *_face);

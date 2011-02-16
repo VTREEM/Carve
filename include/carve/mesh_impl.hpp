@@ -193,6 +193,31 @@ namespace carve {
 
 
 
+    template<unsigned ndim>
+    Edge<ndim> *Edge<ndim>::perimNext() const {
+      if (rev) return NULL;
+      Edge *e = next;
+      while(e->rev) {
+        e = e->rev->next;
+      }
+      return e;
+    }
+
+
+
+    template<unsigned ndim>
+    Edge<ndim> *Edge<ndim>::perimPrev() const {
+      if (rev) return NULL;
+      Edge *e = prev;
+      while(e->rev) {
+        e = e->rev->prev;
+      }
+      return e;
+    }
+
+
+
+    template<unsigned ndim>
     Edge<ndim>::Edge(vertex_t *_vert, face_t *_face) :
         vert(_vert), face(_face), prev(this), next(this), rev(NULL) {
       CARVE_ASSERT(face != NULL);
