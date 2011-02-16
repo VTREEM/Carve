@@ -185,8 +185,12 @@ namespace carve {
       Edge *perimNext() const;
       Edge *perimPrev() const;
 
+      double length2() const {
+        return (v1()->v - v2()->v).length2();
       }
 
+      double length() const {
+        return (v1()->v - v2()->v).length();
       }
 
       Edge(vertex_t *_vert, face_t *_face);
