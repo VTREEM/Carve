@@ -241,8 +241,14 @@ TEST(MeshTest, ComplexMesh) {
   ASSERT_EQ(meshes.size(), 1U);
 
   carve::mesh::MeshSet<3> *mesh = new carve::mesh::MeshSet<3>(vertices, meshes);
+  carve::mesh::MeshSet<3> *mesh2 = mesh->clone();
   dumpMeshes(mesh);
+
+  ASSERT_EQ(mesh->meshes.size(), 1U);
+  ASSERT_EQ(mesh2->meshes.size(), 1U);
+
   delete mesh;
+  delete mesh2;
 }
 
 TEST(MeshTest, ComplexMesh2) {
@@ -251,11 +257,17 @@ TEST(MeshTest, ComplexMesh2) {
   obj2(vertices, faces);
   std::vector<carve::mesh::Mesh<3> *> meshes;
   carve::mesh::Mesh<3>::create(faces.begin(), faces.end(), meshes);
-
   ASSERT_EQ(meshes.size(), 5U);
+
   carve::mesh::MeshSet<3> *mesh = new carve::mesh::MeshSet<3>(vertices, meshes);
+  carve::mesh::MeshSet<3> *mesh2 = mesh->clone();
   dumpMeshes(mesh);
+
+  ASSERT_EQ(mesh->meshes.size(), 5U);
+  ASSERT_EQ(mesh2->meshes.size(), 5U);
+
   delete mesh;
+  delete mesh2;
 }
 
 TEST(MeshTest, MeshConstruction2) {
