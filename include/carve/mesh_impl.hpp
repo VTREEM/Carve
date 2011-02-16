@@ -184,6 +184,15 @@ namespace carve {
 
 
     template<unsigned ndim>
+    size_t Edge<ndim>::loopSize() const {
+      const Edge *e = this;
+      size_t n = 0;
+      do { e = e->next; ++n; } while (e != this);
+      return n;
+    }
+
+
+
     Edge<ndim>::Edge(vertex_t *_vert, face_t *_face) :
         vert(_vert), face(_face), prev(this), next(this), rev(NULL) {
       CARVE_ASSERT(face != NULL);

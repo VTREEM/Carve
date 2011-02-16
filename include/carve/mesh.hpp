@@ -174,12 +174,7 @@ namespace carve {
       fwd_vert_iter_t vend();
       const_fwd_vert_iter_t vend() const;
 
-      size_t loopSize() const {
-        const Edge *e = this;
-        size_t n = 0;
-        do { e = e->next; ++n; } while (e != this);
-        return n;
-      }
+      size_t loopSize() const;
 
       vertex_t *v1() { return vert; }
       vertex_t *v2() { return next->vert; }
