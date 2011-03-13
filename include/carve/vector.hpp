@@ -44,29 +44,29 @@ namespace carve {
 
 
     struct vec_adapt_ident {
-      const Vector &operator()(const Vector &v) { return v; }
-      Vector &operator()(Vector &v) { return v; }
+      const Vector &operator()(const Vector &v) const { return v; }
+      Vector &operator()(Vector &v) const { return v; }
     };
 
 
 
     struct vec_adapt_ptr {
-      const Vector &operator()(const Vector * const &v) { return *v; }
-      Vector &operator()(Vector *&v) { return *v; }
+      const Vector &operator()(const Vector * const &v) const { return *v; }
+      Vector &operator()(Vector *&v) const { return *v; }
     };
 
 
   
     struct vec_adapt_pair_first {
-      template<typename pair_t> const Vector &operator()(const pair_t &v) { return v.first; }
-      template<typename pair_t> Vector &operator()(pair_t &v) { return v.first; }
+      template<typename pair_t> const Vector &operator()(const pair_t &v) const { return v.first; }
+      template<typename pair_t> Vector &operator()(pair_t &v) const { return v.first; }
     };
 
 
 
     struct vec_adapt_pair_second {
-      template<typename pair_t> const Vector &operator()(const pair_t &v) { return v.second; }
-      template<typename pair_t> Vector &operator()(pair_t &v) { return v.second; }
+      template<typename pair_t> const Vector &operator()(const pair_t &v) const { return v.second; }
+      template<typename pair_t> Vector &operator()(pair_t &v) const { return v.second; }
     };
 
 
@@ -74,8 +74,8 @@ namespace carve {
     template<typename adapt_t>
     struct vec_cmp_lt_x {
       adapt_t adapt;
-      vec_cmp_lt_x(adapt_t _adapt) : adapt(_adapt) {}
-      template<typename input_t> bool operator()(input_t &a, input_t &b) { return adapt(a).x < adapt(b).x; }
+      vec_cmp_lt_x(adapt_t _adapt = adapt_t()) : adapt(_adapt) {}
+      template<typename input_t> bool operator()(const input_t &a, const input_t &b) const { return adapt(a).x < adapt(b).x; }
     };
     template<typename adapt_t> vec_cmp_lt_x<adapt_t> vec_lt_x(adapt_t &adapt) { return vec_cmp_lt_x<adapt_t>(adapt); }
 
@@ -84,8 +84,8 @@ namespace carve {
     template<typename adapt_t>
     struct vec_cmp_lt_y {
       adapt_t adapt;
-      vec_cmp_lt_y(adapt_t _adapt) : adapt(_adapt) {}
-      template<typename input_t> bool operator()(input_t &a, input_t &b) { return adapt(a).y < adapt(b).y; }
+      vec_cmp_lt_y(adapt_t _adapt = adapt_t()) : adapt(_adapt) {}
+      template<typename input_t> bool operator()(const input_t &a, const input_t &b) const { return adapt(a).y < adapt(b).y; }
     };
     template<typename adapt_t> vec_cmp_lt_y<adapt_t> vec_lt_y(adapt_t &adapt) { return vec_cmp_lt_y<adapt_t>(adapt); }
 
@@ -94,8 +94,8 @@ namespace carve {
     template<typename adapt_t>
     struct vec_cmp_lt_z {
       adapt_t adapt;
-      vec_cmp_lt_z(adapt_t _adapt) : adapt(_adapt) {}
-      template<typename input_t> bool operator()(input_t &a, input_t &b) { return adapt(a).z < adapt(b).z; }
+      vec_cmp_lt_z(adapt_t _adapt = adapt_t()) : adapt(_adapt) {}
+      template<typename input_t> bool operator()(const input_t &a, const input_t &b) const { return adapt(a).z < adapt(b).z; }
     };
     template<typename adapt_t> vec_cmp_lt_z<adapt_t> vec_lt_z(adapt_t &adapt) { return vec_cmp_lt_z<adapt_t>(adapt); }
 
@@ -104,8 +104,8 @@ namespace carve {
     template<typename adapt_t>
     struct vec_cmp_gt_x {
       adapt_t adapt;
-      vec_cmp_gt_x(adapt_t _adapt) : adapt(_adapt) {}
-      template<typename input_t> bool operator()(input_t &a, input_t &b) { return adapt(a).x > adapt(b).x; }
+      vec_cmp_gt_x(adapt_t _adapt = adapt_t()) : adapt(_adapt) {}
+      template<typename input_t> bool operator()(const input_t &a, const input_t &b) const { return adapt(a).x > adapt(b).x; }
     };
     template<typename adapt_t> vec_cmp_gt_x<adapt_t> vec_gt_x(adapt_t &adapt) { return vec_cmp_gt_x<adapt_t>(adapt); }
 
@@ -114,8 +114,8 @@ namespace carve {
     template<typename adapt_t>
     struct vec_cmp_gt_y {
       adapt_t adapt;
-      vec_cmp_gt_y(adapt_t _adapt) : adapt(_adapt) {}
-      template<typename input_t> bool operator()(input_t &a, input_t &b) { return adapt(a).y > adapt(b).y; }
+      vec_cmp_gt_y(adapt_t _adapt = adapt_t()) : adapt(_adapt) {}
+      template<typename input_t> bool operator()(const input_t &a, const input_t &b) const { return adapt(a).y > adapt(b).y; }
     };
     template<typename adapt_t> vec_cmp_gt_y<adapt_t> vec_gt_y(adapt_t &adapt) { return vec_cmp_gt_y<adapt_t>(adapt); }
 
@@ -124,8 +124,8 @@ namespace carve {
     template<typename adapt_t>
     struct vec_cmp_gt_z {
       adapt_t adapt;
-      vec_cmp_gt_z(adapt_t _adapt) : adapt(_adapt) {}
-      template<typename input_t> bool operator()(input_t &a, input_t &b) { return adapt(a).z > adapt(b).z; }
+      vec_cmp_gt_z(adapt_t _adapt = adapt_t()) : adapt(_adapt) {}
+      template<typename input_t> bool operator()(const input_t &a, const input_t &b) const { return adapt(a).z > adapt(b).z; }
     };
     template<typename adapt_t> vec_cmp_gt_z<adapt_t> vec_gt_z(adapt_t &adapt) { return vec_cmp_gt_z<adapt_t>(adapt); }
 
