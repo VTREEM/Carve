@@ -554,7 +554,9 @@ namespace carve {
     template<unsigned ndim>
     Mesh<ndim>::Mesh(std::vector<face_t *> &_faces) : faces(), open_edges(), closed_edges(), meshset(NULL) {
       faces.swap(_faces);
-
+      for (size_t i = 0; i < faces.size(); ++i) {
+        faces[i]->mesh = this;
+      }
       cacheEdges();
       calcOrientation();
     }
