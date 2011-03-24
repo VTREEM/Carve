@@ -72,10 +72,17 @@ namespace carve {
     exception(const std::string &e) : err(e), accum() { }
     exception() : err(), accum() { }
     exception(const exception &e) : err(e.str()), accum() { }
+    exception &operator=(const exception &e) {
+      if (this != &e) {
+        err = e.str();
+        accum.str("");
+      }
+      return *this;
+    }
 
     const std::string &str() const {
       if (accum.str().size() > 0) {
-        err = accum.str();
+        err += accum.str();
         accum.str("");
       }
       return err;
