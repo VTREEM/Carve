@@ -149,8 +149,7 @@ namespace carve {
     template<unsigned ndim>
     void Face<ndim>::invert() {
       size_t n_verts = vertices.size();
-      for (size_t i = 0; i < n_verts / 2; ++i) std::swap(vertices[i], vertices[n_verts - 1 - i]);
-
+      std::reverse(vertices.begin(), vertices.end());
 
       if (project != NULL) {
         plane_eqn.negate();
@@ -161,13 +160,11 @@ namespace carve {
         unproject = getUnprojector(plane_eqn.N.v[da] > 0, da);
       }
 
-      if (edges.size() == n_verts) {
-        for (size_t i = 0; i < (n_verts - 1) / 2; ++i) std::swap(edges[i], edges[n_verts - 2 - i]);
-        for (size_t i = 0; i < n_verts; i++) {
-          const vertex_t *v1 = vertices[i];
-          const vertex_t *v2 = vertices[(i+1) % n_verts];
-          CARVE_ASSERT((edges[i]->v1 == v1 && edges[i]->v2 == v2) || (edges[i]->v1 == v2 && edges[i]->v2 == v1));
-        }
+      std::reverse(edges.begin(), edges.end() - 1);
+      for (size_t i = 0; i < n_verts; i++) {
+        const vertex_t *v1 = vertices[i];
+        const vertex_t *v2 = vertices[(i+1) % n_verts];
+        CARVE_ASSERT((edges[i]->v1 == v1 && edges[i]->v2 == v2) || (edges[i]->v1 == v2 && edges[i]->v2 == v1));
       }
     }
 
