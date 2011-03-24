@@ -170,6 +170,21 @@ namespace carve {
     }
     return true;
   }
+
+  template<typename iter_t,
+           typename pred_t>
+  inline bool is_sorted(iter_t first, iter_t last, pred_t pred) {
+    if (first == last) return true;
+
+    iter_t iter = first;
+    iter_t next = first; ++next;
+    for (; next != last; iter = next, ++next) {
+      if (pred(*next, *iter)) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 
