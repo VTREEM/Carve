@@ -299,6 +299,15 @@ namespace carve {
 
       vector_t centroid() const;
       
+      Face(edge_t *e) : edge(e), n_edges(0), mesh(NULL) {
+        do {
+          e->face = this;
+          n_edges++;
+          e = e->next;
+        } while (e != edge);
+        recalc();
+      }
+
       Face(vertex_t *a, vertex_t *b, vertex_t *c) : edge(NULL), n_edges(0), mesh(NULL) {
         init(a, b, c);
         recalc();
