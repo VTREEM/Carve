@@ -507,7 +507,16 @@ namespace carve {
             edge_map_t::iterator e1i = complex_edges.find(e1);
             vpair_t e2 = vpair_t(e1.second, e1.first);
             edge_map_t::iterator e2i = complex_edges.find(e2);
-            CARVE_ASSERT(e2i != complex_edges.end()); // each complex edge should have a mate.
+            if (e2i == complex_edges.end()) {
+              // This could occur, for example, when two faces share
+              // an edge in the same direction, but are both not
+              // touching anything else. Both get removed by the open
+              // group removal code, leaving an edge map with zero
+              // edges. The edge in the opposite direction does not
+              // exist, because there's no face that adjoins either of
+              // the two open faces.
+              continue;
+            }
 
             for (edgelist_t::iterator j = (*e2i).second.begin(); j != (*e2i).second.end(); ++j) {
               open_groups.insert(faceGroupID(*j));
