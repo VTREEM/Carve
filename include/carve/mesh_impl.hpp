@@ -468,6 +468,68 @@ namespace carve {
 
 
 
+    namespace detail {
+      template<typename iter_t>
+      void FaceStitcher::initEdges(iter_t begin,
+                                   iter_t end) {
+        size_t c = 0;
+        for (iter_t i = begin; i != end; ++i) {
+          face_t *face = *i;
+          CARVE_ASSERT(face->mesh == NULL); // for the moment, can only insert a face into a mesh once.
+
+          face->id = c++;
+          edge_t *e = face->edge;
+          do {
+            edges[vpair_t(e->v1(), e->v2())].push_back(e);
+            e = e->next;
+            if (e->rev) { e->rev->rev = NULL; e->rev = NULL; }
+          } while (e != face->edge);
+        }
+        face_groups.init(c);
+        is_open.clear();
+        is_open.resize(c, false);
+      }
+
+      template<typename iter_t>
+      void FaceStitcher::build(iter_t begin,
+                               iter_t end,
+                               std::vector<Mesh<3> *> &meshes) {
+        // work out what set each face belongs to, and then construct
+        // mesh instances for each set of faces.
+        std::vector<size_t> index_set;
+        std::vector<size_t> set_size;
+        face_groups.get_index_to_set(index_set, set_size);
+
+        std::vector<std::vector<face_t *> > mesh_faces;
+        mesh_faces.resize(set_size.size());
+        for (size_t i = 0; i < set_size.size(); ++i) {
+          mesh_faces[i].reserve(set_size[i]);
+        }
+      
+        for (iter_t i = begin; i != end; ++i) {
+          face_t *face = *i;
+          mesh_faces[index_set[face->id]].push_back(face);
+        }
+
+        meshes.clear();
+        meshes.reserve(mesh_faces.size());
+        for (size_t i = 0; i < mesh_faces.size(); ++i) {
+          meshes.push_back(new Mesh<3>(mesh_faces[i]));
+        }
+      }
+
+      template<typename iter_t>
+      void FaceStitcher::create(iter_t begin,
+                                iter_t end,
+                                std::vector<Mesh<3> *> &meshes) {
+        initEdges(begin, end);
+        construct();
+        build(begin, end, meshes);
+      }
+    }
+
+
+
     template<unsigned ndim>
     void Mesh<ndim>::cacheEdges() {
       closed_edges.clear();
