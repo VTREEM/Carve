@@ -71,16 +71,16 @@ namespace carve {
          * \brief Provides API access to intermediate steps in CSG calculation.
          * 
          */
-        virtual void intersectionVertex(const carve::poly::Polyhedron::vertex_t *vertex,
-                                        const IObjPairSet &intersections) {
+        virtual void intersectionVertex(const carve::poly::Polyhedron::vertex_t * /* vertex */,
+                                        const IObjPairSet & /* intersections */) {
         }
-        virtual void processOutputFace(std::vector<carve::poly::Polyhedron::face_t *> &faces,
-                                       const carve::poly::Polyhedron::face_t *orig_face,
-                                       bool flipped) {
+        virtual void processOutputFace(std::vector<carve::poly::Polyhedron::face_t *> & /* faces */,
+                                       const carve::poly::Polyhedron::face_t * /* orig_face */,
+                                       bool /* flipped */) {
         }
-        virtual void resultFace(const carve::poly::Polyhedron::face_t *new_face,
-                                const carve::poly::Polyhedron::face_t *orig_face,
-                                bool flipped) {
+        virtual void resultFace(const carve::poly::Polyhedron::face_t * /* new_face */,
+                                const carve::poly::Polyhedron::face_t * /* orig_face */,
+                                bool /* flipped */) {
         }
 
         virtual ~Hook() {

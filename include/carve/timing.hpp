@@ -81,15 +81,15 @@ namespace carve {
     TimingName(const char *) {}
   };
   struct TimingBlock {
-    TimingBlock(int id) {}
-    TimingBlock(const TimingName &name) {}
+    TimingBlock(int /* id */) {}
+    TimingBlock(const TimingName & /* name */) {}
   };
   struct Timing {
-    static void start(int id) {}
-    static void start(const TimingName &id) {}
+    static void start(int /* id */) {}
+    static void start(const TimingName & /* id */) {}
     static double stop() { return 0; }
     static void printTimings() {}
-    static void registerID(int id, const char *name) {}
+    static void registerID(int /* id */, const char * /* name */) {}
   };
 
 #endif
