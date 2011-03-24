@@ -125,48 +125,46 @@ namespace carve {
 
 
     template<unsigned ndim>
-    Edge<ndim> *Edge<ndim>::collapse() {
-      next->v1()->v = (next->v1()->v + v1()->v) / 2;
-
-      if (rev) {
-        rev->next->prev = rev->prev;
-        rev->prev->next = rev->next;
-        if (rev->face) {
-          rev->face->n_edges--;
-          if (rev->face->edge == rev) {
-            if (rev == rev->next) {
-              rev->face->edge = NULL;
-            } else {
-              rev->face->edge = rev->next;
-            }
-          }
-        }
-        delete rev;
-      }
-
-      next->prev = prev;
-      prev->next = next;
+    Edge<ndim> *Edge<ndim>::removeHalfEdge() {
+      Edge *n = NULL;
       if (face) {
         face->n_edges--;
-        if (face->edge == this) {
-          if (next == this) {
-            face->edge = NULL;
-            next = NULL;
-          } else {
-            face->edge = next;
-          }
-        }
       }
 
-      Edge *n = next;
+      if (next == this) {
+        if (face) face->edge = NULL;
+      } else {
+        if (face && face->edge == this) face->edge = next;
+        next->prev = prev;
+        prev->next = next;
+        n = next;
+      }
       delete this;
       return n;
     }
 
+
+
     template<unsigned ndim>
-    void Edge<ndim>::remove() {
+    Edge<ndim> *Edge<ndim>::removeEdge() {
+      if (rev) {
+        rev->removeHalfEdge();
+      }
+      return removeHalfEdge();
+    }
+
+
+
+    template<unsigned ndim>
+    void Edge<ndim>::unlink() {
       if (rev) { rev->rev = NULL; rev = NULL; }
       if (prev->rev) { prev->rev->rev = NULL; prev->rev = NULL; }
+
+      if (face) {
+        face->n_edges--;
+        if (face->edge == this) face->edge = next;
+        face = NULL;
+      }
 
       next->prev = prev;
       prev->next = next;
@@ -178,7 +176,7 @@ namespace carve {
 
     template<unsigned ndim>
     void Edge<ndim>::insertBefore(Edge<ndim> *other) {
-      if (prev != this) remove();
+      if (prev != this) unlink();
       prev = other->prev;
       next = other;
       next->prev = this;
@@ -211,7 +209,7 @@ namespace carve {
 
     template<unsigned ndim>
     void Edge<ndim>::insertAfter(Edge<ndim> *other) {
-      if (prev != this) remove();
+      if (prev != this) unlink();
       next = other->next;
       prev = other;
       next->prev = this;
@@ -259,7 +257,6 @@ namespace carve {
     template<unsigned ndim>
     Edge<ndim>::Edge(vertex_t *_vert, face_t *_face) :
         vert(_vert), face(_face), prev(this), next(this), rev(NULL) {
-      CARVE_ASSERT(face != NULL);
     }
 
 

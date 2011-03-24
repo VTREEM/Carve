@@ -143,12 +143,15 @@ namespace carve {
       face_t *face;
       Edge *prev, *next, *rev;
 
-      Edge *collapse();
+      Edge *removeHalfEdge();
 
-      // Remove this edge from its containing edge loop. disconnect
+      // Remove and delete this edge.
+      Edge *removeEdge();
+
+      // Unlink this edge from its containing edge loop. disconnect
       // rev links. The rev links of the previous edge also change, as
       // its successor vertex changes.
-      void remove();
+      void unlink();
 
       // Insert this edge into a loop before other. If edge was
       // already in a loop, it needs to be removed first.
