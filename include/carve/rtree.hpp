@@ -36,30 +36,30 @@ namespace carve {
       typedef vector<ndim> vector_t;
       typedef RTreeNode<ndim, data_t, aabb_calc_t> node_t;
 
-      aabb_t aabb;
+      aabb_t bbox;
       node_t *child;
       node_t *sibling;
       std::vector<data_t> data;
 
-      aabb_t getAABB() const { return aabb; }
+      aabb_t getAABB() const { return bbox; }
 
 
 
       struct data_aabb_t {
-        aabb_t aabb;
+        aabb_t bbox;
         data_t data;
 
         data_aabb_t() { }
-        data_aabb_t(const data_t &_data) : aabb(aabb_calc_t()(_data)), data(_data) {
+        data_aabb_t(const data_t &_data) : bbox(aabb_calc_t()(_data)), data(_data) {
         }
 
-        aabb_t getAABB() const { return aabb; }
+        aabb_t getAABB() const { return bbox; }
 
         struct cmp {
           size_t dim;
           cmp(size_t _dim) : dim(_dim) { }
           bool operator()(const data_aabb_t &a, const data_aabb_t &b) {
-            return a.aabb.pos.v[dim] < b.aabb.pos.v[dim];
+            return a.bbox.pos.v[dim] < b.bbox.pos.v[dim];
           }
         };
       };
@@ -69,19 +69,19 @@ namespace carve {
       template<typename iter_t>
       void _fill(iter_t begin, iter_t end, data_aabb_t) {
         data.reserve(std::distance(begin, end));
-        vector_t min = (*begin).aabb.min();
-        vector_t max = (*begin).aabb.max();
+        vector_t min = (*begin).bbox.min();
+        vector_t max = (*begin).bbox.max();
         for (iter_t i = begin; i != end; ++i) {
           data.push_back((*i).data);
         }
-        aabb.fit(begin, end);
+        bbox.fit(begin, end);
       }
 
       template<typename iter_t>
       void _fill(iter_t begin, iter_t end, data_t) {
         data.reserve(std::distance(begin, end));
         std::copy(begin, end, std::back_inserter(data));
-        aabb.fit(begin, end, aabb_calc_t());
+        bbox.fit(begin, end, aabb_calc_t());
       }
 
       template<typename iter_t>
@@ -92,12 +92,12 @@ namespace carve {
           curr->sibling = *i;
           curr = curr->sibling;
         }
-        aabb.fit(begin, end);
+        bbox.fit(begin, end);
       }
 
       template<typename obj_t, typename out_iter_t>
       void search(const obj_t &obj, out_iter_t out) {
-        if (!aabb.intersects(obj)) return;
+        if (!bbox.intersects(obj)) return;
         if (child) {
           for (node_t *node = child; node; node = node->sibling) {
             node->search(obj, out);
@@ -108,7 +108,7 @@ namespace carve {
       }
 
       template<typename iter_t>
-      RTreeNode(iter_t begin, iter_t end) : aabb(), child(NULL), sibling(NULL), data() {
+      RTreeNode(iter_t begin, iter_t end) : bbox(), child(NULL), sibling(NULL), data() {
         _fill(begin, end, typename std::iterator_traits<iter_t>::value_type());
       }
 
@@ -119,10 +119,10 @@ namespace carve {
         aabb_cmp_mid(size_t _dim) : dim(_dim) { }
 
         bool operator()(const node_t *a, const node_t *b) {
-          return a->aabb.mid(dim) < b->aabb.mid(dim);
+          return a->bbox.mid(dim) < b->bbox.mid(dim);
         }
         bool operator()(const data_aabb_t &a, const data_aabb_t &b) {
-          return a.aabb.mid(dim) < b.aabb.mid(dim);
+          return a.bbox.mid(dim) < b.bbox.mid(dim);
         }
       };
 
@@ -131,10 +131,10 @@ namespace carve {
         aabb_cmp_min(size_t _dim) : dim(_dim) { }
 
         bool operator()(const node_t *a, const node_t *b) {
-          return a->aabb.min(dim) < b->aabb.min(dim);
+          return a->bbox.min(dim) < b->bbox.min(dim);
         }
         bool operator()(const data_aabb_t &a, const data_aabb_t &b) {
-          return a.aabb.min(dim) < b.aabb.min(dim);
+          return a.bbox.min(dim) < b.bbox.min(dim);
         }
       };
 
@@ -143,10 +143,10 @@ namespace carve {
         aabb_cmp_max(size_t _dim) : dim(_dim) { }
 
         bool operator()(const node_t *a, const node_t *b) {
-          return a->aabb.max(dim) < b->aabb.max(dim);
+          return a->bbox.max(dim) < b->bbox.max(dim);
         }
         bool operator()(const data_aabb_t &a, const data_aabb_t &b) {
-          return a.aabb.max(dim) < b.aabb.max(dim);
+          return a.bbox.max(dim) < b.bbox.max(dim);
         }
       };
 
@@ -154,12 +154,12 @@ namespace carve {
         size_t dim;
         aabb_extent(size_t _dim) : dim(_dim) { }
 
-        double min(const node_t *a) { return a->aabb.pos.v[dim] - a->aabb.extent.v[dim]; }
-        double max(const node_t *a) { return a->aabb.pos.v[dim] + a->aabb.extent.v[dim]; }
-        double len(const node_t *a) { return 2.0 * a->aabb.extent.v[dim]; }
-        double min(const data_aabb_t &a) { return a.aabb.pos.v[dim] - a.aabb.extent.v[dim]; }
-        double max(const data_aabb_t &a) { return a.aabb.pos.v[dim] + a.aabb.extent.v[dim]; }
-        double len(const data_aabb_t &a) { return 2.0 * a.aabb.extent.v[dim]; }
+        double min(const node_t *a) { return a->bbox.pos.v[dim] - a->bbox.extent.v[dim]; }
+        double max(const node_t *a) { return a->bbox.pos.v[dim] + a->bbox.extent.v[dim]; }
+        double len(const node_t *a) { return 2.0 * a->bbox.extent.v[dim]; }
+        double min(const data_aabb_t &a) { return a.bbox.pos.v[dim] - a.bbox.extent.v[dim]; }
+        double max(const data_aabb_t &a) { return a.bbox.pos.v[dim] + a.bbox.extent.v[dim]; }
+        double len(const data_aabb_t &a) { return 2.0 * a.bbox.extent.v[dim]; }
       };
 
       template<typename iter_t>
@@ -172,7 +172,7 @@ namespace carve {
         const size_t N = std::distance(begin, end);
 
         size_t dim = ndim;
-        double r_best = N;
+        double r_best = N+1;
 
         // find the sparsest remaining dimension to partition by.
         for (size_t i = 0; i < ndim; ++i) {
