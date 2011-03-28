@@ -29,9 +29,9 @@ namespace carve {
 
     template<typename order_t>
     struct VPtrSort {
-      order_t &order;
+      order_t order;
 
-      VPtrSort(order_t &_order) : order(_order) {}
+      VPtrSort(const order_t &_order) : order(_order) {}
       bool operator()(carve::poly::Polyhedron::vertex_t const *a,
                       carve::poly::Polyhedron::vertex_t const *b) const {
         return order(a->v, b->v);
