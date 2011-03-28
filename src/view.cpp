@@ -120,7 +120,7 @@ void _drawNode(carve::geom::RTreeNode<3, data_t> *rtree_node, size_t depth, size
   col = HSV2RGB(H, S, V/2);
   glColor4f(col.r, col.g, col.b, .1 + r * .5);
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  drawCube(rtree_node->aabb.min(), rtree_node->aabb.max());
+  drawCube(rtree_node->bbox.min(), rtree_node->bbox.max());
 
   // col = HSV2RGB(H, S, V);
   // glColor4f(col.r, col.g, col.b, .1 + r * .25);
@@ -237,7 +237,7 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
     // face_rtree_t *tree = face_rtree_t::construct_TGS(poly->faceBegin(), poly->faceEnd(), 50, 4);
     is_wireframe[list_num] = true;
     glNewList(dlist + list_num++, GL_COMPILE);
-    drawTree(tree);
+    // drawTree(tree);
     glEndList();
     delete tree;
   }
