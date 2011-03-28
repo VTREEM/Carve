@@ -44,7 +44,7 @@ set(HAVE_LIBSTDCPP_UNORDERED_COLLECTIONS FALSE)
 set(HAVE_BOOST_UNORDERED_COLLECTIONS FALSE)
 
 if(CARVE_SYSTEM_BOOST)
-  find_package(BOOST 1.40)
+  find_package(Boost 1.40)
   if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     message(STATUS "Using system boost")
