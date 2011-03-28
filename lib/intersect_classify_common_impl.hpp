@@ -250,6 +250,7 @@ namespace carve {
           std::cerr << "d = " << d << std::endl;
 #endif
           fc = d < 0 ? FACE_IN : FACE_OUT;
+          break;
         }
 	default:
           CARVE_FAIL("unhandled switch case -- should not happen");
