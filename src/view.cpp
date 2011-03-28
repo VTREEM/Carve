@@ -191,12 +191,13 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
 
   for (size_t p = 0; p < polys.size(); ++p) {
     carve::mesh::MeshSet<3> *poly = polys[p];
+    glEnable(GL_CULL_FACE);
     for (unsigned i = 0; i < poly->meshes.size(); i++) {
       if (!poly->meshes[i]->isClosed()) {
         is_wireframe[list_num] = false;
         glNewList(dlist + list_num++, GL_COMPILE);
         glCullFace(GL_BACK);
-        drawPolyhedron(poly, 0.0f, 0.0f, 0.5f, 1.0f, i);
+        drawPolyhedron(poly, 0.3f, 0.8f, 0.5f, 1.0f, i);
         glCullFace(GL_FRONT);
         drawPolyhedron(poly, 0.0f, 0.0f, 1.0f, 1.0f, i);
         glCullFace(GL_BACK);
