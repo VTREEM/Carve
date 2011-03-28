@@ -307,6 +307,10 @@ struct TestScene : public Scene {
       for (unsigned i = 1; i < draw_flags.size(); i += 2) {
         draw_flags[i] = !draw_flags[i];
       }
+    } else if (k == '|') {
+      for (unsigned i = 1; i < draw_flags.size(); i++) {
+        if (is_wireframe[i]) draw_flags[i] = !draw_flags[i];
+      }
     } else if (k == 'n') {
       bool n = true;
       for (unsigned i = 0; i < draw_flags.size(); ++i)
