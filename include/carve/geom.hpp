@@ -313,7 +313,7 @@ namespace carve {
       typedef __pow__<base, ndigits> fac;
 
       double operator()(double in) {
-        return rint(in * fac::val) / fac::val;
+        return round(in * fac::val) / fac::val;
       }
 
       template<unsigned ndim>
