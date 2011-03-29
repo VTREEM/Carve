@@ -457,6 +457,8 @@ namespace carve {
             edge_face_pairs.push_back(j->face);
           }
 
+          if (ef_closed.fwd.size() == 0 && ef_closed.rev.size() == 0) continue;
+
           // group edges based upon the closed-face sets that are incident to them.
           std::vector<int> tag;
           tag.reserve(ef_closed.fwd.size() + ef_closed.rev.size());
