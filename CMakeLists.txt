@@ -5,9 +5,9 @@ project(carve)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-set(carve_VERSION_MAJOR 1)
-set(carve_VERSION_MINOR 2)
-set(carve_VERSION_PATCH 0)
+set(carve_VERSION_MAJOR 2)
+set(carve_VERSION_MINOR 0)
+set(carve_VERSION_PATCH 0a)
 
 set(CARVE_VERSION ${carve_VERSION_MAJOR}.${carve_VERSION_MINOR}.${carve_VERSION_PATCH})
 
