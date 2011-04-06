@@ -125,6 +125,83 @@ namespace carve {
 
 
     template<unsigned ndim>
+    Edge<ndim> *Edge<ndim>::mergeFaces() {
+      if (rev == NULL) return NULL;
+
+      face_t *fwdface = face;
+      face_t *revface = rev->face;
+
+      size_t n_removed = 0;
+
+      Edge *splice_beg = this;
+      do {
+        splice_beg = splice_beg->prev;
+        ++n_removed;
+      } while (splice_beg != this &&
+               splice_beg->rev &&
+               splice_beg->next->rev->prev == splice_beg->rev);
+
+      if (splice_beg == this) {
+        // edge loops are completely matched.
+        return NULL;
+      }
+
+      Edge *splice_end = this;
+      do {
+        splice_end = splice_end->next;
+        ++n_removed;
+      } while (splice_end->rev &&
+               splice_end->prev->rev->next == splice_end->rev);
+
+      --n_removed;
+
+      Edge *link1_p = splice_beg;
+      Edge *link1_n = splice_beg->next->rev->next;
+
+      Edge *link2_p = splice_end->prev->rev->prev;
+      Edge *link2_n = splice_end;
+
+      CARVE_ASSERT(link1_p->face == fwdface);
+      CARVE_ASSERT(link1_n->face == revface);
+
+      CARVE_ASSERT(link2_p->face == revface);
+      CARVE_ASSERT(link2_n->face == fwdface);
+
+      Edge *left_loop = link1_p->next;
+
+      CARVE_ASSERT(left_loop->rev == link1_n->prev);
+
+      _link(link2_n->prev, link1_p->next);
+      _link(link1_n->prev, link2_p->next);
+
+      _link(link1_p, link1_n);
+      _link(link2_p, link2_n);
+
+      fwdface->edge = link1_p;
+
+      for (Edge *e = link1_n; e != link2_n; e = e->next) {
+        CARVE_ASSERT(e->face == revface);
+        e->face = fwdface;
+        fwdface->n_edges++;
+      }
+      for (Edge *e = link2_n; e != link1_n; e = e->next) {
+        CARVE_ASSERT(e->face == fwdface);
+      }
+
+      fwdface->n_edges -= n_removed;
+
+      revface->n_edges = 0;
+      revface->edge = NULL;
+
+      _setloopface(left_loop, NULL);
+      _setloopface(left_loop->rev, NULL);
+
+      return left_loop;
+    }
+
+
+
+    template<unsigned ndim>
     Edge<ndim> *Edge<ndim>::removeHalfEdge() {
       Edge *n = NULL;
       if (face) {

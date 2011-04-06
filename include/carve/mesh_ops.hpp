@@ -56,20 +56,6 @@ namespace carve {
 
 
       
-      template<unsigned ndim>
-      size_t loopLen(Edge<ndim> *edge) {
-        Edge<ndim> *e = edge;
-        size_t c = 0;
-        do {
-          ++c;
-          CARVE_ASSERT(e->next->prev == e);
-          e = e->next;
-        } while (e != edge);
-        return c;
-      }
-
-
-
       template<unsigned ndim, typename proj_t>
       struct TriangulationData {
         typedef Edge<ndim> edge_t;

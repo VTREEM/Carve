@@ -62,7 +62,7 @@ void triangulate(std::vector<carve::mesh::Vertex<3> > &vertices) {
 
   double a1 = 0.0;
   for (size_t i = 0; i < triangles.size(); ++i) {
-    ASSERT_EQ(carve::mesh::detail::loopLen(triangles[i]), 3);
+    ASSERT_EQ(triangles[i]->loopLen(), 3);
     double a = area(triangles[i], faces[0]->project);
     // std::cerr << triangles[i]->face << " " << triangles[i]->next->face << " " << triangles[i]->next->next->face << std::endl;
     ASSERT_LE(a, 0.0);

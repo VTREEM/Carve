@@ -143,6 +143,63 @@ namespace carve {
       face_t *face;
       Edge *prev, *next, *rev;
 
+    private:
+      static void _link(Edge *a, Edge *b) {
+        a->next = b; b->prev = a;
+      }
+
+      static void _freeloop(Edge *s) {
+        Edge *e = s;
+        do {
+          Edge *n = e->next;
+          delete e;
+          e = n;
+        } while (e != s);
+      }
+
+      static void _setloopface(Edge *s, face_t *f) {
+        Edge *e = s;
+        do {
+          e->face = f;
+          e = e->next;
+        } while (e != s);
+      }
+
+      static size_t _looplen(Edge *s) {
+        Edge *e = s;
+        face_t *f = s->face;
+        size_t c = 0;
+        do {
+          ++c;
+          CARVE_ASSERT(e->rev->rev == e);
+          CARVE_ASSERT(e->next->prev == e);
+          CARVE_ASSERT(e->face == f);
+          e = e->next;
+        } while (e != s);
+        return c;
+      }
+
+    public:
+      void validateLoop() {
+        Edge *e = this;
+        face_t *f = face;
+        size_t c = 0;
+        do {
+          ++c;
+          CARVE_ASSERT(e->rev->rev == e);
+          CARVE_ASSERT(e->next->prev == e);
+          CARVE_ASSERT(e->face == f);
+          e = e->next;
+        } while (e != this);
+        CARVE_ASSERT(f == NULL || c == f->n_edges);
+      }
+
+      size_t loopLen() {
+        return _looplen(this);
+      }
+
+      Edge *mergeFaces();
+
       Edge *removeHalfEdge();
 
       // Remove and delete this edge.
