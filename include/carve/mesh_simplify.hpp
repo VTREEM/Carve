@@ -103,6 +103,11 @@ namespace carve {
 
 
       struct FlippableBase {
+        double min_dp;
+
+        FlippableBase(double min_dp = 0.0) {
+        }
+
         virtual bool canFlip(const EdgeInfo *) const =0;
 
         bool open(const EdgeInfo *e) const {
@@ -120,10 +125,10 @@ namespace carve {
           const vertex_t *v4 = edge->rev->next->next->vert;
 
           if (carve::geom::dot(carve::geom::cross(v3->v - v2->v, v1->v - v2->v),
-                               carve::geom::cross(v4->v - v1->v, v2->v - v1->v)) < 0.95) return false;
+                               carve::geom::cross(v4->v - v1->v, v2->v - v1->v)) < min_dp) return false;
 
           if (carve::geom::dot(carve::geom::cross(v3->v - v4->v, v1->v - v4->v),
-                               carve::geom::cross(v4->v - v3->v, v2->v - v3->v)) < 0.95) return false;
+                               carve::geom::cross(v4->v - v3->v, v2->v - v3->v)) < min_dp) return false;
 
           return true;
         }
@@ -146,6 +151,9 @@ namespace carve {
 
 
       struct FlippableConservative : public FlippableBase {
+        FlippableConservative() : FlippableBase(0.0) {
+        }
+
         bool connectsAlmostCoplanarFaces(const EdgeInfo *e) const {
           // XXX: remove hard coded constants.
           if (e->c[0] < 1e-10 || e->c[1] < 1e-10) return true;
@@ -177,8 +185,9 @@ namespace carve {
         double min_delta_v;
 
         Flippable(double _min_colinearity,
-                  double _min_delta_v) :
-            FlippableBase(),
+                  double _min_delta_v,
+                  double _min_normal_angle) :
+            FlippableBase(cos(_min_normal_angle)),
             min_colinearity(_min_colinearity),
             min_delta_v(_min_delta_v) {
         }
@@ -413,8 +422,9 @@ namespace carve {
 
 
 
-      size_t mergeEdges(meshset_t *mesh,
-                        const EdgeMerger &merger) {
+      // collapse edges edges based upon the predicate implemented by EdgeMerger.
+      size_t collapseEdges(meshset_t *mesh,
+                           const EdgeMerger &merger) {
         size_t n_mods = 0;
 
         std::vector<EdgeInfo *> edge_heap;
@@ -536,6 +546,173 @@ namespace carve {
 
 
 
+      size_t mergeCoplanarFaces(mesh_t *mesh, double min_normal_angle) {
+        std::unordered_set<edge_t *> coplanar_face_edges;
+        double min_dp = cos(min_normal_angle);
+        size_t n_merge = 0;
+
+        for (size_t i = 0; i < mesh->closed_edges.size(); ++i) {
+          edge_t *e = mesh->closed_edges[i];
+          face_t *f1 = e->face;
+          face_t *f2 = e->rev->face;
+
+          if (carve::geom::dot(f1->plane.N, f2->plane.N) < min_dp) {
+            continue;
+          }
+
+          coplanar_face_edges.insert(std::min(e, e->rev));
+        }
+
+        while (coplanar_face_edges.size()) {
+          edge_t *edge = *coplanar_face_edges.begin();
+          if (edge->face == edge->rev->face) {
+            coplanar_face_edges.erase(edge);
+            continue;
+          }
+
+          edge_t *removed = edge->mergeFaces();
+          if (removed == NULL) {
+            coplanar_face_edges.erase(edge);
+            ++n_merge;
+          } else {
+            edge_t *e = removed;
+            do {
+              edge_t *n = e->next;
+              coplanar_face_edges.erase(std::min(e, e->rev));
+              delete e->rev;
+              delete e;
+              e = n;
+            } while (e != removed);
+          }
+        }
+        return n_merge;
+      }
+
+
+
+      uint8_t affected_axes(const face_t *face) {
+        uint8_t r = 0;
+        if (fabs(carve::geom::dot(face->plane.N, carve::geom::VECTOR(1,0,0))) > 0.001) r |= 1;
+        if (fabs(carve::geom::dot(face->plane.N, carve::geom::VECTOR(0,1,0))) > 0.001) r |= 2;
+        if (fabs(carve::geom::dot(face->plane.N, carve::geom::VECTOR(0,0,1))) > 0.001) r |= 4;
+        return r;
+      }
+
+
+
+      template<typename iter_t>
+      void snapFaces(iter_t begin, iter_t end, double grid, int axis) {
+        std::set<vertex_t *> vertices;
+        for (iter_t i = begin; i != end; ++i) {
+          face_t *face = *i;
+          edge_t *edge = face->edge;
+          do {
+            vertices.insert(edge->vert);
+            edge = edge->next;
+          } while (edge != face->edge);
+        }
+
+        std::vector<double> pos;
+        pos.reserve(vertices.size());
+        for (std::set<vertex_t *>::iterator i = vertices.begin(); i != vertices.end(); ++i) {
+          pos.push_back((*i)->v.v[axis]);
+        }
+
+        double median;
+
+        if (pos.size() & 1) {
+          size_t N = pos.size() / 2 + 1;
+          std::nth_element(pos.begin(), pos.begin() + N, pos.end());
+          median = pos[N];
+        } else {
+          size_t N = pos.size() / 2;
+          std::nth_element(pos.begin(), pos.begin() + N, pos.end());
+          median = pos[N] + *std::min_element(pos.begin() + N + 1, pos.end());
+          median /= 2.0;
+        }
+
+        double snap_pos = median;
+        if (grid) snap_pos = round(median / grid) * grid;
+
+        for (std::set<vertex_t *>::iterator i = vertices.begin(); i != vertices.end(); ++i) {
+          (*i)->v.v[axis] = snap_pos;
+        }
+
+        for (iter_t i = begin; i != end; ++i) {
+          face_t *face = *i;
+          face->recalc();
+          edge_t *edge = face->edge;
+          do {
+            if (edge->rev && edge->rev->face) edge->rev->face->recalc();
+            edge = edge->next;
+          } while (edge != face->edge);
+        }
+      }
+
+      carve::geom::plane<3> quantizePlane(const face_t *face, int angle_quantization) {
+        return face->plane;
+      }
+
+
+
+      double summedError(const carve::geom::vector<3> &vert, const std::list<carve::geom::plane<3> > &planes) {
+        double d = 0;
+        for (std::list<carve::geom::plane<3> >::const_iterator i = planes.begin(); i != planes.end(); ++i) {
+          d += fabs(carve::geom::distance2(*i, vert));
+        }
+        return d;
+      }
+
+
+
+      double minimize(carve::geom::vector<3> &vert, const std::list<carve::geom::plane<3> > &planes, int axis) {
+        double num = 0.0;
+        double den = 0.0;
+        int a1 = (axis + 1) % 3;
+        int a2 = (axis + 2) % 3;
+        for (std::list<carve::geom::plane<3> >::const_iterator i = planes.begin(); i != planes.end(); ++i) {
+          const carve::geom::vector<3> &N = (*i).N;
+          const double d = (*i).d;
+          den += N.v[axis] * N.v[axis];
+          num -= N.v[axis] * (N.v[a1] * vert.v[a1] + N.v[a2] * vert.v[a2] + d);
+        }
+        if (fabs(den) < 1e-5) return vert.v[axis];
+        return num / den;
+      }
+
+
+
+      size_t cleanFaceEdges(mesh_t *mesh) {
+        size_t n_removed = 0;
+        for (size_t i = 0; i < mesh->faces.size(); ++i) {
+          face_t *face = mesh->faces[i];
+          edge_t *start = face->edge;
+          edge_t *edge = start;
+          do {
+            if (edge->next == edge->rev || edge->prev == edge->rev) {
+              edge = edge->removeEdge();
+              ++n_removed;
+              start = edge->prev;
+            } else {
+              edge = edge->next;
+            }
+          } while (edge != start);
+        }
+        return n_removed;
+      }
+
+
+
+      size_t cleanFaceEdges(meshset_t *mesh) {
+        size_t n_removed = 0;
+        for (size_t i = 0; i < mesh->meshes.size(); ++i) {
+          n_removed += cleanFaceEdges(mesh->meshes[i]);
+        }
+        return n_removed;
+      }
+
+
+
       void removeRemnantFaces(mesh_t *mesh) {
         size_t n = 0;
         for (size_t i = 0; i < mesh->faces.size(); ++i) {
@@ -559,6 +736,19 @@ namespace carve {
 
 
     public:
+      // Merge adjacent coplanar faces (where coplanar is determined
+      // by dot-product >= cos(min_normal_angle)).
+      size_t mergeCoplanarFaces(meshset_t *meshset, double min_normal_angle) {
+        size_t n_removed = 0;
+        for (size_t i = 0; i < meshset->meshes.size(); ++i) {
+          n_removed += mergeCoplanarFaces(meshset->meshes[i], min_normal_angle);
+          removeRemnantFaces(meshset->meshes[i]);
+          cleanFaceEdges(meshset->meshes[i]);
+          meshset->meshes[i]->cacheEdges();
+        }
+        return n_removed;
+      }
+
       size_t improveMesh_conservative(meshset_t *meshset) {
         initEdgeInfo(meshset);
         size_t modifications = flipEdges(meshset, FlippableConservative());
@@ -570,9 +760,10 @@ namespace carve {
 
       size_t improveMesh(meshset_t *meshset,
                          double min_colinearity,
-                         double min_delta_v) {
+                         double min_delta_v,
+                         double min_normal_angle) {
         initEdgeInfo(meshset);
-        size_t modifications = flipEdges(meshset, Flippable(min_colinearity, min_delta_v));
+        size_t modifications = flipEdges(meshset, Flippable(min_colinearity, min_delta_v, min_normal_angle));
         clearEdgeInfo();
         return modifications;
       }
@@ -582,7 +773,7 @@ namespace carve {
       size_t eliminateShortEdges(meshset_t *meshset,
                                  double min_length) {
         initEdgeInfo(meshset);
-        size_t modifications = mergeEdges(meshset, EdgeMerger(min_length));
+        size_t modifications = collapseEdges(meshset, EdgeMerger(min_length));
         removeRemnantFaces(meshset);
         clearEdgeInfo();
         return modifications;
@@ -590,9 +781,136 @@ namespace carve {
 
 
 
+      // Snap vertices to grid, aligning almost flat axis-aligned
+      // faces to the axis, and flattening other faces as much as is
+      // possible. Passing a number less than DBL_MIN_EXPONENT (-1021)
+      // turns off snapping to grid (but face alignment is still
+      // performed).
+      void snap(meshset_t *meshset, int log2_grid, int angle_quantization = 0) {
+        double grid = 0.0;
+        if (log2_grid >= std::numeric_limits<double>::min_exponent) grid = exp2((double)log2_grid);
+
+        typedef std::unordered_map<face_t *, uint8_t> axis_influence_map_t;
+        axis_influence_map_t axis_influence;
+
+        typedef std::unordered_map<face_t *, std::set<face_t *> > interaction_graph_t;
+        interaction_graph_t interacting_faces;
+
+        for (size_t m = 0; m < meshset->meshes.size(); ++m) {
+          mesh_t *mesh = meshset->meshes[m];
+          for (size_t f = 0; f < mesh->faces.size(); ++f) {
+            face_t *face = mesh->faces[f];
+            axis_influence[face] = affected_axes(face);
+          }
+        }
+
+        std::map<vertex_t *, std::list<carve::geom::plane<3> > > non_axis_vertices;
+        std::unordered_map<vertex_t *, uint8_t> vertex_constraints;
+
+        for (axis_influence_map_t::iterator i = axis_influence.begin(); i != axis_influence.end(); ++i) {
+          face_t *face = (*i).first;
+          uint8_t face_axes = (*i).second;
+          edge_t *edge = face->edge;
+          if (face_axes != 1 && face_axes != 2 && face_axes != 4) {
+            do {
+              if (angle_quantization) {
+                non_axis_vertices[edge->vert].push_back(quantizePlane(face, angle_quantization));
+              } else {
+                non_axis_vertices[edge->vert].push_back(face->plane);
+              }
+              edge = edge->next;
+            } while (edge != face->edge);
+          } else {
+            interacting_faces[face].insert(face);
+            do {
+              vertex_constraints[edge->vert] |= face_axes;
+
+              if (edge->rev && edge->rev->face) {
+                face_t *face2 = edge->rev->face;
+                uint8_t face2_axes = axis_influence[face2];
+                if (face2_axes == face_axes) {
+                  interacting_faces[face].insert(face2);
+                }
+              }
+              edge = edge->next;
+            } while (edge != face->edge);
+          }
+        }
+
+        while (interacting_faces.size()) {
+          std::set<face_t *> face_set;
+          uint8_t axes = 0;
+
+          std::set<face_t *> open;
+          open.insert((*interacting_faces.begin()).first);
+          while (open.size()) {
+            face_t *curr = *open.begin();
+            open.erase(open.begin());
+            face_set.insert(curr);
+            axes |= axis_influence[curr];
+            for (interaction_graph_t::data_type::iterator i = interacting_faces[curr].begin(), e = interacting_faces[curr].end(); i != e; ++i) {
+              face_t *f = *i;
+              if (face_set.find(f) != face_set.end()) continue;
+              open.insert(f);
+            }
+          }
+
+          switch (axes) {
+          case 1: snapFaces(face_set.begin(), face_set.end(), grid, 0); break;
+          case 2: snapFaces(face_set.begin(), face_set.end(), grid, 1); break;
+          case 4: snapFaces(face_set.begin(), face_set.end(), grid, 2); break;
+          default: CARVE_ASSERT(!!!"should not be reached");
+          }
+
+          for (std::set<face_t *>::iterator i = face_set.begin(); i != face_set.end(); ++i) {
+            interacting_faces.erase((*i));
+          }
+        }
+
+        for (std::map<vertex_t *, std::list<carve::geom::plane<3> > >::iterator i = non_axis_vertices.begin(); i != non_axis_vertices.end(); ++i) {
+          vertex_t *vert = (*i).first;
+          std::list<carve::geom::plane<3> > &planes = (*i).second;
+          uint8_t constraint = vertex_constraints[vert];
+
+          if (constraint == 7) continue;
+
+          double d = summedError(vert->v, planes);
+          for (size_t N = 0; ; N = (N+1) % 3) {
+            if (constraint & (1 << N)) continue;
+            vert->v[N] = minimize(vert->v, planes, N);
+            double d_next = summedError(vert->v, planes);
+            if (d - d_next < 1e-20) break;
+            d = d_next;
+          }
+
+          if (grid) {
+            carve::geom::vector<3> v_best = vert->v;
+            double d_best = 0.0;
+            
+            for (size_t axes = 0; axes < 8; ++axes) {
+              carve::geom::vector<3> v = vert->v;
+              for (size_t N = 0; N < 3; ++N) {
+                if (constraint & (1 << N)) continue;
+                v.v[N] = ((axes & (1<<N)) ? ceil : floor)(v.v[N] / grid) * grid;
+              }
+              double d = summedError(v, planes);
+              if (axes == 0 || d < d_best) {
+                v_best = v;
+                d_best = d;
+              }
+            }
+
+            vert->v = v_best;
+          }
+        }
+      }
+
+
+
       size_t simplify(meshset_t *meshset,
                       double min_colinearity,
                       double min_delta_v,
+                      double min_normal_angle,
                       double min_length) {
         size_t modifications = 0;
         size_t n_flip, n_merge;
@@ -600,16 +918,16 @@ namespace carve {
         initEdgeInfo(meshset);
 
         std::cerr << "initial merge" << std::endl;
-        modifications = mergeEdges(meshset, EdgeMerger(0.0));
+        modifications = collapseEdges(meshset, EdgeMerger(0.0));
 
         do {
           n_flip = n_merge = 0;
           std::cerr << "flip conservative" << std::endl;
           n_flip = flipEdges(meshset, FlippableConservative());
-          // std::cerr << "flip" << std::endl;
-          // n_flip += flipEdges(meshset, Flippable(min_colinearity, min_delta_v));
+          std::cerr << "flip" << std::endl;
+          n_flip += flipEdges(meshset, Flippable(min_colinearity, min_delta_v, min_normal_angle));
           std::cerr << "merge" << std::endl;
-          n_merge = mergeEdges(meshset, EdgeMerger(min_length));
+          n_merge = collapseEdges(meshset, EdgeMerger(min_length));
           modifications += n_flip + n_merge;
           std::cerr << "stats:" << n_flip << " " << n_merge << std::endl;
         } while (n_flip || n_merge);

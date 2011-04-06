@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     carve::mesh::MeshSimplifier simplifier;
 
     // p->transform(carve::geom::quantize<10,3>());
-    simplifier.simplify(p, 1e-2, 1e-2, 2e-3);
+    simplifier.simplify(p, 1e-2, 1e-2, M_PI/180.0, 2e-3);
     // std::cerr << "n_flips: " << simplifier.improveMesh_conservative(p) << std::endl;
 
     carve::poly::Polyhedron *poly = carve::polyhedronFromMesh(p, -1);
