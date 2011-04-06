@@ -120,10 +120,10 @@ namespace carve {
           const vertex_t *v4 = edge->rev->next->next->vert;
 
           if (carve::geom::dot(carve::geom::cross(v3->v - v2->v, v1->v - v2->v),
-                               carve::geom::cross(v4->v - v1->v, v2->v - v1->v)) < 0.0) return false;
+                               carve::geom::cross(v4->v - v1->v, v2->v - v1->v)) < 0.95) return false;
 
           if (carve::geom::dot(carve::geom::cross(v3->v - v4->v, v1->v - v4->v),
-                               carve::geom::cross(v4->v - v3->v, v2->v - v3->v)) < 0.0) return false;
+                               carve::geom::cross(v4->v - v3->v, v2->v - v3->v)) < 0.95) return false;
 
           return true;
         }
