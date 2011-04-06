@@ -28,3 +28,8 @@ shell_stress_test_1         | -r -e -c    | TRANS(0, 1.1547005383792515, 0, SCAL
 shell_stress_test_2         | -r -e -c    | TRANS(0, 1.1547005383792515, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(-1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply))
 shell_stress_test_3         | -r -e -c    | TRANS(-1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply)) INTERSECTION TRANS(1.0, -0.57735026918962584, 0, SCALE(2.71, 2.71, 2.71, ../data/shells.ply))
 cylinder_spiral             | -r -e -c -f | test-cylinders
+
+cube_holes                  | -r -e -c    | CUBE - (SCALE(.3,.3,1.2,(TRANS(1,1,0,CUBE) UNION TRANS(-1,-1,0,CUBE))) UNION TRANS(-.8,0,0,SCALE(.1,1.1,1.1,CUBE)) UNION TRANS(+.8,0,0,SCALE(.1,1.1,1.1,CUBE)))
+triangulation               | -r -e -c -t | SCALE(10,2,1,ROT(45deg,0,0,1,CUBE)) UNION (TRANS(2,1,0,SCALE(.5,.5,2,CUBE)) UNION TRANS(-2,1,0,SCALE(.5,.5,2,CUBE)))
+dup_edge                    | -r -e -c    | dup_cube_input_a.ply UNION TRANS(0,-.7,-.7,ROT(45deg,1,0,0,SCALE(2,.1,.1,CUBE)))
+torus_test                  | -r -e -c    | CUBE - TRANS(0,0,1,(TORUS(20,20,.5,.1) UNION TORUS(20,20,.3,.1)))
