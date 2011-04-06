@@ -255,6 +255,9 @@ namespace carve {
     template<unsigned ndim, typename val_t>
     double distance(const plane<ndim> &plane, const val_t &point);
 
+    template<unsigned ndim, typename val_t>
+    double distance2(const plane<ndim> &plane, const val_t &point);
+
     template<unsigned ndim>
     static inline vector<ndim> closestPoint(const plane<ndim> &p, const vector<ndim> &v);
 
@@ -276,6 +279,9 @@ namespace carve {
 
     template<unsigned ndim, typename val_t>
     double distance(const sphere<ndim> &sphere, const val_t &point);
+
+    template<unsigned ndim, typename val_t>
+    double distance2(const sphere<ndim> &sphere, const val_t &point);
 
     template<unsigned ndim>
     static inline vector<ndim> closestPoint(const sphere<ndim> &sphere, const vector<ndim> &point);

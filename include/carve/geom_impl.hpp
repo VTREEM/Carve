@@ -538,6 +538,12 @@ namespace carve {
       return dot(plane.N, point) + plane.d;
     }
 
+    template<unsigned ndim, typename val_t>
+    double distance2(const plane<ndim> &plane, const val_t &point) {
+      double d = distance(plane, point);
+      return d * d;
+    }
+
     template<unsigned ndim>
     static inline vector<ndim> closestPoint(const plane<ndim> &p, const vector<ndim> &v) {
       return v - p.N * (p.d + dot(p.N, v)) / dot(p.N, p.N);
@@ -566,6 +572,11 @@ namespace carve {
     template<unsigned ndim, typename val_t>
     double distance(const sphere<ndim> &sphere, const val_t &point) {
       return std::max(0.0, distance(sphere.C, point) - sphere.r);
+    }
+
+    template<unsigned ndim, typename val_t>
+    double distance2(const sphere<ndim> &sphere, const val_t &point) {
+      return std::max(0.0, distance2(sphere.C, point) - sphere.r * sphere.r);
     }
 
     template<unsigned ndim>
