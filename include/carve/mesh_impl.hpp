@@ -497,9 +497,9 @@ namespace carve {
 
 
     template<unsigned ndim>
-    Face<ndim> *Face<ndim>::clone(const Face<ndim>::vertex_t *old_base,
-                                  Face<ndim>::vertex_t *new_base,
-                                  std::unordered_map<const Face<ndim>::edge_t *, Face<ndim>::edge_t *> &edge_map) const {
+    Face<ndim> *Face<ndim>::clone(const vertex_t *old_base,
+                                  vertex_t *new_base,
+                                  std::unordered_map<const edge_t *, edge_t *> &edge_map) const {
       Face *r = new Face(*this);
 
       edge_t *e = edge;
@@ -525,9 +525,9 @@ namespace carve {
 
 
     template<unsigned ndim>
-    Mesh<ndim>::Mesh(std::vector<typename Mesh<ndim>::face_t *> &_faces,
-                     std::vector<typename Mesh<ndim>::edge_t *> &_open_edges,
-                     std::vector<typename Mesh<ndim>::edge_t *> &_closed_edges,
+    Mesh<ndim>::Mesh(std::vector<face_t *> &_faces,
+                     std::vector<edge_t *> &_open_edges,
+                     std::vector<edge_t *> &_closed_edges,
                      bool _is_negative) {
       std::swap(faces, _faces);
       std::swap(open_edges, _open_edges);
@@ -669,8 +669,8 @@ namespace carve {
 
 
     template<unsigned ndim>
-    Mesh<ndim> *Mesh<ndim>::clone(const typename Mesh<ndim>::vertex_t *old_base,
-                                  typename Mesh<ndim>::vertex_t *new_base) const {
+    Mesh<ndim> *Mesh<ndim>::clone(const vertex_t *old_base,
+                                  vertex_t *new_base) const {
       std::vector<face_t *> r_faces;
       std::vector<edge_t *> r_open_edges;
       std::vector<edge_t *> r_closed_edges;

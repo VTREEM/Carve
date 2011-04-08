@@ -43,7 +43,7 @@ namespace carve {
 
   namespace poly {
 
-    struct Polyhedron : public Geometry<3> {
+    class Polyhedron : public Geometry<3> {
     private:
       friend Polyhedron *carve::polyhedronFromMesh(const mesh::MeshSet<3> *, int);
 

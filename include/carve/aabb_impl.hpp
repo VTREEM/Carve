@@ -260,8 +260,8 @@ namespace carve {
     }
 
     template<unsigned ndim>
-    aabb<ndim>::aabb(const aabb<ndim>::vector_t &_pos,
-                     const aabb<ndim>::vector_t &_extent) : pos(_pos), extent(_extent) {
+    aabb<ndim>::aabb(const vector_t &_pos,
+                     const vector_t &_extent) : pos(_pos), extent(_extent) {
     }
 
     template<unsigned ndim>
