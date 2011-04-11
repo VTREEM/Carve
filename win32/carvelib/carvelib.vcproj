@@ -175,6 +175,14 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\lib\csg_data.hpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\lib\csg_detail.hpp"
+			>
+		</File>
+		<File
 			RelativePath="..\..\lib\edge.cpp"
 			>
 		</File>
@@ -240,6 +248,10 @@
 		</File>
 		<File
 			RelativePath="..\..\lib\math.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\lib\mesh.cpp"
 			>
 		</File>
 		<File
