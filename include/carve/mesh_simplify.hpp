@@ -606,6 +606,40 @@ namespace carve {
 
 
 
+      double median(std::vector<double> &v) {
+        if (v.size() & 1) {
+          size_t N = v.size() / 2 + 1;
+          std::nth_element(v.begin(), v.begin() + N, v.end());
+          return v[N];
+        } else {
+          size_t N = v.size() / 2;
+          std::nth_element(v.begin(), v.begin() + N, v.end());
+          return (v[N] + *std::min_element(v.begin() + N + 1, v.end())) / 2.0;
+        }
+      }
+
+
+
+      double harmonicmean(const std::vector<double> &v) {
+        double m = 0.0;
+        for (size_t i = 0; i < v.size(); ++i) {
+          m *= v[i];
+        }
+        return pow(m, 1.0 / v.size());
+      }
+
+
+
+      double mean(const std::vector<double> &v) {
+        double m = 0.0;
+        for (size_t i = 0; i < v.size(); ++i) {
+          m += v[i];
+        }
+        return m / v.size();
+      }
+
+
+
       template<typename iter_t>
       void snapFaces(iter_t begin, iter_t end, double grid, int axis) {
         std::set<vertex_t *> vertices;
@@ -624,21 +658,10 @@ namespace carve {
           pos.push_back((*i)->v.v[axis]);
         }
 
-        double median;
+        double med = median(pos);
 
-        if (pos.size() & 1) {
-          size_t N = pos.size() / 2 + 1;
-          std::nth_element(pos.begin(), pos.begin() + N, pos.end());
-          median = pos[N];
-        } else {
-          size_t N = pos.size() / 2;
-          std::nth_element(pos.begin(), pos.begin() + N, pos.end());
-          median = pos[N] + *std::min_element(pos.begin() + N + 1, pos.end());
-          median /= 2.0;
-        }
-
-        double snap_pos = median;
-        if (grid) snap_pos = round(median / grid) * grid;
+        double snap_pos = med;
+        if (grid) snap_pos = round(snap_pos / grid) * grid;
 
         for (std::set<vertex_t *>::iterator i = vertices.begin(); i != vertices.end(); ++i) {
           (*i)->v.v[axis] = snap_pos;
@@ -655,8 +678,46 @@ namespace carve {
         }
       }
 
-      carve::geom::plane<3> quantizePlane(const face_t *face, int angle_quantization) {
-        return face->plane;
+      carve::geom::plane<3> quantizePlane(const face_t *face,
+                                          int angle_xy_quantization,
+                                          int angle_z_quantization) {
+        if (!angle_xy_quantization && !angle_z_quantization) {
+          return face->plane;
+        }
+        carve::geom::vector<3> normal = face->plane.N;
+
+        if (angle_z_quantization) {
+          if (normal.x || normal.y) {
+            double a = asin(std::min(std::max(normal.z, 0.0), 1.0));
+            a = round(a * angle_z_quantization / (M_PI * 2)) * (M_PI * 2) / angle_z_quantization;
+            normal.z = sin(a);
+            double s = sqrt((1 - normal.z * normal.z) / (normal.x * normal.x + normal.y * normal.y));
+            normal.x = normal.x * s;
+            normal.y = normal.y * s;
+          }
+        }
+        if (angle_xy_quantization) {
+          if (normal.x || normal.y) {
+            double a = atan2(normal.y, normal.x);
+            a = round(a * angle_xy_quantization / (M_PI * 2)) * (M_PI * 2) / angle_xy_quantization;
+            double s = sqrt(1 - normal.z * normal.z);
+            s = std::min(std::max(s, 0.0), 1.0);
+            normal.x = cos(a) * s;
+            normal.y = sin(a) * s;
+          }
+        }
+
+        std::cerr << "normal = " << normal << std::endl;
+
+        std::vector<double> d_vec;
+        d_vec.reserve(face->nVertices());
+        edge_t *e = face->edge;
+        do {
+          d_vec.push_back(-carve::geom::dot(normal, e->vert->v));
+          e = e->next;
+        } while (e != face->edge);
+
+        return carve::geom::plane<3>(normal, mean(d_vec));
       }
 
 
@@ -792,7 +853,10 @@ namespace carve {
       // possible. Passing a number less than DBL_MIN_EXPONENT (-1021)
       // turns off snapping to grid (but face alignment is still
       // performed).
-      void snap(meshset_t *meshset, int log2_grid, int angle_quantization = 0) {
+      void snap(meshset_t *meshset,
+                int log2_grid,
+                int angle_xy_quantization = 0,
+                int angle_z_quantization = 0) {
         double grid = 0.0;
         if (log2_grid >= std::numeric_limits<double>::min_exponent) grid = pow(2.0, (double)log2_grid);
 
@@ -819,11 +883,9 @@ namespace carve {
           edge_t *edge = face->edge;
           if (face_axes != 1 && face_axes != 2 && face_axes != 4) {
             do {
-              if (angle_quantization) {
-                non_axis_vertices[edge->vert].push_back(quantizePlane(face, angle_quantization));
-              } else {
-                non_axis_vertices[edge->vert].push_back(face->plane);
-              }
+              non_axis_vertices[edge->vert].push_back(quantizePlane(face,
+                                                                    angle_xy_quantization,
+                                                                    angle_z_quantization));
               edge = edge->next;
             } while (edge != face->edge);
           } else {
