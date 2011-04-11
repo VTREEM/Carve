@@ -64,8 +64,8 @@ namespace carve {
 
         void FWD(const poly_t::face_t *orig_face,
                  const std::vector<const poly_t::vertex_t *> &vertices,
-                 carve::geom3d::Vector normal,
-                 bool poly_a,
+                 carve::geom3d::Vector /* normal */,
+                 bool /* poly_a */,
                  FaceClass face_class,
                  CSG::Hooks &hooks) {
           std::vector<poly_t::face_t *> new_faces;
@@ -85,11 +85,11 @@ namespace carve {
 
         void REV(const poly_t::face_t *orig_face,
                  const std::vector<const poly_t::vertex_t *> &vertices,
-                 carve::geom3d::Vector normal,
-                 bool poly_a,
+                 carve::geom3d::Vector /* normal */,
+                 bool /* poly_a */,
                  FaceClass face_class,
                  CSG::Hooks &hooks) {
-          normal = -normal;
+          // normal = -normal;
           std::vector<poly_t::face_t *> new_faces;
           new_faces.reserve(1);
           new_faces.push_back(orig_face->create(vertices, true));

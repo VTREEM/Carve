@@ -215,7 +215,7 @@ void drawCube(const carve::geom3d::Vector &a, const carve::geom3d::Vector &b) {
   glEnd();
 }
 
-static void drawCell(int level, carve::csg::Octree::Node *node) {
+static void drawCell(int /* level */, carve::csg::Octree::Node *node) {
   // we only want to draw leaf nodes
   if (!node->hasChildren() && node->hasGeometry()) {
     glColor3f(1,0,0);
@@ -243,7 +243,7 @@ static void __stdcall _faceBegin(GLenum type, void *data) {
   glNormal3f(face->plane.N.x, face->plane.N.y, face->plane.N.z);
 }
 
-static void __stdcall _faceEnd(void *data) {
+static void __stdcall _faceEnd(void * /* data */) {
   glEnd();
 }
 
@@ -253,11 +253,11 @@ static void __stdcall _normalBegin(GLenum type, void *data) {
   glNormal3dv(normal);
 }
 
-static void __stdcall _normalEnd(void *data) {
+static void __stdcall _normalEnd(void * /* data */) {
   glEnd();
 }
 
-static void __stdcall _colourVertex(void *vertex_data, void *data) {
+static void __stdcall _colourVertex(void *vertex_data, void * /* data */) {
   std::pair<carve::geom3d::Vector, cRGBA> &vd(*static_cast<std::pair<carve::geom3d::Vector, cRGBA> *>(vertex_data));
   glColor4f(vd.second.r, vd.second.g, vd.second.b, vd.second.a);
   glVertex3f(vd.first.x, vd.first.y, vd.first.z);

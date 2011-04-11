@@ -157,7 +157,7 @@ namespace carve {
 
         inline bool isLeaf() const { return children == NULL; }
 
-        Node(Node *_parent, const vector_t &_min, const vector_t &_max) : parent(_parent), min(_min), max(_max), children(NULL) {
+        Node(Node *_parent, const vector_t &_min, const vector_t &_max) : parent(_parent), children(NULL), min(_min), max(_max) {
           aabb = makeAABB();
         }
 
@@ -174,7 +174,7 @@ namespace carve {
         }
 
         template<typename obj_t>
-        bool insert(const obj_t &object) {
+        void insert(const obj_t &object) {
           if (!isLeaf()) {
             for (size_t i = 0; i < n_children; ++i) {
               if (intersection_test(children[i].aabb, object)) {

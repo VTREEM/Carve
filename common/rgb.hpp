@@ -25,8 +25,7 @@ struct cRGB {
 
   cRGB() : r(0), g(0), b(0) { }
 
-  template <typename T>
-  cRGB(T _r, T _g, T _b) : r((value_type)_r), g((value_type)_g), b((value_type)_b) { }
+  cRGB(float _r, float _g, float _b) : r(_r), g(_g), b(_b) { }
 };
 
 struct cRGBA {
@@ -34,8 +33,8 @@ struct cRGBA {
   value_type r, g, b, a;
 
   cRGBA() : r(0),g(0),b(0),a(1) { }
-  template <typename T>
-  cRGBA(T _r, T _g, T _b, T _a = T(1)) : r((value_type)_r), g((value_type)_g), b((value_type)_b), a((value_type)_a) { }
+
+  cRGBA(float _r, float _g, float _b, float _a = 1.0f) : r(_r), g(_g), b(_b), a(_a) { }
 
   cRGBA(const cRGB &rgb) : r(rgb.r), g(rgb.g), b(rgb.b), a(1) { }
 };
@@ -48,7 +47,7 @@ static inline cRGB &operator+=(cRGB &a, const cRGB &b) {
   return a;
 }
 
-static inline cRGB operator*(double s, const cRGB &a) {
+static inline cRGB operator*(float s, const cRGB &a) {
   return cRGB(s * a.r, s * a.g, s * a.b);
 }
 
@@ -60,7 +59,7 @@ static inline cRGBA &operator+=(cRGBA &a, const cRGBA &b) {
   return a;
 }
 
-static inline cRGBA operator*(double s, const cRGBA &a) {
+static inline cRGBA operator*(float s, const cRGBA &a) {
   return cRGBA(s * a.r, s * a.g, s * a.b, s * a.a);
 }
 

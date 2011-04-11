@@ -19,13 +19,21 @@
 #  include <carve_config.h>
 #endif
 
+#include <carve/carve.hpp>
 #include <carve/interpolator.hpp>
-
 #include <carve/csg.hpp>
+
+#include <fstream>
+#include <string>
+#include <utility>
+#include <set>
+
+#include <time.h>
 
 #include "geom_draw.hpp"
 #include "geometry.hpp"
 #include "scene.hpp"
+#include "rgb.hpp"
 
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
@@ -36,16 +44,6 @@
 #include <GL/glu.h>
 #include <GL/glut.h>
 #endif
-
-#include <fstream>
-#include <string>
-#include <utility>
-#include <set>
-
-#include <time.h>
-
-#include "rgb.hpp"
-#include "geometry.hpp"
 
 typedef carve::poly::Polyhedron poly_t;
 
@@ -62,7 +60,7 @@ static inline void glColor(const cRGBA &c) {
 carve::interpolate::FaceVertexAttr<cRGBA> fv_colours;
 
 void drawColourPolyhedron(poly_t *poly, float r, float g, float b, float a) {
-  cRGBA cdefault = cRGBA(r, g, b);
+  cRGBA cdefault(r, g, b);
   glColor(cdefault);
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

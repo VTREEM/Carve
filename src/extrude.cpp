@@ -31,6 +31,7 @@
 #include "write_ply.hpp"
 
 #include <iostream>
+#include <cctype>
 
 template<unsigned ndim>
 carve::geom::vector<ndim> lerp(

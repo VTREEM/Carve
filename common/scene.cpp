@@ -390,7 +390,7 @@ Option* OptionGroup::createOption(const char *caption, bool initialValue) {
 bool Option::isChecked() {
   GLUI_Checkbox *cb = optionToCheckboxes[this];
   if (cb != NULL) {
-    return cb->get_int_val();
+    return cb->get_int_val() != 0;
   } else {
     return false;
   }

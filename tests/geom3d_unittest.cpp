@@ -31,9 +31,10 @@ using namespace carve::geom3d;
 
 #include BOOST_INCLUDE(random.hpp)
 
-// OSX only.
 uint32_t getseed() {
+#if defined(__APPLE__)
   srandomdev();
+#endif
   return random();
 }
 

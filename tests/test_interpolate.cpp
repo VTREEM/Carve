@@ -52,7 +52,7 @@ struct TestScene : public Scene {
     t = strchr(l, k);
     if (t != NULL) {
       int layer = t - l;
-      if (layer < draw_flags.size()) {
+      if ((size_t)layer < draw_flags.size()) {
         draw_flags[layer] = !draw_flags[layer];
       }
     }
@@ -60,7 +60,7 @@ struct TestScene : public Scene {
   }
 
   virtual GLvoid draw() {
-    for (int i = 0; i < draw_flags.size(); ++i) {
+    for (size_t i = 0; i < draw_flags.size(); ++i) {
       if (draw_flags[i]) glCallList(draw_list_base + i);
     }
   }

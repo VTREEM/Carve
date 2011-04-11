@@ -247,7 +247,7 @@ void writeOBJ(std::ostream &out, const carve::line::PolylineSet *lines) {
   file.write(out);
 }
 
-void writeOBJ(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii) {
+void writeOBJ(std::string &out_file, const carve::line::PolylineSet *lines, bool /* ascii */) {
   std::ofstream out(out_file.c_str(), std::ios_base::binary);
   if (!out.is_open()) { std::cerr << "File '" <<  out_file << "' could not be opened." << std::endl; return; }
   writeOBJ(out, lines);
@@ -273,7 +273,7 @@ void writeVTK(std::ostream &out, const carve::line::PolylineSet *lines) {
   file.write(out);
 }
 
-void writeVTK(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii) {
+void writeVTK(std::string &out_file, const carve::line::PolylineSet *lines, bool /* ascii */) {
   std::ofstream out(out_file.c_str(), std::ios_base::binary);
   if (!out.is_open()) { std::cerr << "File '" <<  out_file << "' could not be opened." << std::endl; return; }
   writeVTK(out, lines);

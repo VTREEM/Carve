@@ -53,7 +53,7 @@ namespace carve {
 
 #else
 
-    IntersectDebugHooks *intersect_installDebugHooks(IntersectDebugHooks *hooks) {
+    IntersectDebugHooks *intersect_installDebugHooks(IntersectDebugHooks * /* hooks */) {
       return NULL;
     }
 

@@ -120,10 +120,10 @@ namespace opt {
       return std::string ("Usage: ") + progname + std::string(" [options] [args]");
     };
 
-    virtual void optval(const std::string &o, const std::string &v) {
+    virtual void optval(const std::string & /* o */, const std::string & /* v */) {
     }
 
-    virtual void arg(const std::string &a) {
+    virtual void arg(const std::string & /* a */) {
     }
 
     void long_opt(std::vector<std::string>::const_iterator &i, const std::vector<std::string>::const_iterator &e) {

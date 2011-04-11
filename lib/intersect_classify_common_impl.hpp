@@ -158,7 +158,7 @@ namespace carve {
     template <typename CLASSIFIER> 
     static void performClassifyHardFaceGroups(FLGroupList &group,
                                               const carve::poly::Polyhedron *poly_a,
-                                              const CLASSIFIER &classifier,
+                                              const CLASSIFIER & /* classifier */,
                                               CSG::Collector &collector,
                                               CSG::Hooks &hooks) {
       for (FLGroupList::iterator
@@ -167,7 +167,7 @@ namespace carve {
         FaceLoopGroup &grp = (*i);
         FaceLoopList &curr = (grp.face_loops);
         V2Set &perim = ((*i).perimeter);
-        FaceClass fc;
+        FaceClass fc =FACE_UNCLASSIFIED;
 
         for (FaceLoop *f = curr.head; f; f = f->next) {
           const carve::poly::Polyhedron::vertex_t *v1, *v2;

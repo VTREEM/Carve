@@ -29,10 +29,6 @@
 #include <carve/geom2d.hpp>
 #include <carve/heap.hpp>
 
-#include "read_ply.hpp"
-#include "write_ply.hpp"
-
-#include "opts.hpp"
 
 #include <fstream>
 #include <string>
@@ -40,14 +36,16 @@
 #include <set>
 #include <algorithm>
 
-#include <time.h>
-#include <sys/time.h>
-
 typedef carve::mesh::MeshSet<3> meshset_t;
 typedef carve::mesh::Mesh<3> mesh_t;
 typedef mesh_t::vertex_t vertex_t;
 typedef mesh_t::edge_t edge_t;
 typedef mesh_t::face_t face_t;
+
+#include "read_ply.hpp"
+#include "write_ply.hpp"
+
+#include "opts.hpp"
 
 int main(int argc, char **argv) {
   try {

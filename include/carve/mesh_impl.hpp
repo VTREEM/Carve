@@ -333,7 +333,8 @@ namespace carve {
 
     template<unsigned ndim>
     Edge<ndim>::Edge(vertex_t *_vert, face_t *_face) :
-        vert(_vert), face(_face), prev(this), next(this), rev(NULL) {
+        vert(_vert), face(_face), prev(NULL), next(NULL), rev(NULL) {
+      prev = next = this;
     }
 
 
@@ -750,8 +751,8 @@ namespace carve {
 
 
     template<unsigned ndim>
-    MeshSet<ndim>::MeshSet(std::vector<typename MeshSet<ndim>::vertex_t> &_vertex_storage,
-                           std::vector<MeshSet<ndim>::mesh_t *> &_meshes) {
+    MeshSet<ndim>::MeshSet(std::vector<vertex_t> &_vertex_storage,
+                           std::vector<mesh_t *> &_meshes) {
       vertex_storage.swap(_vertex_storage);
       meshes.swap(_meshes);
 
@@ -867,7 +868,7 @@ namespace carve {
 
 
     template<unsigned ndim>
-    typename MeshSet<ndim>::FaceIter::super::difference_type MeshSet<ndim>::FaceIter::operator-(const FaceIter &other) const {
+    typename MeshSet<ndim>::FaceIter::difference_type MeshSet<ndim>::FaceIter::operator-(const FaceIter &other) const {
       CARVE_ASSERT(obj == other.obj);
       if (mesh == other.mesh) return face - other.face;
 
@@ -877,13 +878,9 @@ namespace carve {
       }
 
       if (mesh < other.mesh) {
-        return -(obj->meshes[mesh]->faces.size() - face +
-                 m +
-                 other.face);
+        return -(difference_type)((obj->meshes[mesh]->faces.size() - face) + m + other.face);
       } else {
-        return +(obj->meshes[other.mesh]->faces.size() - other.face +
-                 m +
-                 face);
+        return +(difference_type)((obj->meshes[other.mesh]->faces.size() - other.face) + m + face);
       }
     }
   }

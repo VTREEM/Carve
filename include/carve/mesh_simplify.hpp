@@ -105,7 +105,7 @@ namespace carve {
       struct FlippableBase {
         double min_dp;
 
-        FlippableBase(double min_dp = 0.0) {
+        FlippableBase(double _min_dp = 0.0) : min_dp(_min_dp) {
         }
 
         virtual bool canFlip(const EdgeInfo *) const =0;
@@ -137,8 +137,11 @@ namespace carve {
           return std::min(e->c[2], e->c[3]) - std::min(e->c[0], e->c[1]);
         }
 
-        struct Priority {
+        class Priority {
+          Priority &operator=(const Priority &);
           const FlippableBase &flip;
+
+        public:
           Priority(const FlippableBase &_flip) : flip(_flip) {}
           bool operator()(const EdgeInfo *a, const EdgeInfo *b) const { return flip.score(a) > flip.score(b); }
         };
@@ -221,7 +224,10 @@ namespace carve {
           return min_edgelen - e->l[0];
         }
 
-        struct Priority {
+        class Priority {
+          Priority &operator=(const Priority &);
+
+        public:
           const EdgeMerger &merger;
           Priority(const EdgeMerger &_merger) : merger(_merger) {
           }
@@ -279,11 +285,11 @@ namespace carve {
         CARVE_ASSERT(i != edge_info.end());
         EdgeInfo *e = (*i).second;
 
-        bool heap_pre = e->heap_idx != -1U;
+        bool heap_pre = e->heap_idx != ~0U;
         (*i).second->update();
         bool heap_post = edge->v1() < edge->v2() && flipper.canFlip(e);
 
-        if (!heap_pre and heap_post) {
+        if (!heap_pre && heap_post) {
           edge_heap.push_back(e);
           carve::heap::push_heap(edge_heap.begin(),
                                  edge_heap.end(),
@@ -298,7 +304,7 @@ namespace carve {
                                    EdgeInfo::NotifyPos());
           CARVE_ASSERT(edge_heap.back() == e);
           edge_heap.pop_back();
-          e->heap_idx = -1U;
+          e->heap_idx = ~0U;
         } else if (heap_pre && heap_post) {
           CARVE_ASSERT(edge_heap[e->heap_idx] == e);
           carve::heap::adjust_heap(edge_heap.begin(),
@@ -312,7 +318,7 @@ namespace carve {
 
 
 
-      size_t flipEdges(meshset_t *meshset,
+      size_t flipEdges(meshset_t * /* meshset */,
                        const FlippableBase &flipper) {
         size_t n_mods = 0;
 
@@ -328,7 +334,7 @@ namespace carve {
           if (e->edge->v1() < e->edge->v2() && flipper.canFlip(e)) {
             edge_heap.push_back(e);
           } else {
-            e->heap_idx = -1U;
+            e->heap_idx = ~0U;
           }
         }
 
@@ -344,7 +350,7 @@ namespace carve {
                                 EdgeInfo::NotifyPos());
           EdgeInfo *e = edge_heap.back();
           edge_heap.pop_back();
-          e->heap_idx = -1U;
+          e->heap_idx = ~0U;
 
           n_mods++;
           CARVE_ASSERT(flipper.canFlip(e));
@@ -373,7 +379,7 @@ namespace carve {
       void removeFromEdgeMergeHeap(std::vector<EdgeInfo *> &edge_heap,
                                    EdgeInfo *edge,
                                    const EdgeMerger &merger) {
-        if (edge->heap_idx != -1U) {
+        if (edge->heap_idx != ~0U) {
           CARVE_ASSERT(edge_heap[edge->heap_idx] == edge);
           carve::heap::remove_heap(edge_heap.begin(),
                                    edge_heap.end(),
@@ -382,18 +388,18 @@ namespace carve {
                                    EdgeInfo::NotifyPos());
           CARVE_ASSERT(edge_heap.back() == edge);
           edge_heap.pop_back();
-          edge->heap_idx = -1U;
+          edge->heap_idx = ~0U;
         }
       }
 
       void updateEdgeMergeHeap(std::vector<EdgeInfo *> &edge_heap,
                                EdgeInfo *edge,
                                const EdgeMerger &merger) {
-        bool heap_pre = edge->heap_idx != -1U;
+        bool heap_pre = edge->heap_idx != ~0U;
         edge->update();
         bool heap_post = merger.canMerge(edge);
 
-        if (!heap_pre and heap_post) {
+        if (!heap_pre && heap_post) {
           edge_heap.push_back(edge);
           carve::heap::push_heap(edge_heap.begin(),
                                  edge_heap.end(),
@@ -408,7 +414,7 @@ namespace carve {
                                    EdgeInfo::NotifyPos());
           CARVE_ASSERT(edge_heap.back() == edge);
           edge_heap.pop_back();
-          edge->heap_idx = -1U;
+          edge->heap_idx = ~0U;
         } else if (heap_pre && heap_post) {
           CARVE_ASSERT(edge_heap[edge->heap_idx] == edge);
           carve::heap::adjust_heap(edge_heap.begin(),
@@ -423,7 +429,7 @@ namespace carve {
 
 
       // collapse edges edges based upon the predicate implemented by EdgeMerger.
-      size_t collapseEdges(meshset_t *mesh,
+      size_t collapseEdges(meshset_t * /* mesh */,
                            const EdgeMerger &merger) {
         size_t n_mods = 0;
 
@@ -443,7 +449,7 @@ namespace carve {
           if (merger.canMerge(e)) {
             edge_heap.push_back(e);
           } else {
-            e->heap_idx = -1U;
+            e->heap_idx = ~0U;
           }
         }
 
@@ -459,7 +465,7 @@ namespace carve {
                                 EdgeInfo::NotifyPos());
           EdgeInfo *e = edge_heap.back();
           edge_heap.pop_back();
-          e->heap_idx = -1U;
+          e->heap_idx = ~0U;
 
           edge_t *edge = e->edge;
           vertex_t *v1 = edge->v1();
@@ -788,7 +794,7 @@ namespace carve {
       // performed).
       void snap(meshset_t *meshset, int log2_grid, int angle_quantization = 0) {
         double grid = 0.0;
-        if (log2_grid >= std::numeric_limits<double>::min_exponent) grid = exp2((double)log2_grid);
+        if (log2_grid >= std::numeric_limits<double>::min_exponent) grid = pow(2.0, (double)log2_grid);
 
         typedef std::unordered_map<face_t *, uint8_t> axis_influence_map_t;
         axis_influence_map_t axis_influence;
@@ -859,7 +865,7 @@ namespace carve {
           case 1: snapFaces(face_set.begin(), face_set.end(), grid, 0); break;
           case 2: snapFaces(face_set.begin(), face_set.end(), grid, 1); break;
           case 4: snapFaces(face_set.begin(), face_set.end(), grid, 2); break;
-          default: CARVE_ASSERT(!!!"should not be reached");
+          default: CARVE_FAIL("should not be reached");
           }
 
           for (std::set<face_t *>::iterator i = face_set.begin(); i != face_set.end(); ++i) {
@@ -891,7 +897,11 @@ namespace carve {
               carve::geom::vector<3> v = vert->v;
               for (size_t N = 0; N < 3; ++N) {
                 if (constraint & (1 << N)) continue;
-                v.v[N] = ((axes & (1<<N)) ? ceil : floor)(v.v[N] / grid) * grid;
+                if (axes & (1<<N)) {
+                  v.v[N] = ceil(v.v[N] / grid) * grid;
+                } else {
+                  v.v[N] = floor(v.v[N] / grid) * grid;
+                }
               }
               double d = summedError(v, planes);
               if (axes == 0 || d < d_best) {

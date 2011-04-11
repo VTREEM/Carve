@@ -603,6 +603,7 @@ namespace carve {
     public:
       struct FaceIter : public std::iterator<std::random_access_iterator_tag, face_t *> {
         typedef std::iterator<std::random_access_iterator_tag, face_t *> super;
+		typedef typename super::difference_type difference_type;
         const MeshSet<ndim> *obj;
         size_t mesh, face;
 
@@ -622,7 +623,7 @@ namespace carve {
         FaceIter &operator--() { rev(1); return *this; }
         FaceIter &operator-=(int v) { adv(-v); return *this; }
 
-        typename super::difference_type operator-(const FaceIter &other) const;
+        difference_type operator-(const FaceIter &other) const;
 
         bool operator==(const FaceIter &other) const {
           return obj == other.obj && mesh == other.mesh && face == other.face;

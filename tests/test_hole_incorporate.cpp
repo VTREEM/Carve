@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
 
   glColor4f(1, 1, 1, 1);
   glBegin(GL_LINE_LOOP);
-  for (int i = 0; i < merged.size(); ++i) {
+  for (size_t i = 0; i < merged.size(); ++i) {
     glVertex3f((merged[i].x - aabb.pos.x) * scale, (merged[i].y - aabb.pos.y) * scale, 2.0);
   }
   glEnd();

@@ -747,7 +747,7 @@ void carve::csg::CSG::generateEdgeFaceIntersections(const poly_t *a, const poly_
   }
 }
 
-void carve::csg::CSG::determinePotentiallyInteractingOctreeNodes(const poly_t *a, const poly_t *b) {
+void carve::csg::CSG::determinePotentiallyInteractingOctreeNodes(const poly_t * /* a */, const poly_t * /* b */) {
 }
 
 void carve::csg::CSG::generateIntersections(const poly_t *a, const poly_t *b) {
@@ -847,7 +847,7 @@ carve::csg::CSG::~CSG() {
 
 
 void carve::csg::CSG::divideEdges(const std::vector<poly_t::edge_t > &edges,
-                                  const poly_t *poly,
+                                  const poly_t * /* poly */,
                                   detail::Data &data) {
   static carve::TimingName FUNC_NAME("CSG::divideEdges()");
   carve::TimingBlock block(FUNC_NAME);

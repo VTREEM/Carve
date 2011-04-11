@@ -195,10 +195,18 @@ namespace carve {
 }
 
 
+#if defined(_MSC_VER)
+#  define MACRO_BEGIN do {
+#  define MACRO_END   __pragma(warning(push)) __pragma(warning(disable:4127)) } while(0) __pragma(warning(pop))
+#else
+#  define MACRO_BEGIN do {
+#  define MACRO_END   } while(0)
+#endif
+
 #if !defined(CARVE_NODEBUG)
-#  define CARVE_ASSERT(x) do { if (!(x)) throw carve::exception() << __FILE__ << ":" << __LINE__ << "  " << #x; } while(0)
+#  define CARVE_ASSERT(x) MACRO_BEGIN if (!(x)) throw carve::exception() << __FILE__ << ":" << __LINE__ << "  " << #x; MACRO_END
 #else
 #  define CARVE_ASSERT(X)
 #endif
 
-#define CARVE_FAIL(x) do { throw carve::exception() << __FILE__ << ":" << __LINE__ << "  " << #x; } while(0)
+#define CARVE_FAIL(x) MACRO_BEGIN throw carve::exception() << __FILE__ << ":" << __LINE__ << "  " << #x; MACRO_END

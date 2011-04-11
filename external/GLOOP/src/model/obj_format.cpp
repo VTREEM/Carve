@@ -27,6 +27,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <gloop/gloop.hpp>
 #include <gloop/model/stream.hpp>
 #include <gloop/model/obj_format.hpp>
 #include <gloop/stringfuncs.hpp>
@@ -178,7 +179,7 @@ namespace gloop {
 
       while (in.good()) {
         std::string s = "";
-        while (1) {
+        for (;;) {
           std::string t;
           std::getline(in, t);
           if (t.size() && t[0] == '#') continue;
@@ -347,7 +348,7 @@ namespace {
   struct null : public prop {
     virtual ~null() {}
 
-    virtual bool setup(const gloop::stream::named_element_t *elem) const {
+    virtual bool setup(const gloop::stream::named_element_t * /* elem */) const {
       return true;
     }
     virtual std::string next() const {

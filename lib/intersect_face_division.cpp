@@ -231,7 +231,7 @@ namespace {
                         const carve::csg::V2Set &edges,
                         std::list<std::vector<const poly_t::vertex_t *> > &face_loops,
                         std::list<std::vector<const poly_t::vertex_t *> > &hole_loops,
-                        const carve::csg::VertexIntersections &vi) {
+                        const carve::csg::VertexIntersections & /* vi */) {
     Graph graph;
 
     for (carve::csg::V2Set::const_iterator
@@ -254,7 +254,7 @@ namespace {
 
       int len = 0;
 
-      while (1) {
+      for (;;) {
         double in_ang = M_PI + edge->ang;
         if (in_ang > M_TWOPI) in_ang -= M_TWOPI;
 
@@ -546,7 +546,7 @@ namespace {
   static void mergeFacesAndHoles(const poly_t::face_t *face,
                                  std::list<std::vector<const poly_t::vertex_t *> > &f_loops,
                                  std::list<std::vector<const poly_t::vertex_t *> > &h_loops,
-                                 carve::csg::CSG::Hooks &hooks) {
+                                 carve::csg::CSG::Hooks & /* hooks */) {
     std::vector<std::vector<const poly_t::vertex_t *> > face_loops;
     std::vector<std::vector<const poly_t::vertex_t *> > hole_loops;
 
@@ -1207,7 +1207,7 @@ namespace {
       path.clear();
       path.push_back(v);
 
-      while (1) {
+      for (;;) {
         CARVE_ASSERT(p != vertex_graph.end());
 
         // pick a connected vertex to move to.
@@ -1252,7 +1252,7 @@ namespace {
       path.clear();
       path.push_back(v);
 
-      while (1) {
+      for (;;) {
         CARVE_ASSERT(p != vertex_graph.end());
         // pick a connected vertex to move to.
 

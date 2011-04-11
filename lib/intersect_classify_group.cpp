@@ -77,6 +77,8 @@ namespace carve {
 #else
       template <int poly_num>
       class FaceMaker {
+        FaceMaker &operator=(const FaceMaker &);
+
       public:
         CSG::Collector &collector;
         CSG::Hooks &hooks;
@@ -98,6 +100,8 @@ namespace carve {
       typedef FaceMaker<1> FaceMaker1;
 #endif
       class ClassifyFaceGroups {
+        ClassifyFaceGroups &operator=(const ClassifyFaceGroups &);
+
       public:
         CSG::Collector &collector;
         CSG::Hooks &hooks;
@@ -107,7 +111,7 @@ namespace carve {
     
         void classifySimple(FLGroupList &a_loops_grouped,
                             FLGroupList &b_loops_grouped,
-                            VertexClassification &vclass,
+                            VertexClassification & /* vclass */,
                             const carve::poly::Polyhedron *poly_a,
                             const carve::poly::Polyhedron *poly_b) const {
           if (a_loops_grouped.size() < b_loops_grouped.size()) {
@@ -136,7 +140,7 @@ namespace carve {
     
         void classifyHard(FLGroupList &a_loops_grouped,
                           FLGroupList &b_loops_grouped,
-                          VertexClassification &vclass,
+                          VertexClassification & /* vclass */,
                           const carve::poly::Polyhedron *poly_a,
                           const carve::poly::Polyhedron *poly_b) const {
           performClassifyHardFaceGroups(a_loops_grouped, poly_b, FaceMaker0(collector, hooks), collector, hooks);
@@ -149,7 +153,7 @@ namespace carve {
     
         void faceLoopWork(FLGroupList &a_loops_grouped,
                           FLGroupList &b_loops_grouped,
-                          VertexClassification &vclass,
+                          VertexClassification & /* vclass */,
                           const carve::poly::Polyhedron *poly_a,
                           const carve::poly::Polyhedron *poly_b) const {
           performFaceLoopWork(poly_b, a_loops_grouped, *this, collector, hooks);
@@ -177,14 +181,14 @@ namespace carve {
       };
     }
 
-    void CSG::classifyFaceGroups(const V2Set &shared_edges,
+    void CSG::classifyFaceGroups(const V2Set & /* shared_edges */,
                                  VertexClassification &vclass,
                                  const carve::poly::Polyhedron *poly_a,                           
                                  FLGroupList &a_loops_grouped,
-                                 const detail::LoopEdges &a_edge_map,
+                                 const detail::LoopEdges & /* a_edge_map */,
                                  const carve::poly::Polyhedron *poly_b,
                                  FLGroupList &b_loops_grouped,
-                                 const detail::LoopEdges &b_edge_map,
+                                 const detail::LoopEdges & /* b_edge_map */,
                                  CSG::Collector &collector) {
       ClassifyFaceGroups classifier(collector, hooks);
 #if defined(CARVE_DEBUG)

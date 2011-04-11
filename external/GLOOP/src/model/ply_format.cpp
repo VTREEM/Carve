@@ -78,9 +78,9 @@ namespace {
     return -1;
   }
 
-  inline int is_big_endian() {
+  inline bool is_big_endian() {
     long one= 1;
-    return !(*((char *)(&one)));
+    return (*((char *)(&one))) == 0;
   }
 
   inline void _copy(char *a, const char *b, int size, bool swap) {
@@ -333,7 +333,7 @@ namespace {
       char buf[8];
       if (is_list) {
         size_t cts = gloop::stream::type_size(count_type);
-        in.read(buf, cts); if (in.gcount() != cts) return false;
+        in.read(buf, cts); if (in.gcount() != (std::streamsize)cts) return false;
         _read(buf, byteswap, count_type, len);
       }
       if (rd == NULL) {
@@ -344,7 +344,7 @@ namespace {
         for (size_t i = 0; i < len; ++i) {
           rd->next();
           in.read(buf, sz);
-          if (in.gcount() != sz) {
+          if (in.gcount() != (std::streamsize)sz) {
             rd->fail();
             return false;
           }

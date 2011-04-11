@@ -26,9 +26,6 @@ endif(CARVE_WITH_GUI)
 add_executable       (mesh_simplify mesh_simplify.cpp)
 target_link_libraries(mesh_simplify carve_fileformats carve gloop_model)
 
-add_executable       (load load.cpp)
-target_link_libraries(load carve_fileformats carve gloop_model)
-
 add_executable       (triangulate triangulate.cpp)
 target_link_libraries(triangulate carve_fileformats carve gloop_model)
 

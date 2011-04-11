@@ -40,7 +40,7 @@ namespace {
   struct line : public gloop::stream::null_reader {
     carve::input::PolylineSetData *data;
     line(carve::input::PolylineSetData *_data) : data(_data) { }
-    virtual void length(int len) {
+    virtual void length(int /* len */) {
     }
     virtual void next() {
       data->beginPolyline();

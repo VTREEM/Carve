@@ -32,6 +32,8 @@ namespace {
   // private code related to hole patching.
 
   class order_h_loops_2d {
+    order_h_loops_2d &operator=(const order_h_loops_2d &);
+
     const std::vector<std::vector<carve::geom2d::P2> > &poly;
     int axis;
     public:
@@ -47,6 +49,8 @@ namespace {
   };
 
   class heap_ordering_2d {
+    heap_ordering_2d &operator=(const heap_ordering_2d &);
+
     const std::vector<std::vector<carve::geom2d::P2> > &poly;
     const std::vector<std::pair<size_t, size_t> > &loop;
     const carve::geom2d::P2 p;
@@ -672,7 +676,7 @@ bool carve::triangulate::detail::doTriangulate(vertex_info *begin, std::vector<c
   std::cerr << "doTriangulate complete; remain=" << remain << std::endl;
 #endif
 
-  bool ret;
+  bool ret = true;
 
   if (remain > 3) {
     std::vector<carve::geom2d::P2> temp;
@@ -741,8 +745,8 @@ bool testCandidateAttachment(const std::vector<std::vector<carve::geom2d::P2> > 
 
   size_t v1 = current_f_loop.size() - 1;
   size_t v2 = 0;
-  int v1_side = carve::geom2d::orient2d(test.v1, test.v2, pvert(poly, current_f_loop[v1]));
-  int v2_side = 0;
+  double v1_side = carve::geom2d::orient2d(test.v1, test.v2, pvert(poly, current_f_loop[v1]));
+  double v2_side = 0;
 
   while (v2 != current_f_loop.size()) {
     v2_side = carve::geom2d::orient2d(test.v1, test.v2, pvert(poly, current_f_loop[v2]));

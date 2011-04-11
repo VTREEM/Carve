@@ -142,15 +142,15 @@ namespace carve {
       static void walkGraphSegment(carve::csg::detail::VVSMap &shared_edge_graph,
                                    const carve::csg::detail::VSet &branch_points,
                                    V2 initial,
-                                   const carve::csg::detail::LoopEdges &a_edge_map,
-                                   const carve::csg::detail::LoopEdges &b_edge_map,
+                                   const carve::csg::detail::LoopEdges & /* a_edge_map */,
+                                   const carve::csg::detail::LoopEdges & /* b_edge_map */,
                                    std::list<V2> &out) {
         V2 curr;
         curr = initial;
         bool closed = false;
 
         out.clear();
-        while (1) {
+        for (;;) {
           // walk forward.
           out.push_back(curr);
           remove(curr, shared_edge_graph);
@@ -168,7 +168,7 @@ namespace carve {
         if (!closed) {
           // walk backward.
           curr = initial;
-          while (1) {
+          for (;;) {
             if (branch_points.find(curr.first) != branch_points.end()) break;
             carve::csg::detail::VVSMap::const_iterator o = shared_edge_graph.find(curr.first);
             if (o == shared_edge_graph.end()) break;
@@ -384,8 +384,8 @@ namespace carve {
 
 
       static void traceIntersectionGraph(const V2Set &shared_edges,
-                                         const FLGroupList &a_loops_grouped,
-                                         const FLGroupList &b_loops_grouped,
+                                         const FLGroupList & /* a_loops_grouped */,
+                                         const FLGroupList & /* b_loops_grouped */,
                                          const carve::csg::detail::LoopEdges &a_edge_map,
                                          const carve::csg::detail::LoopEdges &b_edge_map) {
 

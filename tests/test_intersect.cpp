@@ -112,7 +112,7 @@ struct TestScene : public Scene {
     t = strchr(l, k);
     if (t != NULL) {
       int layer = t - l;
-      if (layer < draw_flags.size()) {
+      if ((size_t)layer < draw_flags.size()) {
         draw_flags[layer]->setChecked(!draw_flags[layer]->isChecked());
       }
     }
@@ -120,7 +120,7 @@ struct TestScene : public Scene {
   }
 
   virtual GLvoid draw() {
-    for (int i = 0; i < draw_flags.size(); ++i) {
+    for (size_t i = 0; i < draw_flags.size(); ++i) {
       if (draw_flags[i]->isChecked() && !wireframe_flags[i]) {
         glCallList(draw_list_base + i);
       }
@@ -133,7 +133,7 @@ struct TestScene : public Scene {
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixf(proj);
 
-    for (int i = 0; i < draw_flags.size(); ++i) {
+    for (size_t i = 0; i < draw_flags.size(); ++i) {
       if (draw_flags[i]->isChecked() && wireframe_flags[i]) {
         glCallList(draw_list_base + i);
       }
@@ -145,7 +145,7 @@ struct TestScene : public Scene {
 
     if (rays.size()) {
       glBegin(GL_LINES);
-      for (int i = 0; i < rays.size(); ++i) {
+      for (size_t i = 0; i < rays.size(); ++i) {
         carve::geom3d::Vector a = rays[i].v1, b = rays[i].v2;
         
         glVertex3f(a.x, a.y, a.z);
@@ -171,7 +171,7 @@ struct TestScene : public Scene {
       g_result->findFacesNear(carve::geom3d::LineSegment(from, to), faces);
 
       // see if any of the faces intersect our ray
-      for (int i = 0; i < faces.size();++i) {
+      for (size_t i = 0; i < faces.size();++i) {
         const carve::poly::Face<3> *f = faces[i];
         carve::geom3d::Vector pos;
         if (f->lineSegmentIntersection(carve::geom3d::LineSegment(from, to), pos) > 0) {

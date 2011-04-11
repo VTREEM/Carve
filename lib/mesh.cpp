@@ -398,7 +398,7 @@ namespace carve {
                                            std::vector<std::vector<Edge<3> *> > &efwd,
                                            std::vector<std::vector<Edge<3> *> > &erev) {
         typedef std::unordered_map<std::pair<size_t, size_t>, size_t> pair_counts_t;
-        while (1) {
+        for (;;) {
           pair_counts_t pair_counts;
 
           for (std::vector<std::vector<EdgeOrderData> >::iterator i = begin; i != end; ++i) {

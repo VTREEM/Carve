@@ -396,11 +396,10 @@ namespace carve {
       }
       carve::Timing::stop();
 
-      std::cerr << "could not find test points!!!" << std::endl;
-      return true;
-
       CARVE_FAIL("could not find test points");
 
+      // std::cerr << "could not find test points!!!" << std::endl;
+      // return true;
     done:;
       for (std::map<int, std::set<int> >::iterator i = embedding.begin(); i != embedding.end(); ++i) {
 #if defined(CARVE_DEBUG)
@@ -703,7 +702,7 @@ namespace carve {
       boost::uniform_on_sphere<double> distrib(3);
       boost::variate_generator<boost::mt19937 &, boost::uniform_on_sphere<double> > gen(rng, distrib);
 
-      while (1) {
+      for (;;) {
         carve::geom3d::Vector ray_dir;
         ray_dir = gen();
 
@@ -805,7 +804,7 @@ namespace carve {
 
       std::vector<std::pair<const face_t *, carve::geom3d::Vector> > manifold_intersections;
 
-      while (1) {
+      for (;;) {
         double a1 = random() / double(RAND_MAX) * M_TWOPI;
         double a2 = random() / double(RAND_MAX) * M_TWOPI;
 

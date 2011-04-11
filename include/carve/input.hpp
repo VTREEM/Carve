@@ -35,7 +35,7 @@ namespace carve {
       virtual ~Data() {
       }
 
-      virtual void transform(const carve::math::Matrix &transform) {
+      virtual void transform(const carve::math::Matrix & /* transform */) {
       }
     };
 

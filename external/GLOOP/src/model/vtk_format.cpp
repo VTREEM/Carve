@@ -27,6 +27,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <gloop/gloop.hpp>
 #include <gloop/model/stream.hpp>
 #include <gloop/model/vtk_format.hpp>
 #include <gloop/stringfuncs.hpp>
@@ -306,7 +307,7 @@ namespace gloop {
       }
     }
 
-    bool VtkReader::readXML(std::istream &in) {
+    bool VtkReader::readXML(std::istream & /* in */) {
 	  return false;
     }
 
@@ -339,7 +340,7 @@ namespace gloop {
       out << "ASCII" << std::endl;
 
       for (std::list<std::pair<std::string, stream::block_t> >::iterator i = blocks.begin(); i != blocks.end(); ++i) {
-        std::string &blockname = (*i).first;
+        // std::string &blockname = (*i).first;
         stream::block_t &block = (*i).second;
         if (block.name == "polyhedron") {
           if (block.wt != NULL) block.wt->begin();

@@ -79,9 +79,9 @@ namespace gloop {
     MonitoredRefObj &operator=(const MonitoredRefObj &);
 
   protected:
-    virtual void refcountIncreased(int refcount) const {
+    virtual void refcountIncreased(int /* refcount */) const {
     }
-    virtual void refcountDecreased(int refcount) const {
+    virtual void refcountDecreased(int /* refcount */) const {
     }
 
     virtual ~MonitoredRefObj() {

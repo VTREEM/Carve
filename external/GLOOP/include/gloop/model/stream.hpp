@@ -107,20 +107,20 @@ namespace gloop {
       virtual void fail() { }
       virtual void end() { }
 
-      virtual void length(int l) { }
+      virtual void length(int /* l */) { }
     };
 
 
 
     struct null_reader : public reader_base {
-      virtual void _val(int8_t t)   { }
-      virtual void _val(uint8_t t)  { }
-      virtual void _val(int16_t t)  { }
-      virtual void _val(uint16_t t) { }
-      virtual void _val(int32_t t)  { }
-      virtual void _val(uint32_t t) { }
-      virtual void _val(float t)    { }
-      virtual void _val(double t)   { }
+      virtual void _val(int8_t /* t */)   { }
+      virtual void _val(uint8_t /* t */)  { }
+      virtual void _val(int16_t /* t */)  { }
+      virtual void _val(uint16_t /* t */) { }
+      virtual void _val(int32_t /* t */)  { }
+      virtual void _val(uint32_t /* t */) { }
+      virtual void _val(float /* t */)    { }
+      virtual void _val(double /* t */)   { }
     };
 
 
@@ -187,14 +187,14 @@ namespace gloop {
 
 
     struct null_writer : public writer_base {
-      virtual void _val(int8_t &t)   { }
-      virtual void _val(uint8_t &t)  { }
-      virtual void _val(int16_t &t)  { }
-      virtual void _val(uint16_t &t) { }
-      virtual void _val(int32_t &t)  { }
-      virtual void _val(uint32_t &t) { }
-      virtual void _val(float &t)    { }
-      virtual void _val(double &t)   { }
+      virtual void _val(int8_t & /* t */)   { }
+      virtual void _val(uint8_t & /* t */)  { }
+      virtual void _val(int16_t & /* t */)  { }
+      virtual void _val(uint16_t & /* t */) { }
+      virtual void _val(int32_t & /* t */)  { }
+      virtual void _val(uint32_t & /* t */) { }
+      virtual void _val(float & /* t */)    { }
+      virtual void _val(double & /* t */)   { }
     };
 
 
