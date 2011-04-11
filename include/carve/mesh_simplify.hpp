@@ -538,12 +538,13 @@ namespace carve {
               vert_to_edges[e2->v2()].erase(e2i);
               removeFromEdgeMergeHeap(edge_heap, e1i, merger);
               removeFromEdgeMergeHeap(edge_heap, e2i, merger);
-              delete e1i;
-              delete e2i;
               edge_info.erase(e1);
               edge_info.erase(e2);
               f1->clearEdges();
+              delete e1i;
+              delete e2i;
             }
+            delete e;
           }
         }
 

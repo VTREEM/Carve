@@ -20,7 +20,22 @@ option(CARVE_DEBUG                       "Compile in debug code"                
 option(CARVE_DEBUG_WRITE_PLY_DATA        "Write geometry output during debug"                OFF)
 option(CARVE_INTERSECT_GLU_TRIANGULATOR  "Include support for GLU triangulator in intersect" OFF)
 
-
+if (MSVC)
+  # For MSVC, CMake sets certain flags to defaults we want to override.
+  # This replacement code is taken from sample in the CMake Wiki at
+  # http://www.cmake.org/Wiki/CMake_FAQ#Dynamic_Replace.
+  foreach (flag_var
+           CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+           CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+    # In hermetic build environments, tests may not have access to MS runtime
+    # DLLs, so this replaces /MD (CRT libraries in DLLs) with /MT (static CRT
+    # libraries).
+    string(REPLACE "/MD" "-MT" ${flag_var} "${${flag_var}}")
+    # We prefer more strict warning checking for building Google Test.
+    # Replaces /W3 with /W4 in defaults.
+    string(REPLACE "/W3" "-W4" ${flag_var} "${${flag_var}}")
+  endforeach()
+endif()
 
 if (BUILD_COVERAGE)
   set(BUILD_SHARED_LIBS OFF)

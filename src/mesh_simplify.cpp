@@ -62,6 +62,8 @@ int main(int argc, char **argv) {
 
     carve::poly::Polyhedron *poly = carve::polyhedronFromMesh(p, -1);
     writePLY(std::cout, poly, true);
+    delete poly;
+    delete p;
     return 0;
   } catch (carve::exception e) {
     std::cerr << "exception: " << e.str() << std::endl;
