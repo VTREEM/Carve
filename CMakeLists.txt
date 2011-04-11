@@ -133,10 +133,4 @@ include(CTest)
 
 if(BUILD_TESTING)
   ENABLE_TESTING()
-
-  # ADD_TEST(exact_unittest    ${carve_BINARY_DIR}/tests/exact_unittest)
-  # ADD_TEST(shewchuk_unittest ${carve_BINARY_DIR}/tests/shewchuk_unittest)
-  ADD_TEST(geom2d_unittest   ${carve_BINARY_DIR}/tests/geom2d_unittest)
-  ADD_TEST(geom3d_unittest   ${carve_BINARY_DIR}/tests/geom3d_unittest)
-  ADD_TEST(mesh_unittest     ${carve_BINARY_DIR}/tests/mesh_unittest)
 endif(BUILD_TESTING)
