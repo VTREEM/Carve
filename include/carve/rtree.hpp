@@ -22,6 +22,8 @@
 #include <carve/geom.hpp>
 #include <carve/aabb.hpp>
 
+#include <iostream>
+
 #include <cmath>
 #include <limits>
 
@@ -188,7 +190,7 @@ namespace carve {
             dmax = std::max(dmax, extent.max(*j));
             dsum += extent.len(*j);
           }
-          double r = dsum / (dmax - dmin);
+          double r = dsum ? dsum / (dmax - dmin) : 0.0;
           if (r_best > r) {
             dim = i;
             r_best = r;
