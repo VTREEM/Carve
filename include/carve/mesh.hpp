@@ -563,6 +563,22 @@ namespace carve {
         return is_negative;
       }
 
+      double volume() const {
+        if (is_negative || !faces.size()) return 0.0;
+
+        double vol = 0.0;
+        typename vertex_t::vector_t origin = faces[0]->edge->vert->v;
+
+        for (size_t f = 0; f < faces.size(); ++f) {
+          face_t *face = faces[f];
+          edge_t *e1 = face->edge;
+          for (edge_t *e2 = e1->next ;e2->next != e1; e2 = e2->next) {
+            vol += carve::geom3d::tetrahedronVolume(e1->vert->v, e2->vert->v, e2->next->vert->v, origin);
+          }
+        }
+        return vol;
+      }
+
       struct IsClosed {
         bool operator()(const Mesh &mesh) const { return mesh.isClosed(); }
         bool operator()(const Mesh *mesh) const { return mesh->isClosed(); }
