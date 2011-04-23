@@ -646,8 +646,8 @@ namespace carve {
         edge_t *emin = closed_edges[0];
         if (emin->rev->v1()->v < emin->v1()->v) emin = emin->rev;
         for (size_t i = 1; i < closed_edges.size(); ++i) {
-          if (emin->v1()->v < closed_edges[i]->v1()->v) emin = closed_edges[i];
-          if (emin->v1()->v < closed_edges[i]->rev->v1()->v) emin = closed_edges[i]->rev;
+          if (closed_edges[i]->v1()->v      < emin->v1()->v) emin = closed_edges[i];
+          if (closed_edges[i]->rev->v1()->v < emin->v1()->v) emin = closed_edges[i]->rev;
         }
 
         std::vector<face_t *> min_faces;
@@ -657,6 +657,8 @@ namespace carve {
           CARVE_ASSERT(e->rev != NULL);
           e = e->rev->next;
           CARVE_ASSERT(e->v1() == emin->v1());
+          CARVE_ASSERT(e->v1()->v < e->v2()->v);
+          CARVE_ASSERT(e->v1()->v.x <= e->v2()->v.x);
         } while (e != emin);
 
         double max_abs_x = 0.0;
