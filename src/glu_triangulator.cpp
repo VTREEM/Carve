@@ -111,7 +111,7 @@ void GLUTriangulator::processOutputFace(std::vector<carve::poly::Face<3> *> &fac
   size_t f = 0;
   while (f < faces.size()) {
     carve::poly::Face<3> *face = faces[f];
-    if (face->vertices.size() == 3) {
+    if (face->nVertices() == 3) {
       ++f;
       continue;
     }
@@ -123,8 +123,8 @@ void GLUTriangulator::processOutputFace(std::vector<carve::poly::Face<3> *> &fac
     gluTessBeginPolygon(tess, (void *)this);
     gluTessBeginContour(tess);
 
-    for (size_t i = 0; i < face->vertices.size(); ++i) {
-      gluTessVertex(tess, (GLdouble *)face->vertices[i]->v.v, (GLvoid *)face->vertices[i]);
+    for (size_t i = 0; i < face->nVertices(); ++i) {
+      gluTessVertex(tess, (GLdouble *)face->vertex(i)->v.v, (GLvoid *)face->vertex(i));
     }
 
     gluTessEndContour(tess);
