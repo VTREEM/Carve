@@ -97,11 +97,8 @@ target_link_libraries(mesh_triangulate_unittest carve carve_fileformats gloop_mo
 cxx_test(heap_unittest gtest_main)
 target_link_libraries(heap_unittest carve)
 
-# not committed yet.
+cxx_test(exact_unittest gtest_main)
+target_link_libraries(exact_unittest carve)
 
-# cxx_test(exact_unittest gtest_main)
-# target_link_libraries(exact_unittest carve)
-
-# cxx_test(shewchuk_unittest gtest_main)
-# target_link_libraries(shewchuk_unittest carve)
-
+cxx_test(shewchuk_unittest gtest_main)
+target_link_libraries(shewchuk_unittest carve)
