@@ -82,6 +82,9 @@ function(cxx_test name libs)
   cxx_test_with_flags("${name}" "${CMAKE_CXX_FLAGS}" "${libs}" "${name}.cpp" ${ARGN})
 endfunction()
 
+cxx_test(triangle_intersection_unittest gtest_main)
+target_link_libraries(triangle_intersection_unittest carve)
+
 cxx_test(geom2d_unittest gtest_main)
 target_link_libraries(geom2d_unittest carve)
 

@@ -27,6 +27,7 @@ add_library(carve
             tag.cpp
             timing.cpp
             triangulator.cpp
+            triangle_intersection.cpp
             shewchuk_predicates.cpp)
 
 set_target_properties(carve PROPERTIES
