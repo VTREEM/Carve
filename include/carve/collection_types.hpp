@@ -1,6 +1,6 @@
 
 // Begin License:
-// Copyright (C) 2006-2008 Tobias Sargeant (tobias.sargeant@gmail.com).
+// Copyright (C) 2006-2011 Tobias Sargeant (tobias.sargeant@gmail.com).
 // All rights reserved.
 //
 // This file is part of the Carve CSG Library (http://carve-csg.com/)
