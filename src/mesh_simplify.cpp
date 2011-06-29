@@ -56,14 +56,18 @@ int main(int argc, char **argv) {
 
     carve::mesh::MeshSimplifier simplifier;
 
+    simplifier.removeFins(p);
+    simplifier.removeLowVolumeManifolds(p, 1.0);
+
     // p->transform(carve::geom::quantize<10,3>());
-    simplifier.simplify(p, 1e-2, 1e-2, M_PI/180.0, 2e-3);
+    simplifier.simplify(p, 1e-2, 1.0, M_PI/180.0, 2e-3);
     // std::cerr << "n_flips: " << simplifier.improveMesh_conservative(p) << std::endl;
+
+    simplifier.removeFins(p);
+    simplifier.removeLowVolumeManifolds(p, 1.0);
 
     carve::poly::Polyhedron *poly = carve::polyhedronFromMesh(p, -1);
     writePLY(std::cout, poly, true);
-    delete poly;
-    delete p;
     return 0;
   } catch (carve::exception e) {
     std::cerr << "exception: " << e.str() << std::endl;
