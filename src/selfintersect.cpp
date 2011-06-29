@@ -21,6 +21,7 @@
 
 #include <carve/csg.hpp>
 #include <carve/csg_triangulator.hpp>
+#include <carve/triangle_intersection.hpp>
 #include <carve/poly.hpp>
 #include <carve/mesh.hpp>
 #include <carve/rtree.hpp>
@@ -582,22 +583,14 @@ int main(int argc, char **argv) {
       tri_b[1] = fb->edge->next->vert->v;
       tri_b[2] = fb->edge->next->next->vert->v;
 
-      if (fa->getAABB().intersects(fb->getAABB())) {
-        switch (tripair_intersection(tri_a, tri_b)) {
-        case 0:
-          break;
-        case 1:
-          break;
-        case 2:
-          break;
-        case 3: {
-          std::cerr << "intersection: " << fa << " - " << fb << std::endl;
-          static int c = 0;
-          std::ostringstream fn;
-          fn << "intersection-" << c++ << ".ply";
-          std::cerr << fn.str().c_str() << std::endl;
-          std::ofstream outf(fn.str().c_str());
-          outf << "\
+      if (carve::geom::triangle_intersection_exact(tri_a, tri_b) == carve::geom::TR_TYPE_INT) {
+        std::cerr << "intersection: " << fa << " - " << fb << std::endl;
+        static int c = 0;
+        std::ostringstream fn;
+        fn << "intersection-" << c++ << ".ply";
+        std::cerr << fn.str().c_str() << std::endl;
+        std::ofstream outf(fn.str().c_str());
+        outf << "\
 ply\n\
 format ascii 1.0\n\
 element vertex 6\n\
@@ -607,19 +600,17 @@ property double z\n\
 element face 2\n\
 property list uchar uchar vertex_indices\n\
 end_header\n";
-          outf << std::setprecision(30);
-          outf << tri_a[0].x << " " << tri_a[0].y << " " << tri_a[0].z << "\n";
-          outf << tri_a[1].x << " " << tri_a[1].y << " " << tri_a[1].z << "\n";
-          outf << tri_a[2].x << " " << tri_a[2].y << " " << tri_a[2].z << "\n";
-          outf << tri_b[0].x << " " << tri_b[0].y << " " << tri_b[0].z << "\n";
-          outf << tri_b[1].x << " " << tri_b[1].y << " " << tri_b[1].z << "\n";
-          outf << tri_b[2].x << " " << tri_b[2].y << " " << tri_b[2].z << "\n";
-          outf << "\
+        outf << std::setprecision(30);
+        outf << tri_a[0].x << " " << tri_a[0].y << " " << tri_a[0].z << "\n";
+        outf << tri_a[1].x << " " << tri_a[1].y << " " << tri_a[1].z << "\n";
+        outf << tri_a[2].x << " " << tri_a[2].y << " " << tri_a[2].z << "\n";
+        outf << tri_b[0].x << " " << tri_b[0].y << " " << tri_b[0].z << "\n";
+        outf << tri_b[1].x << " " << tri_b[1].y << " " << tri_b[1].z << "\n";
+        outf << tri_b[2].x << " " << tri_b[2].y << " " << tri_b[2].z << "\n";
+        outf << "\
 3 0 1 2\n\
 3 5 4 3\n";
-          break;
-        }
-        }
+        break;
       }
     }
   }
