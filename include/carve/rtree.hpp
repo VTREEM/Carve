@@ -66,19 +66,17 @@ namespace carve {
         };
       };
 
-
-
+      // Fill an rtree node with a set of (data, aabb) pairs.
       template<typename iter_t>
       void _fill(iter_t begin, iter_t end, data_aabb_t) {
         data.reserve(std::distance(begin, end));
-        vector_t min = (*begin).bbox.min();
-        vector_t max = (*begin).bbox.max();
         for (iter_t i = begin; i != end; ++i) {
           data.push_back((*i).data);
         }
         bbox.fit(begin, end);
       }
 
+      // Fill an rtree node with a set of data.
       template<typename iter_t>
       void _fill(iter_t begin, iter_t end, data_t) {
         data.reserve(std::distance(begin, end));
@@ -86,6 +84,7 @@ namespace carve {
         bbox.fit(begin, end, aabb_calc_t());
       }
 
+      // Fill an rtree node with a set of child nodes.
       template<typename iter_t>
       void _fill(iter_t begin, iter_t end, node_t *) {
         iter_t i = begin;
@@ -97,6 +96,8 @@ namespace carve {
         bbox.fit(begin, end);
       }
 
+      // Search the rtree for objects that intersect obj (generally an aabb).
+      // The aabb class must provide a method intersects(obj_t).
       template<typename obj_t, typename out_iter_t>
       void search(const obj_t &obj, out_iter_t out) {
         if (!bbox.intersects(obj)) return;
@@ -109,6 +110,51 @@ namespace carve {
         }
       }
 
+      // update the bounding box extents of nodes that intersect obj (generally an aabb).
+      // The aabb class must provide a method intersects(obj_t).
+      template<typename obj_t>
+      void updateExtents(const obj_t &obj) {
+        if (!bbox.intersects(obj)) return;
+
+        if (child) {
+          node_t *node = child;
+          node->updateExtents(obj);
+          bbox = node->bbox;
+          for (node = node->sibling; node; node = node->sibling) {
+            node->updateExtents(obj);
+            bbox.unionAABB(node->bbox);
+          }
+        } else {
+          bbox.fit(data.begin(), data.end());
+        }
+      }
+
+      // update the bounding box extents of nodes that intersect obj (generally an aabb).
+      // The aabb class must provide a method intersects(obj_t).
+      bool remove(const data_t &val, const aabb_t &val_aabb) {
+        if (!bbox.intersects(val_aabb)) return false;
+
+        if (child) {
+          node_t *node = child;
+          node->remove(val, val_aabb);
+          bbox = node->bbox;
+          bool removed = false;
+          for (node = node->sibling; node; node = node->sibling) {
+            if (!removed) removed = node->remove(val, val_aabb);
+            bbox.unionAABB(node->bbox);
+          }
+          return removed;
+        } else {
+          typename std::vector<data_t>::iterator i = std::remove(data.begin(), data.end(), val);
+          if (i == data.end()) {
+            return false;
+          }
+          data.erase(i, data.end());
+          bbox.fit(data.begin(), data.end());
+          return true;
+        }
+      }
+
       template<typename iter_t>
       RTreeNode(iter_t begin, iter_t end) : bbox(), child(NULL), sibling(NULL), data() {
         _fill(begin, end, typename std::iterator_traits<iter_t>::value_type());
@@ -116,6 +162,7 @@ namespace carve {
 
 
 
+      // functor for ordering nodes by increasing aabb midpoint, along a specified axis.
       struct aabb_cmp_mid {
         size_t dim;
         aabb_cmp_mid(size_t _dim) : dim(_dim) { }
@@ -128,6 +175,7 @@ namespace carve {
         }
       };
 
+      // functor for ordering nodes by increasing aabb minimum, along a specified axis.
       struct aabb_cmp_min {
         size_t dim;
         aabb_cmp_min(size_t _dim) : dim(_dim) { }
@@ -140,6 +188,7 @@ namespace carve {
         }
       };
 
+      // functor for ordering nodes by increasing aabb maximum, along a specified axis.
       struct aabb_cmp_max {
         size_t dim;
         aabb_cmp_max(size_t _dim) : dim(_dim) { }
@@ -152,6 +201,7 @@ namespace carve {
         }
       };
 
+      // facade for projecting node bounding box onto an axis.
       struct aabb_extent {
         size_t dim;
         aabb_extent(size_t _dim) : dim(_dim) { }

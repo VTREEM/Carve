@@ -22,6 +22,8 @@
 #include <carve/mesh_ops.hpp>
 #include <carve/geom2d.hpp>
 #include <carve/heap.hpp>
+#include <carve/rtree.hpp>
+#include <carve/triangle_intersection.hpp>
 
 #include <fstream>
 #include <string>
@@ -30,6 +32,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "write_ply.hpp"
 
 
 namespace carve {
@@ -40,9 +43,12 @@ namespace carve {
       typedef carve::mesh::MeshSet<3> meshset_t;
       typedef carve::mesh::Mesh<3> mesh_t;
       typedef mesh_t::vertex_t vertex_t;
+      typedef vertex_t::vector_t vector_t;
       typedef mesh_t::edge_t edge_t;
       typedef mesh_t::face_t face_t;
+      typedef face_t::aabb_t aabb_t;
 
+      typedef carve::geom::RTreeNode<3, carve::mesh::Face<3> *> face_rtree_t;
 
 
       struct EdgeInfo {
@@ -108,13 +114,18 @@ namespace carve {
         FlippableBase(double _min_dp = 0.0) : min_dp(_min_dp) {
         }
 
-        virtual bool canFlip(const EdgeInfo *) const =0;
-
         bool open(const EdgeInfo *e) const {
           return e->edge->rev == NULL;
         }
 
+        bool wouldCreateDegenerateEdge(const EdgeInfo *e) const {
+          return e->edge->prev->vert == e->edge->rev->prev->vert;
+        }
+
         bool flippable_DotProd(const EdgeInfo *e) const { 
+          using carve::geom::dot;
+          using carve::geom::cross;
+
           if (open(e)) return false;
 
           edge_t *edge = e->edge;
@@ -124,16 +135,20 @@ namespace carve {
           const vertex_t *v3 = edge->next->next->vert;
           const vertex_t *v4 = edge->rev->next->next->vert;
 
-          if (carve::geom::dot(carve::geom::cross(v3->v - v2->v, v1->v - v2->v),
-                               carve::geom::cross(v4->v - v1->v, v2->v - v1->v)) < min_dp) return false;
+          if (dot(cross(v3->v - v2->v, v1->v - v2->v).normalized(),
+                  cross(v4->v - v1->v, v2->v - v1->v).normalized()) < min_dp) return false;
 
-          if (carve::geom::dot(carve::geom::cross(v3->v - v4->v, v1->v - v4->v),
-                               carve::geom::cross(v4->v - v3->v, v2->v - v3->v)) < min_dp) return false;
+          if (dot(cross(v3->v - v4->v, v1->v - v4->v).normalized(),
+                  cross(v4->v - v3->v, v2->v - v3->v).normalized()) < min_dp) return false;
 
           return true;
         }
 
-        double score(const EdgeInfo *e) const {
+        virtual bool canFlip(const EdgeInfo *e) const {
+          return !open(e) && !wouldCreateDegenerateEdge(e) && score(e) > 0.0;
+        }
+
+        virtual double score(const EdgeInfo *e) const {
           return std::min(e->c[2], e->c[3]) - std::min(e->c[0], e->c[1]);
         }
 
@@ -176,8 +191,29 @@ namespace carve {
                                     edge->next->next->vert->v) == 0.0;
         }
 
-        bool canFlip(const EdgeInfo *e) const {
-          return !open(e) && score(e) > 0.0 && connectsExactlyCoplanarFaces(e) && flippable_DotProd(e);
+        virtual bool canFlip(const EdgeInfo *e) const {
+          return FlippableBase::canFlip(e) && connectsExactlyCoplanarFaces(e) && flippable_DotProd(e);
+        }
+      };
+
+
+
+      struct FlippableColinearPair : public FlippableBase {
+
+        FlippableColinearPair() {
+        }
+
+
+        virtual double score(const EdgeInfo *e) const {
+          return e->l[0] - e->l[1];
+        }
+
+        virtual bool canFlip(const EdgeInfo *e) const {
+          if (!FlippableBase::canFlip(e)) return false;
+
+          if (e->c[0] > 1e-3 || e->c[1] > 1e-3) return false;
+
+          return true;
         }
       };
 
@@ -196,13 +232,12 @@ namespace carve {
         }
 
 
-        bool canFlip(const EdgeInfo *e) const {
-          if (open(e)) return false;
-          if (score(e) <= 0.0) return false;
+        virtual bool canFlip(const EdgeInfo *e) const {
+          if (!FlippableBase::canFlip(e)) return false;
 
           if (fabs(e->delta_v) > min_delta_v) return false;
 
-          if (std::min(e->c[0], e->c[1]) > min_colinearity) return false;
+          // if (std::min(e->c[0], e->c[1]) > min_colinearity) return false;
 
           return flippable_DotProd(e);
         }
@@ -317,9 +352,177 @@ namespace carve {
       }
 
 
+      std::string vk(const vertex_t *v1,
+                     const vertex_t *v2,
+                     const vertex_t *v3) {
+        const vertex_t *v[3];
+        v[0] = v1; v[1] = v2; v[2] = v3;
+        std::sort(v, v+3);
+        std::ostringstream s;
+        s << v[0] << ";" << v[1] << ";" << v[2];
+        return s.str();
+      }
 
-      size_t flipEdges(meshset_t * /* meshset */,
+      std::string vk(const face_t *f) { return vk(f->edge->vert, f->edge->next->vert, f->edge->next->next->vert); }
+
+      int mapTriangle(const face_t *face,
+                      const vertex_t *remap1, const vertex_t *remap2,
+                      const vector_t &tgt,
+                      vector_t tri[3]) {
+        edge_t *edge = face->edge;
+        int n_remaps = 0;
+        for (size_t i = 0; i < 3; edge = edge->next, ++i) {
+          if      (edge->vert == remap1) { tri[i] = tgt; ++n_remaps; }
+          else if (edge->vert == remap2) { tri[i] = tgt; ++n_remaps; }
+          else                           { tri[i] = edge->vert->v;   }
+        }
+        return n_remaps;
+      }
+
+      template<typename iter1_t, typename iter2_t>
+      int countIntersectionPairs(iter1_t fabegin, iter1_t faend,
+                                 iter2_t fbbegin, iter2_t fbend,
+                                 const vertex_t *remap1, const vertex_t *remap2,
+                                 const vector_t &tgt) {
+        vector_t tri_a[3], tri_b[3];
+        int remap_a, remap_b;
+        std::set<std::pair<const face_t *, const face_t *> > ints;
+
+        for (iter1_t i = fabegin; i != faend; ++i) {
+          remap_a = mapTriangle(*i, remap1, remap2, tgt, tri_a);
+          if (remap_a >= 2) continue;
+          for (iter2_t j = fbbegin; j != fbend; ++j) {
+            remap_b = mapTriangle(*j, remap1, remap2, tgt, tri_b);
+            if (remap_b >= 2) continue;
+            if (carve::geom::triangle_intersection_exact(tri_a, tri_b) == carve::geom::TR_TYPE_INT) {
+              ints.insert(std::make_pair(std::min(*i, *j), std::max(*i, *j)));
+            }
+          }
+        }
+
+        return ints.size();
+      }
+
+      int countIntersections(const vertex_t *v1,
+                             const vertex_t *v2,
+                             const vertex_t *v3,
+                             const std::vector<face_t *> &faces) {
+        int n_int = 0;
+        vector_t tri_a[3], tri_b[3];
+        tri_a[0] = v1->v;
+        tri_a[1] = v2->v;
+        tri_a[2] = v3->v;
+
+        for (std::vector<face_t *>::const_iterator i = faces.begin(); i != faces.end(); ++i) {
+          face_t *fb = *i;
+          if (fb->nEdges() != 3) continue;
+          tri_b[0] = fb->edge->vert->v;
+          tri_b[1] = fb->edge->next->vert->v;
+          tri_b[2] = fb->edge->next->next->vert->v;
+
+          if (carve::geom::triangle_intersection_exact(tri_a, tri_b) == carve::geom::TR_TYPE_INT) {
+            n_int++;
+          }
+        }
+        return n_int;
+      }
+
+
+
+      int _findSelfIntersections(const face_rtree_t *a_node,
+                                 const face_rtree_t *b_node,
+                                 bool descend_a = true) {
+        int r = 0;
+
+        if (!a_node->bbox.intersects(b_node->bbox)) {
+          return 0;
+        }
+
+        if (a_node->child && (descend_a || !b_node->child)) {
+          for (face_rtree_t *node = a_node->child; node; node = node->sibling) {
+            r += _findSelfIntersections(node, b_node, false);
+          }
+        } else if (b_node->child) {
+          for (face_rtree_t *node = b_node->child; node; node = node->sibling) {
+            r += _findSelfIntersections(a_node, node, true);
+          }
+        } else {
+          for (size_t i = 0; i < a_node->data.size(); ++i) {
+            face_t *fa = a_node->data[i];
+            if (fa->nVertices() != 3) continue;
+
+            aabb_t aabb_a = fa->getAABB();
+
+            vector_t tri_a[3];
+            tri_a[0] = fa->edge->vert->v;
+            tri_a[1] = fa->edge->next->vert->v;
+            tri_a[2] = fa->edge->next->next->vert->v;
+
+            if (!aabb_a.intersects(b_node->bbox)) continue;
+
+            for (size_t j = 0; j < b_node->data.size(); ++j) {
+              face_t *fb = b_node->data[j];
+              if (fb->nVertices() != 3) continue;
+
+              vector_t tri_b[3];
+              tri_b[0] = fb->edge->vert->v;
+              tri_b[1] = fb->edge->next->vert->v;
+              tri_b[2] = fb->edge->next->next->vert->v;
+              
+              if (carve::geom::triangle_intersection_exact(tri_a, tri_b) == carve::geom::TR_TYPE_INT) {
+                ++r;
+              }
+            }
+          }
+        }
+
+        return r;
+      }
+
+
+
+      int countSelfIntersections(meshset_t *meshset) {
+        int n_ints = 0;
+        face_rtree_t *tree = face_rtree_t::construct_STR(meshset->faceBegin(), meshset->faceEnd(), 4, 4);
+
+        for (meshset_t::FaceIter f = meshset->faceBegin(); f != meshset->faceEnd(); ++f) {
+          face_t *fa = *f;
+          if (fa->nVertices() != 3) continue;
+
+          vector_t tri_a[3];
+          tri_a[0] = fa->edge->vert->v;
+          tri_a[1] = fa->edge->next->vert->v;
+          tri_a[2] = fa->edge->next->next->vert->v;
+
+          std::vector<face_t *> near_faces;
+          tree->search(fa->getAABB(), std::back_inserter(near_faces));
+
+          for (size_t f2 = 0; f2 < near_faces.size(); ++f2) {
+            const face_t *fb = near_faces[f2];
+            if (fb->nVertices() != 3) continue;
+
+            if (fa >= fb) continue;
+
+            vector_t tri_b[3];
+            tri_b[0] = fb->edge->vert->v;
+            tri_b[1] = fb->edge->next->vert->v;
+            tri_b[2] = fb->edge->next->next->vert->v;
+
+            if (carve::geom::triangle_intersection_exact(tri_a, tri_b) == carve::geom::TR_TYPE_INT) {
+              ++n_ints;
+            }
+          }
+        }
+
+        delete tree;
+
+        return n_ints;
+      }
+
+      size_t flipEdges(meshset_t *mesh,
                        const FlippableBase &flipper) {
+        face_rtree_t *tree = face_rtree_t::construct_STR(mesh->faceBegin(), mesh->faceEnd(), 4, 4);
+
         size_t n_mods = 0;
 
         std::vector<EdgeInfo *> edge_heap;
@@ -330,7 +533,7 @@ namespace carve {
              i != edge_info.end();
              ++i) {
           EdgeInfo *e = (*i).second;
-
+          e->update();
           if (e->edge->v1() < e->edge->v2() && flipper.canFlip(e)) {
             edge_heap.push_back(e);
           } else {
@@ -344,17 +547,56 @@ namespace carve {
                                EdgeInfo::NotifyPos());
 
         while (edge_heap.size()) {
+//           std::cerr << "test" << std::endl;
+//           for (size_t m = 0; m < mesh->meshes.size(); ++m) {
+//             for (size_t f = 0; f < mesh->meshes[m]->faces.size(); ++f) {
+//               if (mesh->meshes[m]->faces[f]->edge) mesh->meshes[m]->faces[f]->edge->validateLoop();
+//             }
+//           }
+
           carve::heap::pop_heap(edge_heap.begin(),
                                 edge_heap.end(),
                                 flipper.priority(),
                                 EdgeInfo::NotifyPos());
           EdgeInfo *e = edge_heap.back();
+//           std::cerr << "flip " << e << std::endl;
           edge_heap.pop_back();
           e->heap_idx = ~0U;
 
+          aabb_t aabb;
+          aabb = e->edge->face->getAABB();
+          aabb.unionAABB(e->edge->rev->face->getAABB());
+
+          std::vector<face_t *> overlapping;
+          tree->search(aabb, std::back_inserter(overlapping));
+
+          // overlapping.erase(e->edge->face);
+          // overlapping.erase(e->edge->rev->face);
+
+          const vertex_t *v1 = e->edge->vert;
+          const vertex_t *v2 = e->edge->next->vert;
+          const vertex_t *v3 = e->edge->next->next->vert;
+          const vertex_t *v4 = e->edge->rev->next->next->vert;
+
+          int n_int1 = countIntersections(v1, v2, v3, overlapping);
+          int n_int2 = countIntersections(v2, v1, v4, overlapping);
+          int n_int3 = countIntersections(v3, v4, v2, overlapping);
+          int n_int4 = countIntersections(v4, v3, v1, overlapping);
+
+          if ((n_int3 + n_int4) - (n_int1 + n_int2) > 0) {
+            std::cerr << "delta[ints] = " << (n_int3 + n_int4) - (n_int1 + n_int2) << std::endl;
+            // avoid creating a self intersection.
+            continue;
+          }
+
           n_mods++;
           CARVE_ASSERT(flipper.canFlip(e));
+          edge_info[e->edge]->update();
+          edge_info[e->edge->rev]->update();
+
           carve::mesh::flipTriEdge(e->edge);
+
+          tree->updateExtents(aabb);
 
           updateEdgeFlipHeap(edge_heap, e->edge, flipper);
           updateEdgeFlipHeap(edge_heap, e->edge->rev, flipper);
@@ -370,6 +612,8 @@ namespace carve {
           updateEdgeFlipHeap(edge_heap, e->edge->rev->next->rev, flipper);
           updateEdgeFlipHeap(edge_heap, e->edge->rev->next->next->rev, flipper);
         }
+
+        delete tree;
 
         return n_mods;
       }
@@ -429,8 +673,10 @@ namespace carve {
 
 
       // collapse edges edges based upon the predicate implemented by EdgeMerger.
-      size_t collapseEdges(meshset_t * /* mesh */,
+      size_t collapseEdges(meshset_t *mesh,
                            const EdgeMerger &merger) {
+        face_rtree_t *tree = face_rtree_t::construct_STR(mesh->faceBegin(), mesh->faceEnd(), 4, 4);
+
         size_t n_mods = 0;
 
         std::vector<EdgeInfo *> edge_heap;
@@ -459,6 +705,12 @@ namespace carve {
                                EdgeInfo::NotifyPos());
 
         while (edge_heap.size()) {
+//           std::cerr << "test" << std::endl;
+//           for (size_t m = 0; m < mesh->meshes.size(); ++m) {
+//             for (size_t f = 0; f < mesh->meshes[m]->faces.size(); ++f) {
+//               if (mesh->meshes[m]->faces[f]->edge) mesh->meshes[m]->faces[f]->edge->validateLoop();
+//             }
+//           }
           carve::heap::pop_heap(edge_heap.begin(),
                                 edge_heap.end(),
                                 merger.priority(),
@@ -470,6 +722,20 @@ namespace carve {
           edge_t *edge = e->edge;
           vertex_t *v1 = edge->v1();
           vertex_t *v2 = edge->v2();
+
+          std::set<face_t *> affected_faces;
+          for (std::set<EdgeInfo *>::iterator f = vert_to_edges[v1].begin();
+               f != vert_to_edges[v1].end();
+               ++f) {
+            affected_faces.insert((*f)->edge->face);
+            affected_faces.insert((*f)->edge->rev->face);
+          }
+          for (std::set<EdgeInfo *>::iterator f = vert_to_edges[v2].begin();
+               f != vert_to_edges[v2].end();
+               ++f) {
+            affected_faces.insert((*f)->edge->face);
+            affected_faces.insert((*f)->edge->rev->face);
+          }
 
           std::vector<EdgeInfo *> edges_to_merge;
           std::vector<EdgeInfo *> v1_incident;
@@ -488,10 +754,49 @@ namespace carve {
                               edges_to_merge.begin(), edges_to_merge.end(),
                               std::back_inserter(v2_incident));
 
-          ++n_mods;
+          vector_t aabb_min, aabb_max;
+          assign_op(aabb_min, v1->v, v2->v, carve::util::min_functor());
+          assign_op(aabb_max, v1->v, v2->v, carve::util::max_functor());
+          
+          for (size_t i = 0; i < v1_incident.size(); ++i) {
+            assign_op(aabb_min, aabb_min, v1_incident[i]->edge->v1()->v, carve::util::min_functor());
+            assign_op(aabb_max, aabb_max, v1_incident[i]->edge->v1()->v, carve::util::max_functor());
+            assign_op(aabb_min, aabb_min, v1_incident[i]->edge->v2()->v, carve::util::min_functor());
+            assign_op(aabb_max, aabb_max, v1_incident[i]->edge->v2()->v, carve::util::max_functor());
+          }
+
+          for (size_t i = 0; i < v2_incident.size(); ++i) {
+            assign_op(aabb_min, aabb_min, v2_incident[i]->edge->v1()->v, carve::util::min_functor());
+            assign_op(aabb_max, aabb_max, v2_incident[i]->edge->v1()->v, carve::util::max_functor());
+            assign_op(aabb_min, aabb_min, v2_incident[i]->edge->v2()->v, carve::util::min_functor());
+            assign_op(aabb_max, aabb_max, v2_incident[i]->edge->v2()->v, carve::util::max_functor());
+          }
+
+          aabb_t aabb;
+          aabb.fit(aabb_min, aabb_max);
+
+          std::vector<face_t *> near_faces;
+          tree->search(aabb, std::back_inserter(near_faces));
 
           double frac = 0.5; // compute this based upon v1_incident and v2_incident?
-          v2->v = frac * v1->v + (1 - frac) * v2->v;
+          vector_t merge = frac * v1->v + (1 - frac) * v2->v;
+
+          int i1 = countIntersectionPairs(affected_faces.begin(), affected_faces.end(),
+                                          near_faces.begin(), near_faces.end(),
+                                          NULL, NULL, merge);
+          int i2 = countIntersectionPairs(affected_faces.begin(), affected_faces.end(),
+                                          near_faces.begin(), near_faces.end(),
+                                          v1, v2, merge);
+          if (i2 != i1) {
+            std::cerr << "near faces: " << near_faces.size() << " affected faces: " << affected_faces.size() << std::endl;
+            std::cerr << "merge delta[ints] = " << i2 - i1 << " pre: " << i1 << " post: " << i2 << std::endl;
+            if (i2 > i1) continue;
+          }
+
+          std::cerr << "collapse " << e << std::endl;
+
+          v2->v = merge;
+          ++n_mods;
 
           for (size_t i = 0; i < v1_incident.size(); ++i) {
             if (v1_incident[i]->edge->vert == v1) {
@@ -526,8 +831,8 @@ namespace carve {
             if (f1->n_edges == 2) {
               edge_t *e1 = f1->edge;
               edge_t *e2 = f1->edge->next;
-              e1->rev->rev = e2->rev;
-              e2->rev->rev = e1->rev;
+              if (e1->rev) e1->rev->rev = e2->rev;
+              if (e2->rev) e2->rev->rev = e1->rev;
               EdgeInfo *e1i = edge_info[e1];
               EdgeInfo *e2i = edge_info[e2];
               CARVE_ASSERT(e1i != NULL);
@@ -541,12 +846,18 @@ namespace carve {
               edge_info.erase(e1);
               edge_info.erase(e2);
               f1->clearEdges();
+              tree->remove(f1, aabb);
+
               delete e1i;
               delete e2i;
             }
             delete e;
           }
+
+          tree->updateExtents(aabb);
         }
+
+        delete tree;
 
         return n_mods;
       }
@@ -803,6 +1114,55 @@ namespace carve {
 
 
 
+      edge_t *removeFin(edge_t *e) {
+        // e and e->next are shared with the same reverse triangle.
+        edge_t *e1 = e->prev;
+        edge_t *e2 = e->rev->next;
+        CARVE_ASSERT(e1->v2() == e2->v1());
+        CARVE_ASSERT(e2->v2() == e1->v1());
+
+        CARVE_ASSERT(e1->rev != e2 && e2->rev != e1);
+
+        edge_t *e1r = e1->rev;
+        edge_t *e2r = e2->rev;
+        if (e1r) e1r->rev = e2r;
+        if (e2r) e2r->rev = e1r;
+
+        face_t *f1 = e1->face;
+        face_t *f2 = e2->face;
+        f1->clearEdges();
+        f2->clearEdges();
+
+        return e1r;
+      }
+
+      size_t removeFin(face_t *face) {
+        if (face->edge == NULL || face->nEdges() != 3) return 0;
+        edge_t *e = face->edge;
+        do {
+          if (e->rev != NULL) {
+            face_t *revface = e->rev->face;
+            if (revface->nEdges() == 3) {
+              if (e->next->rev && e->next->rev->face == revface) {
+                if (e->next->next->rev && e->next->next->rev->face == revface) {
+                  // isolated tripair
+                  face->clearEdges();
+                  revface->clearEdges();
+                  return 1;
+                }
+                // fin
+                edge_t *spliced_edge = removeFin(e);
+                return 1 + removeFin(spliced_edge->face);
+              }
+            }
+          }
+          e = e->next;
+        } while (e != face->edge);
+        return 0;
+      }
+
+
+
     public:
       // Merge adjacent coplanar faces (where coplanar is determined
       // by dot-product >= cos(min_normal_angle)).
@@ -986,29 +1346,229 @@ namespace carve {
                       double min_normal_angle,
                       double min_length) {
         size_t modifications = 0;
-        size_t n_flip, n_merge;
+        size_t n, n_flip, n_merge;
 
         initEdgeInfo(meshset);
 
         std::cerr << "initial merge" << std::endl;
         modifications = collapseEdges(meshset, EdgeMerger(0.0));
+        removeRemnantFaces(meshset);
 
         do {
           n_flip = n_merge = 0;
-          std::cerr << "flip conservative" << std::endl;
-          n_flip = flipEdges(meshset, FlippableConservative());
-          std::cerr << "flip" << std::endl;
-          n_flip += flipEdges(meshset, Flippable(min_colinearity, min_delta_v, min_normal_angle));
-          std::cerr << "merge" << std::endl;
-          n_merge = collapseEdges(meshset, EdgeMerger(min_length));
+          // std::cerr << "flip colinear pairs";
+          // n = flipEdges(meshset, FlippableColinearPair());
+          // std::cerr << " " << n << std::endl;
+          // n_flip = n;
+
+          std::cerr << "flip conservative";
+          n = flipEdges(meshset, FlippableConservative());
+          std::cerr << " " << n << std::endl;
+          n_flip += n;
+
+          std::cerr << "flip";
+          n = flipEdges(meshset, Flippable(min_colinearity, min_delta_v, min_normal_angle));
+          std::cerr << " " << n << std::endl;
+          n_flip += n;
+
+          std::cerr << "merge";
+          n = collapseEdges(meshset, EdgeMerger(min_length));
+          removeRemnantFaces(meshset);
+          std::cerr << " " << n << std::endl;
+          n_merge = n;
+
           modifications += n_flip + n_merge;
           std::cerr << "stats:" << n_flip << " " << n_merge << std::endl;
         } while (n_flip || n_merge);
 
-        removeRemnantFaces(meshset);
         clearEdgeInfo();
+
+        for (size_t i = 0; i < meshset->meshes.size(); ++i) {
+          meshset->meshes[i]->cacheEdges();
+        }
+
         return modifications;
       }
+
+      
+      
+      size_t removeFins(mesh_t *mesh) {
+        size_t n_removed = 0;
+        for (size_t i = 0; i < mesh->faces.size(); ++i) {
+          n_removed += removeFin(mesh->faces[i]);
+        }
+        if (n_removed) removeRemnantFaces(mesh);
+        return n_removed;
+      }
+
+
+
+      size_t removeFins(meshset_t *meshset) {
+        size_t n_removed = 0;
+        for (size_t i = 0; i < meshset->meshes.size(); ++i) {
+          n_removed += removeFins(meshset->meshes[i]);
+        }
+        return n_removed;
+      }
+
+
+
+      size_t removeLowVolumeManifolds(meshset_t *meshset, double min_abs_volume) {
+        size_t n_removed;
+        for (size_t i = 0; i < meshset->meshes.size(); ++i) {
+          if (fabs(meshset->meshes[i]->volume()) < min_abs_volume) {
+            delete meshset->meshes[i];
+            meshset->meshes[i] = NULL;
+            ++n_removed;
+          }
+        }
+        meshset->meshes.erase(std::remove_if(meshset->meshes.begin(),
+                                             meshset->meshes.end(),
+                                             std::bind2nd(std::equal_to<mesh_t *>(), NULL)),
+                              meshset->meshes.end());
+        return n_removed;
+      }
+
+      struct point_enumerator_t {
+        struct heapval_t {
+          double dist;
+          vector_t pt;
+          heapval_t(double _dist, vector_t _pt) : dist(_dist), pt(_pt) {
+          }
+          heapval_t() {}
+          bool operator==(const heapval_t &other) const { return dist == other.dist && pt == other.pt; }
+          bool operator<(const heapval_t &other) const { return dist > other.dist || (dist == other.dist && pt > other.pt); }
+        };
+
+        vector_t origin;
+        double rounding_fac;
+        heapval_t last;
+        std::vector<heapval_t> heap;
+
+        point_enumerator_t(vector_t _origin, int _base, int _n_dp) : origin(_origin), rounding_fac(pow(_base, _n_dp)), last(-1.0, _origin), heap() {
+          for (size_t i = 0; i < (1 << 3); ++i) {
+            vector_t t = origin;
+            for (size_t j = 0; j < 3; ++j) {
+              if (i & (1U << j)) {
+                t[j] = ceil(t[j] * rounding_fac) / rounding_fac;
+              } else {
+                t[j] = floor(t[j] * rounding_fac) / rounding_fac;
+              }
+            }
+            heap.push_back(heapval_t(carve::geom::distance2(origin, t), t));
+          }
+          std::make_heap(heap.begin(), heap.end());
+        }
+
+        vector_t next() {
+          heapval_t curr;
+          do {
+            CARVE_ASSERT(heap.size());
+            std::pop_heap(heap.begin(), heap.end());
+            curr = heap.back();
+            heap.pop_back();
+          } while (curr == last);
+
+          vector_t t;
+
+          for (int dx = -1; dx <= +1; ++dx) {
+            t.x = floor(curr.pt.x * rounding_fac + dx) / rounding_fac;
+            for (int dy = -1; dy <= +1; ++dy) {
+              t.y = floor(curr.pt.y * rounding_fac + dy) / rounding_fac;
+              for (int dz = -1; dz <= +1; ++dz) {
+                t.z = floor(curr.pt.z * rounding_fac + dz) / rounding_fac;
+                heapval_t h2(carve::geom::distance2(origin, t), t);
+                if (h2 < curr) {
+                  heap.push_back(h2);
+                  std::push_heap(heap.begin(), heap.end());
+                }
+              }
+            }
+          }
+          last = curr;
+          return curr.pt;
+        }
+      };
+
+      struct quantization_info_t {
+        point_enumerator_t *pt;
+        std::set<face_t *> faces;
+
+        quantization_info_t() : pt(NULL), faces() {
+        }
+
+        ~quantization_info_t() {
+          if (pt) delete pt;
+        }
+
+        aabb_t getAABB() const {
+          std::set<face_t *>::iterator i = faces.begin();
+          aabb_t aabb = (*i)->getAABB();
+          while (++i != faces.end()) {
+            aabb.unionAABB((*i)->getAABB());
+          }
+          return aabb;
+        }
+      };
+
+      void selfIntersectionAwareQuantize(meshset_t *meshset, int base, int n_dp) {
+        typedef std::unordered_map<vertex_t *, quantization_info_t> vfsmap_t;
+
+        vfsmap_t vertex_qinfo;
+
+        for (size_t m = 0; m < meshset->meshes.size(); ++m) {
+          mesh_t *mesh = meshset->meshes[m];
+          for (size_t f = 0; f < mesh->faces.size(); ++f) {
+            face_t *face = mesh->faces[f];
+            edge_t *e = face->edge;
+            do {
+              vertex_qinfo[e->vert].faces.insert(face);
+              e = e->next;
+            } while (e != face->edge);
+          }
+        }
+
+        face_rtree_t *tree = face_rtree_t::construct_STR(meshset->faceBegin(), meshset->faceEnd(), 4, 4);
+
+        for (vfsmap_t::iterator i = vertex_qinfo.begin(); i != vertex_qinfo.end(); ++i) {
+          (*i).second.pt = new point_enumerator_t((*i).first->v, base, n_dp);
+        }
+
+        while (vertex_qinfo.size()) {
+          std::vector<vertex_t *> quantized;
+
+          std::cerr << "vertex_qinfo.size() == " << vertex_qinfo.size() << std::endl;
+
+          for (vfsmap_t::iterator i = vertex_qinfo.begin(); i != vertex_qinfo.end(); ++i) {
+            vertex_t *vert = (*i).first;
+            quantization_info_t &qi = (*i).second;
+            vector_t q_pt = qi.pt->next();
+            aabb_t aabb = qi.getAABB();
+            aabb.unionAABB(aabb_t(q_pt));
+
+            std::vector<face_t *> overlapping;
+            tree->search(aabb, std::back_inserter(overlapping));
+
+
+            int n_intersections = countIntersectionPairs(qi.faces.begin(), qi.faces.end(),
+                                                         overlapping.begin(), overlapping.end(),
+                                                         vert, NULL, q_pt);
+
+            if (n_intersections == 0) {
+              vert->v = q_pt;
+              quantized.push_back((*i).first);
+              tree->updateExtents(aabb);
+            }
+          }
+          for (size_t i = 0; i < quantized.size(); ++i) {
+            vertex_qinfo.erase(quantized[i]);
+          }
+
+          if (!quantized.size()) break;
+        }
+      }
+
+
     };
   }
 }
