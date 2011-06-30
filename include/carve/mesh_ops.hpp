@@ -907,6 +907,11 @@ namespace carve {
       CARVE_ASSERT(edge->face->nEdges() == 3);
       CARVE_ASSERT(edge->rev->face->nEdges() == 3);
 
+      CARVE_ASSERT(edge->prev != edge);
+      CARVE_ASSERT(edge->next != edge);
+      CARVE_ASSERT(edge->rev->prev != edge->rev);
+      CARVE_ASSERT(edge->rev->next != edge->rev);
+
       typedef Edge<ndim> edge_t;
       typedef Face<ndim> face_t;
 
@@ -927,6 +932,7 @@ namespace carve {
 
       // std::cerr << t1[0]->vert << "->" << t2[2]->vert << "->" << t1[1]->vert << std::endl;
       // std::cerr << t2[0]->vert << "->" << t1[2]->vert << "->" << t2[1]->vert << std::endl;
+
       detail::link(t1[0], t2[2], t1[1], f1);
       detail::link(t2[0], t1[2], t2[1], f2);
 

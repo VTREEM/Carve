@@ -186,8 +186,11 @@ namespace carve {
         size_t c = 0;
         do {
           ++c;
-          CARVE_ASSERT(e->rev->rev == e);
+          CARVE_ASSERT(e->rev == NULL || e->rev->rev == e);
+          CARVE_ASSERT(e->next == e || e->next->vert != e->vert);
+          CARVE_ASSERT(e->prev == e || e->prev->vert != e->vert);
           CARVE_ASSERT(e->next->prev == e);
+          CARVE_ASSERT(e->prev->next == e);
           CARVE_ASSERT(e->face == f);
           e = e->next;
         } while (e != this);
