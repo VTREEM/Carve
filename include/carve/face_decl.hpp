@@ -95,6 +95,11 @@ namespace carve {
       Face(const vertex_t *v1, const vertex_t *v2, const vertex_t *v3, bool delay_recalc = false);
       Face(const vertex_t *v1, const vertex_t *v2, const vertex_t *v3, const vertex_t *v4, bool delay_recalc = false);
 
+      template <typename iter_t>
+      Face(const Face *base, iter_t vbegin, iter_t vend, bool flipped) {
+        init(base, vbegin, vend, flipped);
+      }
+
       Face(const Face *base, const std::vector<const vertex_t *> &_vertices, bool flipped) {
         init(base, _vertices, flipped);
       }
