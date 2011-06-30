@@ -21,7 +21,6 @@
 #include BOOST_INCLUDE(unordered_map.hpp)
 
 #include <functional>
-  };
 
 namespace std {
   template <typename Key, typename T, typename Hash = boost::hash<Key>,
@@ -30,6 +29,7 @@ namespace std {
 
   public:
     typedef T data_type;
+  };
 
   template <typename Key, typename T, typename Hash = boost::hash<Key>,
             typename Pred = std::equal_to<Key> >
