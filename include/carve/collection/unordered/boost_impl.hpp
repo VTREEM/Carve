@@ -21,9 +21,9 @@
 #include BOOST_INCLUDE(unordered_map.hpp)
 
 #include <functional>
+  };
 
 namespace std {
-
   template <typename Key, typename T, typename Hash = boost::hash<Key>,
             typename Pred = std::equal_to<Key> >
   class unordered_map : public boost::unordered_map<Key, T, Hash, Pred> {
@@ -31,13 +31,15 @@ namespace std {
   public:
     typedef T data_type;
 
+  template <typename Key, typename T, typename Hash = boost::hash<Key>,
+            typename Pred = std::equal_to<Key> >
+  class unordered_multimap : public boost::unordered_multimap<Key, T, Hash, Pred> {
   };
 
   template <typename Value, typename Hash = boost::hash<Value>,
             typename Pred = std::equal_to<Value> >
   class unordered_set : public boost::unordered_set<Value, Hash, Pred> {
   };
-
 }
 
 #undef UNORDERED_COLLECTIONS_SUPPORT_RESIZE
