@@ -20,6 +20,7 @@
 #endif
 
 #include <carve/csg.hpp>
+#include <carve/csg_triangulator.hpp>
 
 #include "scene.hpp"
 #include "geom_draw.hpp"
@@ -98,7 +99,10 @@ int main(int argc, char **argv) {
 
   std::list<std::pair<carve::csg::FaceClass, carve::poly::Polyhedron *> > b_sliced;
 
-  carve::csg::CSG().sliceAndClassify(a, b, b_sliced);
+  carve::csg::CSG csg;
+
+  csg.hooks.registerHook(new carve::csg::CarveTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+  csg.sliceAndClassify(a, b, b_sliced);
 
   TestScene *scene = new TestScene(argc, argv, 6);
 
@@ -127,7 +131,7 @@ int main(int argc, char **argv) {
       case carve::csg::FACE_ON_ORIENT_IN:   r = 0.0; g = 1.0; b = 1.0; break;
       }
       carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron((*i).second, -1);
-      drawPolyhedron(mesh, r, g, b, 1.0, true);
+      drawPolyhedron(mesh, r, g, b, 1.0);
       delete mesh;
       ++n;
     }

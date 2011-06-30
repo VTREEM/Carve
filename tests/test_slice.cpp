@@ -20,6 +20,7 @@
 #endif
 
 #include <carve/csg.hpp>
+#include <carve/csg_triangulator.hpp>
 
 #include "scene.hpp"
 #include "geom_draw.hpp"
@@ -93,7 +94,10 @@ int main(int argc, char **argv) {
 
   std::list<carve::poly::Polyhedron *> a_sliced, b_sliced;
 
-  carve::csg::CSG().slice(a, b, a_sliced, b_sliced);
+  carve::csg::CSG csg;
+
+  csg.hooks.registerHook(new carve::csg::CarveTriangulator, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
+  csg.slice(a, b, a_sliced, b_sliced);
 
   TestScene *scene = new TestScene(argc, argv, 6);
 
@@ -117,7 +121,7 @@ int main(int argc, char **argv) {
       float g  = n & 2 ? .3 : .7;
       float b  = n & 4 ? .3 : .7;
       carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron(*i, -1);
-      drawPolyhedron(mesh, r, g, b, 1.0, true);
+      drawPolyhedron(mesh, r, g, b, 1.0);
       delete mesh;
       ++n;
     }
