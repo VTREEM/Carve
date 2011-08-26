@@ -14,7 +14,6 @@
 // A PARTICULAR PURPOSE.
 // End:
 
-
 #if defined(HAVE_CONFIG_H)
 #  include <carve_config.h>
 #endif
@@ -173,6 +172,65 @@ void DebugHooks::drawIntersections(const carve::csg::VertexIntersections &vint) 
   glEnable(GL_DEPTH_TEST);
 }
 
+carve::geom3d::Vector sphereAng(double elev, double ang) {
+  return carve::geom::VECTOR(cos(ang) * sin(elev), cos(elev), sin(ang) * sin(elev));
+}
+   
+#define N_STACKS 32
+#define N_SLICES 32
+
+void emitSphereCoord(const carve::geom::vector<3> &c, double r, unsigned stack, unsigned slice) {
+  carve::geom::vector<3> v;
+
+  v = sphereAng(stack * M_PI / N_STACKS, slice * 2 * M_PI / N_SLICES);
+
+  glNormal3dv(v.v);
+  glVertex(c + r * v);
+}
+
+void drawSphere(const carve::geom3d::Vector &c, double r) {
+  glBegin(GL_TRIANGLES);
+  for (unsigned slice = 0; slice < N_SLICES; ++slice) {
+    emitSphereCoord(c, r, 0, 0);
+    emitSphereCoord(c, r, 1, slice+1);
+    emitSphereCoord(c, r, 1, slice);
+  }
+  for (unsigned stack = 1; stack < N_STACKS - 1; ++stack) {
+    for (unsigned slice = 0; slice < N_SLICES; ++slice) {
+      emitSphereCoord(c, r, stack, slice);
+      emitSphereCoord(c, r, stack, slice+1);
+      emitSphereCoord(c, r, stack+1, slice);
+      emitSphereCoord(c, r, stack, slice+1);
+      emitSphereCoord(c, r, stack+1, slice+1);
+      emitSphereCoord(c, r, stack+1, slice);
+    }
+  }
+  for (unsigned slice = 0; slice < N_SLICES; ++slice) {
+    emitSphereCoord(c, r, N_STACKS-1, slice);
+    emitSphereCoord(c, r, N_STACKS-1, slice+1);
+    emitSphereCoord(c, r, N_STACKS, 0);
+  }
+  glEnd();
+}
+
+void drawSphere(const carve::geom::sphere<3> &sphere) {
+  drawSphere(sphere.C, sphere.r);
+}
+
+void drawTri(const carve::geom::tri<3> &tri) {
+  carve::geom::vector<3> n = tri.normal();
+  glBegin(GL_TRIANGLES);
+    glNormal3dv(n.v);
+    glVertex(tri.v[0]);
+    glVertex(tri.v[1]);
+    glVertex(tri.v[2]);
+    glNormal3dv((-n).v);
+    glVertex(tri.v[0]);
+    glVertex(tri.v[2]);
+    glVertex(tri.v[1]);
+  glEnd();
+}
+
 void drawCube(const carve::geom3d::Vector &a, const carve::geom3d::Vector &b) {
   glBegin(GL_QUADS);
     glNormal3f(0,0,-1);
@@ -240,7 +298,7 @@ void DebugHooks::drawOctree(const carve::csg::Octree &o) {
 static void __stdcall _faceBegin(GLenum type, void *data) {
   carve::mesh::Face<3> *face = static_cast<carve::mesh::Face<3> *>(data);
   glBegin(type);
-  glNormal3f(face->plane.N.x, face->plane.N.y, face->plane.N.z);
+  glNormal3dv(face->plane.N.v);
 }
 
 static void __stdcall _faceEnd(void * /* data */) {
@@ -469,7 +527,7 @@ void DebugHooks::drawFaceLoop(const std::vector<const carve::geom3d::Vector *> &
   gluTessCallback(tess, GLU_TESS_VERTEX, (GLUTessCallback)glVertex3dv);
   gluTessCallback(tess,  GLU_TESS_END, (GLUTessCallback)glEnd);
 
-  glNormal3f(normal.x, normal.y, normal.z);
+  glNormal3dv(normal.v);
   glColor4f(r, g, b, a);
 
   gluTessBeginPolygon(tess, (void *)NULL);

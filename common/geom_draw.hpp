@@ -35,7 +35,10 @@ void drawColourFace(carve::mesh::Face<3> *face, const std::vector<cRGBA> &vc);
 void drawFace(carve::mesh::Face<3> *face, cRGBA fc);
 
 void installDebugHooks();
+void drawTri(const carve::geom::tri<3> &);
+void drawSphere(const carve::geom::sphere<3> &);
 void drawCube(const carve::geom3d::Vector &, const carve::geom3d::Vector &);
+void drawSphere(const carve::geom3d::Vector &, double);
 void drawOctree(const carve::csg::Octree &);
 
 extern carve::geom3d::Vector g_translation;
