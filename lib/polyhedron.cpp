@@ -240,18 +240,21 @@ namespace carve {
       manifold_is_negative.resize(meshset->meshes.size());
 
       std::unordered_map<std::pair<size_t, size_t>, std::list<mesh::Edge<3> *> > edge_map;
-      mesh::Vertex<3> *Vbase = &meshset->vertex_storage[0];
-      for (size_t m = 0; m < meshset->meshes.size(); ++m) {
-        mesh::Mesh<3> *mesh = meshset->meshes[m];
-        manifold_is_closed[m] = mesh->isClosed();
-        for (size_t f = 0; f < mesh->faces.size(); ++f) {
-          mesh::Face<3> *src = mesh->faces[f];
-          mesh::Edge<3> *e = src->edge;
-          faces[face_map[src]].manifold_id = m;
-          do {
-            edge_map[std::make_pair(e->v1() - Vbase, e->v2() - Vbase)].push_back(e);
-            e = e->next;
-          } while (e != src->edge);
+
+      if (meshset->vertex_storage.size()) {
+        mesh::Vertex<3> *Vbase = &meshset->vertex_storage[0];
+        for (size_t m = 0; m < meshset->meshes.size(); ++m) {
+          mesh::Mesh<3> *mesh = meshset->meshes[m];
+          manifold_is_closed[m] = mesh->isClosed();
+          for (size_t f = 0; f < mesh->faces.size(); ++f) {
+            mesh::Face<3> *src = mesh->faces[f];
+            mesh::Edge<3> *e = src->edge;
+            faces[face_map[src]].manifold_id = m;
+            do {
+              edge_map[std::make_pair(e->v1() - Vbase, e->v2() - Vbase)].push_back(e);
+              e = e->next;
+            } while (e != src->edge);
+          }
         }
       }
 
