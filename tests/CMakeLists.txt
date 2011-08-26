@@ -43,6 +43,9 @@ if(CARVE_WITH_GUI)
   add_executable       (test_slice             test_slice.cpp)
   target_link_libraries(test_slice             carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
+  add_executable       (test_tri_pt_dist       test_tri_pt_dist.cpp)
+  target_link_libraries(test_tri_pt_dist       carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
+
   add_executable       (test_slice_classify    test_slice_classify.cpp)
   target_link_libraries(test_slice_classify    carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
@@ -81,6 +84,12 @@ endfunction()
 function(cxx_test name libs)
   cxx_test_with_flags("${name}" "${CMAKE_CXX_FLAGS}" "${libs}" "${name}.cpp" ${ARGN})
 endfunction()
+
+cxx_test(hook_unittest gtest_main)
+target_link_libraries(hook_unittest carve)
+
+cxx_test(tri_point_distance_unittest gtest_main)
+target_link_libraries(tri_point_distance_unittest carve)
 
 cxx_test(triangle_intersection_unittest gtest_main)
 target_link_libraries(triangle_intersection_unittest carve)
