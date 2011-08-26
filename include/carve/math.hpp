@@ -19,22 +19,25 @@
 
 #include <carve/carve.hpp>
 
-#include <carve/geom3d.hpp>
 #include <carve/math_constants.hpp>
 
 #include <math.h>
 
 namespace carve {
+  namespace geom {
+    template<unsigned ndim> class vector;
+  }
+}
+
+namespace carve {
   namespace math {
     struct Matrix3;
-    using carve::geom3d::Vector;
-
     int cubic_roots(double c3, double c2, double c1, double c0, double *roots);
 
     void eigSolveSymmetric(const Matrix3 &m,
-                           double &l1, Vector &e1,
-                           double &l2, Vector &e2,
-                           double &l3, Vector &e3);
+                           double &l1, carve::geom::vector<3> &e1,
+                           double &l2, carve::geom::vector<3> &e2,
+                           double &l3, carve::geom::vector<3> &e3);
 
     void eigSolve(const Matrix3 &m, double &l1, double &l2, double &l3);
 
