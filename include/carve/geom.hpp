@@ -201,9 +201,9 @@ namespace carve {
 
     static inline double distance(const ray<3> &r, const vector<3> &v);
 
-    inline double distance2(const ray<2> &r, const vector<2> &v);
+    static inline double distance2(const ray<2> &r, const vector<2> &v);
 
-    inline double distance(const ray<2> &r, const vector<2> &v);
+    static inline double distance(const ray<2> &r, const vector<2> &v);
 
 
 

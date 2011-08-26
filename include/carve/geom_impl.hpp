@@ -448,12 +448,12 @@ namespace carve {
       return sqrt(distance2(r, v));
     }
 
-    inline double distance2(const ray<2> &r, const vector<2> &v) {
+    static inline double distance2(const ray<2> &r, const vector<2> &v) {
       double t = cross(r.D, v - r.v);
       return (t * t) / r.D.length2();
     }
 
-    inline double distance(const ray<2> &r, const vector<2> &v) {
+    static inline double distance(const ray<2> &r, const vector<2> &v) {
       return sqrt(distance2(r, v));
     }
 
