@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <carve/math.hpp>
+
 namespace carve {
   namespace geom {
 
@@ -508,7 +510,8 @@ namespace carve {
 
     template<unsigned ndim>
     void plane<ndim>::negate() {
-      N.negate(); d = -d;
+      N.negate();
+      d = -d;
     }
 
     template<unsigned ndim>
@@ -529,7 +532,7 @@ namespace carve {
 
 
     template<unsigned ndim>
-    inline plane<ndim> operator-(const plane<ndim> &p) {
+    plane<ndim> operator-(const plane<ndim> &p) {
       return plane<ndim>(-p.N, -p.d);
     }
 
@@ -545,7 +548,7 @@ namespace carve {
     }
 
     template<unsigned ndim>
-    static inline vector<ndim> closestPoint(const plane<ndim> &p, const vector<ndim> &v) {
+    vector<ndim> closestPoint(const plane<ndim> &p, const vector<ndim> &v) {
       return v - p.N * (p.d + dot(p.N, v)) / dot(p.N, p.N);
     }
 
@@ -580,7 +583,7 @@ namespace carve {
     }
 
     template<unsigned ndim>
-    static inline vector<ndim> closestPoint(const sphere<ndim> &sphere, const vector<ndim> &point) {
+    vector<ndim> closestPoint(const sphere<ndim> &sphere, const vector<ndim> &point) {
       return (point - sphere.C).normalized() * sphere.r;
     }
 
@@ -608,13 +611,13 @@ namespace carve {
 
 
     template<unsigned ndim>
-    inline std::ostream &operator<<(std::ostream &o, const vector<ndim> &v) {
+    std::ostream &operator<<(std::ostream &o, const vector<ndim> &v) {
       o << v.asStr();
       return o;
     }
 
     template<unsigned ndim>
-    inline std::ostream &operator<<(std::ostream &o, const carve::geom::plane<ndim> &p) {
+    std::ostream &operator<<(std::ostream &o, const carve::geom::plane<ndim> &p) {
       o << p.N << ";" << p.d;
       return o;
     }
@@ -633,5 +636,16 @@ namespace carve {
 
 
 
+    template<unsigned ndim>
+    double distance(const tri<ndim> &tri, const vector<ndim> &pt) {
+      return distance(closestPoint(tri, pt), pt);
+    }
+
+
+
+    template<unsigned ndim>
+    double distance2(const tri<ndim> &tri, const vector<ndim> &pt) {
+      return distance2(closestPoint(tri, pt), pt);
+    }
   }
 }

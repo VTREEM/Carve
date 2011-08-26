@@ -313,6 +313,12 @@ namespace carve {
 
 
 
+    template<unsigned ndim> vector<ndim> closestPoint(const tri<ndim> &tri, const vector<ndim> &pt);
+    template<unsigned ndim> double distance(const tri<ndim> &tri, const vector<ndim> &pt);
+    template<unsigned ndim> double distance2(const tri<ndim> &tri, const vector<ndim> &pt);
+
+
+
     // ========================================================================
     template<int base, int power> struct __pow__          { enum { val = __pow__<base, (power >> 1)>::val * __pow__<base, power - (power >> 1)>::val }; };
     template<int base>            struct __pow__<base, 1> { enum { val = base }; };
