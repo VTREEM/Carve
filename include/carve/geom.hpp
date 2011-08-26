@@ -298,6 +298,10 @@ namespace carve {
 
       tri(vector_t _v[3]);
       tri(const vector_t &a, const vector_t &b, const vector_t &c);
+
+      vector_t normal() const {
+        return cross(v[1] - v[0], v[2] - v[1]).normalized();
+      }
     };
 
 
