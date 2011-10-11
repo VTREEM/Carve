@@ -30,7 +30,9 @@ namespace carve {
     struct _uninitialized { };
 
     template<unsigned ndim>
-    struct base { double v[ndim]; };
+    struct base {
+      double v[ndim];
+    };
 
     template<> struct base<2> {union { double v[2]; struct { double x, y; }; }; };
     template<> struct base<3> {union { double v[3]; struct { double x, y, z; }; }; };
@@ -38,6 +40,8 @@ namespace carve {
 
     template<unsigned ndim>
     struct vector : public base<ndim> {
+      enum { __ndim = ndim };
+
       static vector ZERO();
       double length2() const;
       double length() const;
