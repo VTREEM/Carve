@@ -175,11 +175,22 @@ namespace carve {
     }
 
     template<unsigned ndim>
-    bool aabb<ndim>::intersects(const aabb<ndim> &other) const {
-      for (unsigned i = 0; i < ndim; ++i) {
-        if (fabs(other.pos.v[i] - pos.v[i]) > (extent.v[i] + other.extent.v[i])) return false;
+    double aabb<ndim>::axisSeparation(const aabb<ndim> &other, unsigned axis) const {
+      return fabs(other.pos.v[axis] - pos.v[axis]) - extent.v[axis] - other.extent.v[axis];
+    }
+
+    template<unsigned ndim>
+    double aabb<ndim>::maxAxisSeparation(const aabb<ndim> &other) const {
+      double m = axisSeparation(other, 0);
+      for (unsigned i = 1; i < ndim; ++i) {
+        m = std::max(m, axisSeparation(other, i));
       }
-      return true;
+      return m;
+    }
+
+    template<unsigned ndim>
+    bool aabb<ndim>::intersects(const aabb<ndim> &other) const {
+      return maxAxisSeparation(other) <= 0.0;
     }
  
     template<unsigned ndim>

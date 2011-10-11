@@ -69,6 +69,10 @@ namespace carve {
 
       bool intersectsLineSegment(const vector_t &v1, const vector_t &v2) const;
 
+      double axisSeparation(const aabb<ndim> &other, unsigned axis) const;
+
+      double maxAxisSeparation(const aabb<ndim> &other) const;
+
       bool intersects(const aabb<ndim> &other) const;
       bool intersects(const sphere<ndim> &s) const;
       bool intersects(const plane<ndim> &plane) const;
