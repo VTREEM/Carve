@@ -588,18 +588,15 @@ void carve::csg::CSG::generateVertexEdgeIntersections(const poly_t *a, const pol
       if (distance2(ev1->v, v->v) < carve::EPSILON2) {
         // vertex-vertex intersection
         intersections.record(IObj(ev1), IObj(v), v);
-        // std::cerr << "INTERSECT(VV) " << v << "-" << ev1 << std::endl;
       } else if (distance2(ev2->v, v->v) < carve::EPSILON2) {
         // vertex-vertex intersection
         intersections.record(IObj(ev2), IObj(v), v);
-        // std::cerr << "INTERSECT(VV) " << v << "-" << ev2 << std::endl;
       } else {
         double a = cross(ev2->v - ev1->v, v->v - ev1->v).length2();
         double b = (ev2->v - ev1->v).length2();
         if (a < b * carve::EPSILON2) {
           // vertex-edge intersection
           intersections.record(IObj(edge_b), IObj(v), v);
-          // std::cerr << "INTERSECT(VE) " << v << "-" << edge_b << std::endl;
         }
       }
 
