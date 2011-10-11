@@ -1424,7 +1424,7 @@ namespace carve {
         }
         meshset->meshes.erase(std::remove_if(meshset->meshes.begin(),
                                              meshset->meshes.end(),
-                                             std::bind2nd(std::equal_to<mesh_t *>(), NULL)),
+                                             std::bind2nd(std::equal_to<mesh_t *>(), (mesh_t *)NULL)),
                               meshset->meshes.end());
         return n_removed;
       }
