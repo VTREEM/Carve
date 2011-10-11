@@ -352,6 +352,19 @@ namespace carve {
       void getVertices(std::vector<const vertex_t *> &verts) const;
       void getProjectedVertices(std::vector<carve::geom::vector<2> > &verts) const;
 
+      std::pair<double, double> rangeInDirection(const vector_t &v, const vector_t &b) const {
+        edge_t *e = edge;
+        double lo, hi;
+        lo = hi = carve::geom::dot(v, e->vert->v - b);
+        e = e->next;
+        for (; e != edge; e = e->next) {
+          double d = carve::geom::dot(v, e->vert->v - b);
+          lo = std::min(lo, d);
+          hi = std::max(hi, d);
+        }
+        return std::make_pair(lo, hi);
+      }
+
       size_t nVertices() const {
         return n_edges;
       }
