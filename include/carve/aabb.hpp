@@ -80,6 +80,8 @@ namespace carve {
       bool intersects(tri<ndim> tri) const;
       bool intersects(const linesegment<ndim> &ls) const;
 
+      std::pair<double, double> rangeInDirection(const carve::geom::vector<ndim> &v) const;
+
       vector_t min() const;
       vector_t mid() const;
       vector_t max() const;

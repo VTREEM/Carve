@@ -215,6 +215,14 @@ namespace carve {
     }
 
     template<unsigned ndim>
+    std::pair<double, double> aabb<ndim>::rangeInDirection(const carve::geom::vector<ndim> &v) const {
+      double d1 = dot(v, pos);
+      double d2 = dot(abs(v), extent);
+
+      return std::make_pair(d1 - d2, d1 + d2);
+    }
+
+    template<unsigned ndim>
     typename aabb<ndim>::vector_t aabb<ndim>::min() const { return pos - extent; }
 
     template<unsigned ndim>
