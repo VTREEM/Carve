@@ -40,6 +40,7 @@ namespace carve {
       IObj(const carve::poly::Polyhedron::vertex_t *v) : obtype(OBTYPE_VERTEX), vertex(v) { }
       IObj(const carve::poly::Polyhedron::edge_t *e) : obtype(OBTYPE_EDGE), edge(e) { }
       IObj(const carve::poly::Polyhedron::face_t *f) : obtype(OBTYPE_FACE), face(f) { }
+      char typeChar() const { return "NVExF"[obtype]; }
     };
 
 

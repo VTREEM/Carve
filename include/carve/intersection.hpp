@@ -43,7 +43,9 @@ namespace carve {
        * @param b The second intersecting object.
        * @param p The point of intersection.
        */
-      void record(const IObj &a, const IObj &b, const carve::poly::Polyhedron::vertex_t *p) {
+      void record(IObj a, IObj b, const carve::poly::Polyhedron::vertex_t *p) {
+        if (a > b) std::swap(a, b);
+        std::cerr << "INTERSECT(" << a.typeChar() << b.typeChar() << ") -> " << p->v << std::endl;
         (*this)[a][b] = p;
         (*this)[b][a] = p;
       }
