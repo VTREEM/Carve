@@ -152,10 +152,14 @@ namespace carve {
     INTERSECT_PLANE = 4,
   };
 
+
+
   extern double EPSILON;
   extern double EPSILON2;
 
   static inline void setEpsilon(double ep) { EPSILON = ep; EPSILON2 = ep * ep; }
+
+
 
   template<typename T>
   struct identity_t {
@@ -163,6 +167,8 @@ namespace carve {
     typedef T result_type;
     const T &operator()(const T &t) const { return t; }
   };
+
+
 
   template<typename iter_t>
   inline bool is_sorted(iter_t first, iter_t last) {
@@ -178,6 +184,8 @@ namespace carve {
     return true;
   }
 
+
+
   template<typename iter_t,
            typename pred_t>
   inline bool is_sorted(iter_t first, iter_t last, pred_t pred) {
@@ -191,6 +199,19 @@ namespace carve {
       }
     }
     return true;
+  }
+
+
+
+  inline double rangeSeparation(const std::pair<double, double> &a,
+                                const std::pair<double, double> &b) {
+    if (a.second < b.first) {
+      return b.first - a.second;
+    } else if (b.second < a.first) {
+      return a.first - b.second;
+    } else {
+      return 0.0;
+    }
   }
 }
 
