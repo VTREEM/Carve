@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   m._31 = D(argv[3]); m._32 = D(argv[5]); m._33 = D(argv[6]);
 
   double l1, l2, l3;
-  carve::geom3d::Vector e1, e2, e3;
+  carve::geom::vector<3> e1, e2, e3;
 
   carve::math::eigSolveSymmetric(m, l1, e1, l2, e2, l3, e3);
   std::cout << l1 << " " << e1 << std::endl;

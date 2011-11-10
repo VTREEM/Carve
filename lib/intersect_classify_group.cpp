@@ -112,8 +112,8 @@ namespace carve {
         void classifySimple(FLGroupList &a_loops_grouped,
                             FLGroupList &b_loops_grouped,
                             VertexClassification & /* vclass */,
-                            const carve::poly::Polyhedron *poly_a,
-                            const carve::poly::Polyhedron *poly_b) const {
+                            carve::mesh::MeshSet<3> *poly_a,
+                            carve::mesh::MeshSet<3> *poly_b) const {
           if (a_loops_grouped.size() < b_loops_grouped.size()) {
             performClassifySimpleOnFaceGroups(a_loops_grouped, b_loops_grouped, poly_a, poly_b, collector, hooks);
           } else {
@@ -128,10 +128,12 @@ namespace carve {
         void classifyEasy(FLGroupList &a_loops_grouped,
                           FLGroupList &b_loops_grouped,
                           VertexClassification &vclass,
-                          const carve::poly::Polyhedron *poly_a,
-                          const carve::poly::Polyhedron *poly_b) const {
-          performClassifyEasyFaceGroups(a_loops_grouped, poly_b, vclass, FaceMaker0(collector, hooks), collector, hooks);
-          performClassifyEasyFaceGroups(b_loops_grouped, poly_a, vclass, FaceMaker1(collector, hooks), collector, hooks);
+                          carve::mesh::MeshSet<3> *poly_a,
+                          const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_a_rtree,
+                          carve::mesh::MeshSet<3> *poly_b,
+                          const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_b_rtree) const {
+          performClassifyEasyFaceGroups(a_loops_grouped, poly_b, poly_b_rtree, vclass, FaceMaker0(collector, hooks), collector, hooks);
+          performClassifyEasyFaceGroups(b_loops_grouped, poly_a, poly_a_rtree, vclass, FaceMaker1(collector, hooks), collector, hooks);
 #if defined(CARVE_DEBUG)
           std::cerr << "after removal of easy groups: " << a_loops_grouped.size() << " a groups" << std::endl;
           std::cerr << "after removal of easy groups: " << b_loops_grouped.size() << " b groups" << std::endl;
@@ -141,10 +143,12 @@ namespace carve {
         void classifyHard(FLGroupList &a_loops_grouped,
                           FLGroupList &b_loops_grouped,
                           VertexClassification & /* vclass */,
-                          const carve::poly::Polyhedron *poly_a,
-                          const carve::poly::Polyhedron *poly_b) const {
-          performClassifyHardFaceGroups(a_loops_grouped, poly_b, FaceMaker0(collector, hooks), collector, hooks);
-          performClassifyHardFaceGroups(b_loops_grouped, poly_a, FaceMaker1(collector, hooks), collector, hooks);
+                          carve::mesh::MeshSet<3> *poly_a,
+                          const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_a_rtree,
+                          carve::mesh::MeshSet<3> *poly_b,
+                          const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_b_rtree) const {
+          performClassifyHardFaceGroups(a_loops_grouped, poly_b, poly_b_rtree, FaceMaker0(collector, hooks), collector, hooks);
+          performClassifyHardFaceGroups(b_loops_grouped, poly_a, poly_a_rtree, FaceMaker1(collector, hooks), collector, hooks);
 #if defined(CARVE_DEBUG)
           std::cerr << "after removal of hard groups: " << a_loops_grouped.size() << " a groups" << std::endl;
           std::cerr << "after removal of hard groups: " << b_loops_grouped.size() << " b groups" << std::endl;
@@ -154,10 +158,12 @@ namespace carve {
         void faceLoopWork(FLGroupList &a_loops_grouped,
                           FLGroupList &b_loops_grouped,
                           VertexClassification & /* vclass */,
-                          const carve::poly::Polyhedron *poly_a,
-                          const carve::poly::Polyhedron *poly_b) const {
-          performFaceLoopWork(poly_b, a_loops_grouped, *this, collector, hooks);
-          performFaceLoopWork(poly_a, b_loops_grouped, *this, collector, hooks);
+                          carve::mesh::MeshSet<3> *poly_a,
+                          const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_a_rtree,
+                          carve::mesh::MeshSet<3> *poly_b,
+                          const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_b_rtree) const {
+          performFaceLoopWork(poly_b, poly_b_rtree, a_loops_grouped, *this, collector, hooks);
+          performFaceLoopWork(poly_a, poly_a_rtree, b_loops_grouped, *this, collector, hooks);
         }
     
         void postRemovalCheck(FLGroupList &a_loops_grouped,
@@ -183,10 +189,12 @@ namespace carve {
 
     void CSG::classifyFaceGroups(const V2Set & /* shared_edges */,
                                  VertexClassification &vclass,
-                                 const carve::poly::Polyhedron *poly_a,                           
+                                 carve::mesh::MeshSet<3> *poly_a,                           
+                                 const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_a_rtree,
                                  FLGroupList &a_loops_grouped,
                                  const detail::LoopEdges & /* a_edge_map */,
-                                 const carve::poly::Polyhedron *poly_b,
+                                 carve::mesh::MeshSet<3> *poly_b,
+                                 const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_b_rtree,
                                  FLGroupList &b_loops_grouped,
                                  const detail::LoopEdges & /* b_edge_map */,
                                  CSG::Collector &collector) {
@@ -195,7 +203,17 @@ namespace carve {
       std::cerr << "initial groups: " << a_loops_grouped.size() << " a groups" << std::endl;
       std::cerr << "initial groups: " << b_loops_grouped.size() << " b groups" << std::endl;
 #endif
-      performClassifyFaceGroups(a_loops_grouped, b_loops_grouped, vclass, poly_a, poly_b, classifier, collector, hooks);
+      performClassifyFaceGroups(
+          a_loops_grouped,
+          b_loops_grouped,
+          vclass,
+          poly_a,
+          poly_a_rtree,
+          poly_b,
+          poly_b_rtree,
+          classifier,
+          collector,
+          hooks);
     }
 
   }

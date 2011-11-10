@@ -202,7 +202,7 @@ namespace carve {
       }
     }
 
-    static void eig1(const Matrix3 &m, double l, carve::geom3d::Vector &e) {
+    static void eig1(const Matrix3 &m, double l, carve::geom::vector<3> &e) {
       double u[6];
       double u_max;
       int u_argmax;
@@ -220,7 +220,7 @@ namespace carve {
       e.normalize();
     }
 
-    static void eig2(const Matrix3 &m, double l, carve::geom3d::Vector &e1, carve::geom3d::Vector &e2) {
+    static void eig2(const Matrix3 &m, double l, carve::geom::vector<3> &e1, carve::geom::vector<3> &e2) {
       double u[6];
       double u_max;
       int u_argmax;
@@ -248,16 +248,20 @@ namespace carve {
       e2.normalize();
     }
 
-    static void eig3(const Matrix3 &m, double l, carve::geom3d::Vector &e1, carve::geom3d::Vector &e2, carve::geom3d::Vector &e3) {
+    static void eig3(const Matrix3 &m,
+                     double l,
+                     carve::geom::vector<3> &e1,
+                     carve::geom::vector<3> &e2,
+                     carve::geom::vector<3> &e3) {
       e1.x = 1.0; e1.y = 0.0; e1.z = 0.0;
       e2.x = 0.0; e2.y = 1.0; e2.z = 0.0;
       e3.x = 0.0; e3.y = 0.0; e3.z = 1.0;
     }
 
     void eigSolveSymmetric(const Matrix3 &m,
-                           double &l1, carve::geom3d::Vector &e1,
-                           double &l2, carve::geom3d::Vector &e2,
-                           double &l3, carve::geom3d::Vector &e3) {
+                           double &l1, carve::geom::vector<3> &e1,
+                           double &l2, carve::geom::vector<3> &e2,
+                           double &l3, carve::geom::vector<3> &e3) {
       double c0 =
         m._11 * m._22 * m._33 +
         2.0 * m._12 * m._13 * m._23 -

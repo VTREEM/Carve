@@ -16,6 +16,7 @@
 
 #include <carve/csg.hpp>
 #include <carve/tag.hpp>
+#include <carve/poly.hpp>
 #include <carve/triangulator.hpp>
 #include <deque>
 
@@ -33,10 +34,10 @@ namespace carve {
         virtual ~CarveTriangulator() {
         }
 
-        virtual void processOutputFace(std::vector<poly::Polyhedron::face_t *> &faces,
-                                       const poly::Polyhedron::face_t *orig,
+        virtual void processOutputFace(std::vector<carve::mesh::MeshSet<3>::face_t *> &faces,
+                                       const carve::mesh::MeshSet<3>::face_t *orig,
                                        bool flipped) {
-          std::vector<poly::Polyhedron::face_t *> out_faces;
+          std::vector<carve::mesh::MeshSet<3>::face_t *> out_faces;
 
           size_t n_tris = 0;
           for (size_t f = 0; f < faces.size(); ++f) {
@@ -47,7 +48,7 @@ namespace carve {
           out_faces.reserve(n_tris);
 
           for (size_t f = 0; f < faces.size(); ++f) {
-            poly::Polyhedron::face_t *face = faces[f];
+            carve::mesh::MeshSet<3>::face_t *face = faces[f];
 
             if (face->nVertices() == 3) {
               out_faces.push_back(face);
@@ -56,21 +57,29 @@ namespace carve {
 
             std::vector<triangulate::tri_idx> result;
 
-            std::vector<const poly::Polyhedron::vertex_t *> vloop;
-            face->getVertexLoop(vloop);
+            std::vector<carve::mesh::MeshSet<3>::vertex_t *> vloop;
+            face->getVertices(vloop);
 
-            triangulate::triangulate(face->projector(), vloop, result);
+            triangulate::triangulate(
+                carve::mesh::MeshSet<3>::face_t::projection_mapping(face->project),
+                vloop,
+                result);
+
             if (with_improvement) {
-              triangulate::improve(face->projector(), vloop, result);
+              triangulate::improve(
+                  carve::mesh::MeshSet<3>::face_t::projection_mapping(face->project),
+                  vloop,
+                  carve::mesh::vertex_distance(),
+                  result);
             }
 
-            std::vector<const poly::Polyhedron::vertex_t *> fv;
+            std::vector<carve::mesh::MeshSet<3>::vertex_t *> fv;
             fv.resize(3);
             for (size_t i = 0; i < result.size(); ++i) {
               fv[0] = vloop[result[i].a];
               fv[1] = vloop[result[i].b];
               fv[2] = vloop[result[i].c];
-              out_faces.push_back(face->create(fv, false));
+              out_faces.push_back(face->create(fv.begin(), fv.end(), false));
             }
             delete face;
           }
@@ -90,61 +99,62 @@ namespace carve {
       virtual ~CarveTriangulationImprover() {
       }
 
-      virtual void processOutputFace(std::vector<poly::Polyhedron::face_t *> &faces,
-                                     const poly::Polyhedron::face_t *orig,
+      virtual void processOutputFace(std::vector<carve::mesh::MeshSet<3>::face_t *> &faces,
+                                     const carve::mesh::MeshSet<3>::face_t *orig,
                                      bool flipped) {
         if (faces.size() == 1) return;
 
         // doing improvement as a separate hook is much messier than
         // just incorporating it into the triangulation hook.
 
-        typedef std::map<const poly::Polyhedron::vertex_t *, size_t> vert_map_t;
-        std::vector<poly::Polyhedron::face_t *> out_faces;
+        typedef std::map<carve::mesh::MeshSet<3>::vertex_t *, size_t> vert_map_t;
+        std::vector<carve::mesh::MeshSet<3>::face_t *> out_faces;
         vert_map_t vert_map;
 
         out_faces.reserve(faces.size());
 
-        poly::p2_adapt_project<3> projector(faces[0]->project);
+
+        carve::mesh::MeshSet<3>::face_t::projection_mapping projector(faces[0]->project);
 
         std::vector<triangulate::tri_idx> result;
 
         for (size_t f = 0; f < faces.size(); ++f) {
-          poly::Polyhedron::face_t *face = faces[f];
+          carve::mesh::MeshSet<3>::face_t *face = faces[f];
           if (face->nVertices() != 3) {
             out_faces.push_back(face);
           } else {
             triangulate::tri_idx tri;
-            for (size_t i = 0; i < 3; ++i) {
+            for (carve::mesh::MeshSet<3>::face_t::edge_iter_t i = face->begin(); i != face->end(); ++i) {
               size_t v = 0;
-              vert_map_t::iterator j = vert_map.find(face->vertex(i));
+              vert_map_t::iterator j = vert_map.find(i->vert);
               if (j == vert_map.end()) {
                 v = vert_map.size();
-                vert_map[face->vertex(i)] = v;
+                vert_map[i->vert] = v;
               } else {
                 v = (*j).second;
               }
-              tri.v[i] = v;
+              tri.v[i.idx()] = v;
             }
             result.push_back(tri);
             delete face;
           }
         }
 
-        std::vector<const poly::Polyhedron::vertex_t *> verts;
+        std::vector<carve::mesh::MeshSet<3>::vertex_t *> verts;
         verts.resize(vert_map.size());
         for (vert_map_t::iterator i = vert_map.begin(); i != vert_map.end(); ++i) {
           verts[(*i).second] = (*i).first;
         }
  
-        triangulate::improve(projector, verts, result);
+        triangulate::improve(projector, verts, carve::mesh::vertex_distance(), result);
 
-        std::vector<const poly::Polyhedron::vertex_t *> fv;
+        std::vector<carve::mesh::MeshSet<3>::vertex_t *> fv;
         fv.resize(3);
         for (size_t i = 0; i < result.size(); ++i) {
           fv[0] = verts[result[i].a];
           fv[1] = verts[result[i].b];
           fv[2] = verts[result[i].c];
-          out_faces.push_back(orig->create(fv, false));
+          out_faces.push_back(orig->create(fv.begin(), fv.end(), false));
         }
 
         std::swap(faces, out_faces);
@@ -166,13 +176,13 @@ namespace carve {
         if (!(*i).second.first || !(*i).second.second) return -1;
       }
 
-      poly::Polyhedron::face_t *mergeQuad(edge_map_t::iterator i, edge_map_t &edge_map) {
+      carve::mesh::MeshSet<3>::face_t *mergeQuad(edge_map_t::iterator i, edge_map_t &edge_map) {
         return NULL;
       }
 
-      void recordEdge(const poly::Polyhedron::vertex_t *v1,
-                      const poly::Polyhedron::vertex_t *v2,
-                      const poly::Polyhedron::face_t *f,
+      void recordEdge(carve::mesh::MeshSet<3>::vertex_t *v1,
+                      carve::mesh::MeshSet<3>::vertex_t *v2,
+                      carve::mesh::MeshSet<3>::face_t *f,
                       edge_map_t &edge_map) {
         if (v1 < v2) {
           edge_map[V2(v1, v2)].first = f;
@@ -181,12 +191,12 @@ namespace carve {
         }
       }
 
-      virtual void processOutputFace(std::vector<poly::Polyhedron::face_t *> &faces,
-                                     const poly::Polyhedron::face_t *orig,
+      virtual void processOutputFace(std::vector<carve::mesh::MeshSet<3>::face_t *> &faces,
+                                     const carve::mesh::MeshSet<3>::face_t *orig,
                                      bool flipped) {
         if (faces.size() == 1) return;
 
-        std::vector<poly::Polyhedron::face_t *> out_faces;
+        std::vector<carve::mesh::MeshSet<3>::face_t *> out_faces;
         edge_map_t edge_map;
 
         out_faces.reserve(faces.size());
@@ -194,13 +204,17 @@ namespace carve {
         poly::p2_adapt_project<3> projector(faces[0]->project);
 
         for (size_t f = 0; f < faces.size(); ++f) {
-          poly::Polyhedron::face_t *face = faces[f];
+          carve::mesh::MeshSet<3>::face_t *face = faces[f];
           if (face->nVertices() != 3) {
             out_faces.push_back(face);
           } else {
-            recordEdge(face->vertex(0), face->vertex(1), face, edge_map);
-            recordEdge(face->vertex(1), face->vertex(2), face, edge_map);
-            recordEdge(face->vertex(2), face->vertex(0), face, edge_map);
+            carve::mesh::MeshSet<3>::face_t::vertex_t *v1, *v2, *v3;
+            v1 = face->edge->vert;
+            v2 = face->edge->next->vert;
+            v3 = face->edge->next->next->vert;
+            recordEdge(v1, v2, face, edge_map);
+            recordEdge(v2, v3, face, edge_map);
+            recordEdge(v3, v1, face, edge_map);
           }
         }
 
@@ -227,8 +241,8 @@ namespace carve {
         if (edge_map.size()) {
           tagable::tag_begin();
           for (edge_map_t::iterator i = edge_map.begin(); i != edge_map.end(); ++i) {
-            poly::Polyhedron::face_t *a = const_cast<poly::Polyhedron::face_t *>((*i).second.first);
-            poly::Polyhedron::face_t *b = const_cast<poly::Polyhedron::face_t *>((*i).second.first);
+            carve::mesh::MeshSet<3>::face_t *a = const_cast<carve::mesh::MeshSet<3>::face_t *>((*i).second.first);
+            carve::mesh::MeshSet<3>::face_t *b = const_cast<carve::mesh::MeshSet<3>::face_t *>((*i).second.first);
             if (a && a->tag_once()) out_faces.push_back(a);
             if (b && b->tag_once()) out_faces.push_back(b);
           }
@@ -247,7 +261,7 @@ namespace carve {
       virtual ~CarveHoleResolver() {
       }
 
-      bool findRepeatedEdges(const std::vector<const poly::Polyhedron::vertex_t *> &vertices,
+      bool findRepeatedEdges(const std::vector<carve::mesh::MeshSet<3>::vertex_t *> &vertices,
                              std::list<std::pair<size_t, size_t> > &edge_pos) {
         std::map<V2, size_t> edges;
         for (size_t i = 0; i < vertices.size() - 1; ++i) {
@@ -301,8 +315,8 @@ namespace carve {
       }
 
       void findPerimeter(const std::vector<triangulate::tri_idx> &tris,
-                         const std::vector<const poly::Polyhedron::vertex_t *> &verts,
-                         std::vector<const poly::Polyhedron::vertex_t *> &out) {
+                         const std::vector<carve::mesh::MeshSet<3>::vertex_t *> &verts,
+                         std::vector<carve::mesh::MeshSet<3>::vertex_t *> &out) {
         std::map<std::pair<size_t, size_t>, size_t> edges;
         for (size_t i = 0; i < tris.size(); ++i) {
           edges[std::make_pair(tris[i].a, tris[i].b)] = i;
@@ -327,21 +341,21 @@ namespace carve {
         } while (vert != start);
       }
 
-      virtual void processOutputFace(std::vector<poly::Polyhedron::face_t *> &faces,
-                                     const poly::Polyhedron::face_t *orig,
+      virtual void processOutputFace(std::vector<carve::mesh::MeshSet<3>::face_t *> &faces,
+                                     const carve::mesh::MeshSet<3>::face_t *orig,
                                      bool flipped) {
-        std::vector<poly::Polyhedron::face_t *> out_faces;
+        std::vector<carve::mesh::MeshSet<3>::face_t *> out_faces;
 
         for (size_t f = 0; f < faces.size(); ++f) {
-          poly::Polyhedron::face_t *face = faces[f];
+          carve::mesh::MeshSet<3>::face_t *face = faces[f];
 
           if (face->nVertices() == 3) {
             out_faces.push_back(face);
             continue;
           }
 
-          std::vector<const poly::Polyhedron::vertex_t *> vloop;
-          face->getVertexLoop(vloop);
+          std::vector<carve::mesh::MeshSet<3>::vertex_t *> vloop;
+          face->getVertices(vloop);
 
           std::list<std::pair<size_t, size_t> > rep_edges;
           if (!findRepeatedEdges(vloop, rep_edges)) {
@@ -350,7 +364,10 @@ namespace carve {
           }
 
           std::vector<triangulate::tri_idx> result;
-          triangulate::triangulate(face->projector(), vloop, result);
+          triangulate::triangulate(
+              carve::mesh::MeshSet<3>::face_t::projection_mapping(face->project),
+              vloop,
+              result);
 
           std::map<std::pair<size_t, size_t>, size_t> tri_edge;
           for (size_t i = 0; i < result.size(); ++i) {
@@ -404,9 +421,9 @@ namespace carve {
                 grp_tris.push_back(result[j]);
               }
             }
-            std::vector<const poly::Polyhedron::vertex_t *> grp_perim;
+            std::vector<carve::mesh::MeshSet<3>::vertex_t *> grp_perim;
             findPerimeter(grp_tris, vloop, grp_perim);
-            out_faces.push_back(face->create(grp_perim, false));
+            out_faces.push_back(face->create(grp_perim.begin(), grp_perim.end(), false));
           }
         }
         std::swap(faces, out_faces);

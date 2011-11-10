@@ -106,31 +106,44 @@ static bool endswith(const std::string &a, const std::string &b) {
   return true;
 }
 
-carve::poly::Polyhedron *readModel(const std::string &file) {
-  carve::poly::Polyhedron *poly;
+carve::mesh::MeshSet<3> *readModel(const std::string &file) {
+  carve::mesh::MeshSet<3> *poly;
 
   if (file == "") {
     if (options.obj) {
-      poly = readOBJ(std::cin);
+      poly = readOBJasMesh(std::cin);
     } else if (options.vtk) {
-      poly = readVTK(std::cin);
+      poly = readVTKasMesh(std::cin);
     } else {
-      poly = readPLY(std::cin);
+      poly = readPLYasMesh(std::cin);
     }
   } else if (endswith(file, ".ply")) {
-    poly = readPLY(file);
+    poly = readPLYasMesh(file);
   } else if (endswith(file, ".vtk")) {
-    poly = readVTK(file);
+    poly = readVTKasMesh(file);
   } else if (endswith(file, ".obj")) {
-    poly = readOBJ(file);
+    poly = readOBJasMesh(file);
   }
 
   if (poly == NULL) return NULL;
 
-  std::cerr << "loaded polyhedron " << poly << " has "
-    << poly->vertices.size() << " vertices "
-    << poly->faces.size() << " faces "
-    << poly->manifold_is_closed.size() << " manifolds (" << std::count(poly->manifold_is_closed.begin(), poly->manifold_is_closed.end(), true) << " closed)" << std::endl;
+  std::cerr << "loaded polyhedron "
+            << poly << " has " << poly->meshes.size()
+            << " manifolds (" << std::count_if(poly->meshes.begin(),
+                                               poly->meshes.end(),
+                                               carve::mesh::Mesh<3>::IsClosed()) << " closed)" << std::endl; 
+
+  std::cerr << "closed:    ";
+  for (size_t i = 0; i < poly->meshes.size(); ++i) {
+    std::cerr << (poly->meshes[i]->isClosed() ? '+' : '-');
+  }
+  std::cerr << std::endl;
+
+  std::cerr << "negative:  ";
+  for (size_t i = 0; i < poly->meshes.size(); ++i) {
+    std::cerr << (poly->meshes[i]->isNegative() ? '+' : '-');
+  }
+  std::cerr << std::endl;
 
   return poly;
 }
@@ -138,41 +151,47 @@ carve::poly::Polyhedron *readModel(const std::string &file) {
 int main(int argc, char **argv) {
   options.parse(argc, argv);
 
-  carve::poly::Polyhedron *poly = readModel(options.file);
+  carve::mesh::MeshSet<3> *poly = readModel(options.file);
   if (!poly) exit(1);
 
-  std::vector<carve::poly::Vertex<3> > out_vertices = poly->vertices;
-  std::vector<carve::poly::Face<3> > out_faces;
+  std::vector<carve::mesh::MeshSet<3>::face_t *> out_faces;
 
   size_t N = 0;
-  for (size_t i = 0; i < poly->faces.size(); ++i) {
-    carve::poly::Face<3> &f = poly->faces[i];
-    N += f.nVertices() - 2;
+  for (carve::mesh::MeshSet<3>::face_iter i = poly->faceBegin(); i != poly->faceEnd(); ++i) {
+    carve::mesh::MeshSet<3>::face_t *f = *i;
+    N += f->nVertices() - 2;
   }
   out_faces.reserve(N);
 
-  for (size_t i = 0; i < poly->faces.size(); ++i) {
-    carve::poly::Face<3> &f = poly->faces[i];
+  for (carve::mesh::MeshSet<3>::face_iter i = poly->faceBegin(); i != poly->faceEnd(); ++i) {
+    carve::mesh::MeshSet<3>::face_t *f = *i;
     std::vector<carve::triangulate::tri_idx> result;
 
-    std::vector<const carve::poly::Polyhedron::vertex_t *> vloop;
-    f.getVertexLoop(vloop);
+    std::vector<carve::mesh::MeshSet<3>::vertex_t *> vloop;
+    f->getVertices(vloop);
 
-    carve::triangulate::triangulate(carve::poly::p2_adapt_project<3>(f.project), vloop, result);
+    carve::triangulate::triangulate(
+      carve::mesh::MeshSet<3>::face_t::projection_mapping(f->project),
+      vloop,
+      result);
     if (options.improve) {
-      carve::triangulate::improve(carve::poly::p2_adapt_project<3>(f.project), vloop, result);
+      carve::triangulate::improve(
+        carve::mesh::MeshSet<3>::face_t::projection_mapping(f->project),
+        vloop,
+        carve::mesh::vertex_distance(),
+        result);
     }
 
     for (size_t j = 0; j < result.size(); ++j) {
-      out_faces.push_back(carve::poly::Face<3>(
-            &out_vertices[poly->vertexToIndex_fast(vloop[result[j].a])],
-            &out_vertices[poly->vertexToIndex_fast(vloop[result[j].b])],
-            &out_vertices[poly->vertexToIndex_fast(vloop[result[j].c])]
-            ));
+      out_faces.push_back(
+        new carve::mesh::MeshSet<3>::face_t(
+          vloop[result[j].a],
+          vloop[result[j].b],
+          vloop[result[j].c]));
     }
   }
 
-  carve::poly::Polyhedron *result = new carve::poly::Polyhedron(out_faces, out_vertices);
+  carve::mesh::MeshSet<3> *result = new carve::mesh::MeshSet<3>(out_faces);
 
   if (options.canonicalize) result->canonicalize();
 

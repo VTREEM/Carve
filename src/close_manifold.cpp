@@ -108,7 +108,7 @@ static bool endswith(const std::string &a, const std::string &b) {
 
 int main(int argc, char **argv) {
   options.parse(argc, argv);
-  carve::poly::Polyhedron *poly;
+  carve::mesh::MeshSet<3> *poly;
 
   if (options.axis == Options::ERR) {
     std::cerr << "need to specify a closure plane." << std::endl;
@@ -116,13 +116,13 @@ int main(int argc, char **argv) {
   }
 
   if (options.file == "-") {
-    poly = readPLY(std::cin);
+    poly = readPLYasMesh(std::cin);
   } else if (endswith(options.file, ".ply")) {
-    poly = readPLY(options.file);
+    poly = readPLYasMesh(options.file);
   } else if (endswith(options.file, ".vtk")) {
-    poly = readVTK(options.file);
+    poly = readVTKasMesh(options.file);
   } else if (endswith(options.file, ".obj")) {
-    poly = readOBJ(options.file);
+    poly = readOBJasMesh(options.file);
   }
 
   if (poly == NULL) {
@@ -130,84 +130,80 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  std::cerr << "poly aabb = " << poly->aabb << std::endl;
+  std::cerr << "poly aabb = " << poly->getAABB() << std::endl;
 
-  if (poly->aabb.compareAxis(carve::geom::axis_pos(options.axis, options.pos)) == 0) {
+  if (poly->getAABB().compareAxis(carve::geom::axis_pos(options.axis, options.pos)) == 0) {
     std::cerr << "poly aabb intersects closure plane." << std::endl;
     exit(1);
   }
 
-  std::vector<size_t> open_edges;
-  for (size_t edge_num = 0; edge_num < poly->edges.size(); ++edge_num) {
-    std::vector<const carve::poly::Polyhedron::face_t *> &ef = poly->connectivity.edge_to_face[edge_num];
-    if (std::find(ef.begin(), ef.end(), (const carve::poly::Polyhedron::face_t *)NULL) != ef.end()) {
-      open_edges.push_back(edge_num);
-    }
-  }
 
-  std::vector<carve::poly::Polyhedron::face_t> out_faces;
-  out_faces.reserve(open_edges.size() + 1 + poly->faces.size());
-  for (size_t face = 0; face < poly->faces.size(); ++face) {
-    carve::poly::Polyhedron::face_t *temp = poly->faces[face].clone(options.flip);
-    out_faces.push_back(*temp);
-    delete temp;
-  }
+  for (size_t i = 0; i < poly->meshes.size(); ++i) {
+    carve::mesh::MeshSet<3>::mesh_t *mesh = poly->meshes[i];
+    const size_t N = mesh->open_edges.size();
+    if (N == 0) continue;
 
-  std::vector<carve::poly::Polyhedron::vertex_t> proj_vertices;
-  proj_vertices.reserve(poly->vertices.size());
-  std::copy(poly->vertices.begin(), poly->vertices.end(), std::back_inserter(proj_vertices));
+    mesh->faces.reserve(N + 1);
 
-  for (size_t vert = 0; vert != proj_vertices.size(); ++vert) {
-    proj_vertices[vert].v.v[options.axis] = options.pos;
-  }
+    carve::mesh::MeshSet<3>::edge_t *start = mesh->open_edges[0];
 
-  std::map<const carve::poly::Polyhedron::vertex_t *, const carve::poly::Polyhedron::vertex_t *> base_edges;
-
-
-  for (size_t edge_index = 0; edge_index < open_edges.size(); ++edge_index) {
-    size_t edge_num = open_edges[edge_index];
-    carve::poly::Polyhedron::edge_t *edge = &poly->edges[edge_num];
-    size_t v1i = poly->vertexToIndex_fast(edge->v1);
-    size_t v2i = poly->vertexToIndex_fast(edge->v2);
-    std::vector<const carve::poly::Polyhedron::vertex_t *> vertices;
-    vertices.push_back(edge->v2);
-    vertices.push_back(edge->v1);
-    vertices.push_back(&proj_vertices[v1i]);
-    vertices.push_back(&proj_vertices[v2i]);
-
-    std::vector<const carve::poly::Polyhedron::face_t *> &ef = poly->connectivity.edge_to_face[edge_num];
-    CARVE_ASSERT(ef.size() == 2);
-    if (ef[0] == NULL) { std::swap(vertices[0], vertices[1]); std::swap(vertices[2], vertices[3]); }
-    if (options.flip) { std::swap(vertices[0], vertices[1]); std::swap(vertices[2], vertices[3]); }
-    out_faces.push_back(carve::poly::Polyhedron::face_t(vertices));
-    base_edges[vertices[3]] = vertices[2];
-  }
-
-  while (base_edges.size()) {
-    std::vector<const carve::poly::Polyhedron::vertex_t *> fv;
-    const carve::poly::Polyhedron::vertex_t *vert = base_edges.begin()->first;
-    const carve::poly::Polyhedron::vertex_t *start = vert;
+    std::vector<carve::mesh::MeshSet<3>::edge_t *> edges_to_close;
+    edges_to_close.resize(N);
+    carve::mesh::MeshSet<3>::edge_t *edge = start;
+    size_t j = 0;
     do {
-      const carve::poly::Polyhedron::vertex_t *next = base_edges[vert];
-      base_edges.erase(vert);
-      fv.push_back(next);
-      vert = next;
-    } while (vert != start);
-    out_faces.push_back(carve::poly::Polyhedron::face_t(fv));
-  }
+      edges_to_close[j++] = edge;
+      edge = edge->perimNext();
+    } while (edge != start);
 
-  std::vector<carve::poly::Polyhedron::vertex_t> vertices;
-  carve::csg::VVMap vmap;
-  carve::poly::Polyhedron::collectFaceVertices(out_faces, vertices, vmap);
-  carve::poly::Polyhedron *result = new carve::poly::Polyhedron(out_faces, vertices);
-  std::cerr << "result: " << result->faces.size() << " faces\n";
+    CARVE_ASSERT(j == N);
+
+    std::vector<carve::mesh::MeshSet<3>::vertex_t> projected;
+    projected.resize(N);
+
+    for (j = 0; j < N; ++j) {
+      edge = edges_to_close[j];
+      projected[j].v = edge->vert->v;
+      projected[j].v.v[options.axis] = options.pos;
+    }
+
+    for (j = 0; j < N; ++j) {
+      edge = edges_to_close[j];
+      carve::mesh::MeshSet<3>::face_t *quad =
+        new carve::mesh::MeshSet<3>::face_t(edge->v2(), edge->v1(), &projected[j], &projected[(j+1)%N]);
+      quad->mesh = mesh;
+      edge->rev = quad->edge;
+      quad->edge->rev = edge;
+      mesh->faces.push_back(quad);
+    }
+
+    for (j = 0; j < N; ++j) {
+      carve::mesh::MeshSet<3>::edge_t *e1 = edges_to_close[j]->rev->prev;
+      carve::mesh::MeshSet<3>::edge_t *e2 = edges_to_close[(j+1)%N]->rev->next;
+      e1->rev = e2;
+      e2->rev = e1;
+    }
+
+    for (j = 0; j < N; ++j) {
+      edge = edges_to_close[j]->rev;
+      edge->validateLoop();
+    }
+
+    carve::mesh::MeshSet<3>::face_t *loop =
+      carve::mesh::MeshSet<3>::face_t::closeLoop(edges_to_close[0]->rev->next->next);
+
+    loop->mesh = mesh;
+    mesh->faces.push_back(loop);
+
+    poly->collectVertices();
+  }
 
   if (options.obj) {
-    writeOBJ(std::cout, result);
+    writeOBJ(std::cout, poly);
   } else if (options.vtk) {
-    writeVTK(std::cout, result);
+    writeVTK(std::cout, poly);
   } else {
-    writePLY(std::cout, result, options.ascii);
+    writePLY(std::cout, poly, options.ascii);
   }
 
   return 0;

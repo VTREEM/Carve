@@ -31,7 +31,7 @@ static unsigned buttons;
 static int lastbutton = 0;
 
 static Scene *g_scene = NULL;
-static int g_mainWindow = NULL;
+static int g_mainWindow = 0;
 static GLUI *g_rightPanel = NULL;
 static double near_plane = 0.2;
 static double far_plane = 200;

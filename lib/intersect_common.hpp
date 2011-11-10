@@ -18,11 +18,11 @@
 #pragma once
 
 
-static inline bool facesAreCoplanar(const carve::poly::Polyhedron::face_t *a, const carve::poly::Polyhedron::face_t *b) {
+static inline bool facesAreCoplanar(const carve::mesh::MeshSet<3>::face_t *a, const carve::mesh::MeshSet<3>::face_t *b) {
   carve::geom3d::Ray temp;
   // XXX: Find a better definition. This may be a source of problems
   // if floating point inaccuracies cause an incorrect answer.
-  return !carve::geom3d::planeIntersection(a->plane_eqn, b->plane_eqn, temp);
+  return !carve::geom3d::planeIntersection(a->plane, b->plane, temp);
 }
 
 #if defined(CARVE_DEBUG)
@@ -34,7 +34,7 @@ static inline bool facesAreCoplanar(const carve::poly::Polyhedron::face_t *a, co
 namespace carve {
   namespace csg {
 
-    static inline const carve::poly::Polyhedron::vertex_t *map_vertex(const VVMap &vmap, const carve::poly::Polyhedron::vertex_t *v) {
+    static inline carve::mesh::MeshSet<3>::vertex_t *map_vertex(const VVMap &vmap, carve::mesh::MeshSet<3>::vertex_t *v) {
       VVMap::const_iterator i = vmap.find(v);
       if (i == vmap.end()) return v;
       return (*i).second;
@@ -52,18 +52,18 @@ namespace carve {
                                         float rB, float gB, float bB, float aB,
                                         bool lit) {
       for (FaceLoop *flb = ll.head; flb; flb = flb->next) {
-        const carve::poly::Polyhedron::face_t *f = (flb->orig_face);
-        std::vector<const carve::poly::Polyhedron::vertex_t *> &loop = flb->vertices;
-        HOOK(drawFaceLoop2(loop, f->plane_eqn.N, rF, gF, bF, aF, rB, gB, bB, aB, true, lit););
-        HOOK(drawFaceLoopWireframe(loop, f->plane_eqn.N, 1, 1, 1, 0.1f););
+        const carve::mesh::MeshSet<3>::face_t *f = (flb->orig_face);
+        std::vector<carve::mesh::MeshSet<3>::vertex_t *> &loop = flb->vertices;
+        HOOK(drawFaceLoop2(loop, f->plane.N, rF, gF, bF, aF, rB, gB, bB, aB, true, lit););
+        HOOK(drawFaceLoopWireframe(loop, f->plane.N, 1, 1, 1, 0.1f););
       }
     }
 
     static inline void drawFaceLoopListWireframe(const FaceLoopList &ll) {
       for (FaceLoop *flb = ll.head; flb; flb = flb->next) {
-        const carve::poly::Polyhedron::face_t *f = (flb->orig_face);
-        std::vector<const carve::poly::Polyhedron::vertex_t *> &loop = flb->vertices;
-        HOOK(drawFaceLoopWireframe(loop, f->plane_eqn.N, 1, 1, 1, 0.1f););
+        const carve::mesh::MeshSet<3>::face_t *f = (flb->orig_face);
+        std::vector<carve::mesh::MeshSet<3>::vertex_t *> &loop = flb->vertices;
+        HOOK(drawFaceLoopWireframe(loop, f->plane.N, 1, 1, 1, 0.1f););
       }
     }
 

@@ -197,16 +197,16 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
         is_wireframe[list_num] = false;
         glNewList(dlist + list_num++, GL_COMPILE);
         glCullFace(GL_BACK);
-        drawPolyhedron(poly, 0.3f, 0.8f, 0.5f, 1.0f, i);
+        drawMeshSet(poly, 0.3f, 0.8f, 0.5f, 1.0f, i);
         glCullFace(GL_FRONT);
-        drawPolyhedron(poly, 0.0f, 0.0f, 1.0f, 1.0f, i);
+        drawMeshSet(poly, 0.0f, 0.0f, 1.0f, 1.0f, i);
         glCullFace(GL_BACK);
         glEndList();
 
         if (options.wireframe) {
           is_wireframe[list_num] = true;
           glNewList(dlist + list_num++, GL_COMPILE);
-          drawPolyhedronWireframe(poly, options.normal, i);
+          drawMeshSetWireframe(poly, options.normal, i);
           glEndList();
         }
       }
@@ -217,16 +217,16 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
         is_wireframe[list_num] = false;
         glNewList(dlist + list_num++, GL_COMPILE);
         glCullFace(GL_BACK);
-        drawPolyhedron(poly, 0.3f, 0.5f, 0.8f, 1.0f, i);
+        drawMeshSet(poly, 0.3f, 0.5f, 0.8f, 1.0f, i);
         glCullFace(GL_FRONT);
-        drawPolyhedron(poly, 1.0f, 0.0f, 0.0f, 1.0f, i);
+        drawMeshSet(poly, 1.0f, 0.0f, 0.0f, 1.0f, i);
         glCullFace(GL_BACK);
         glEndList();
 
         if (options.wireframe) {
           is_wireframe[list_num] = true;
           glNewList(dlist + list_num++, GL_COMPILE);
-          drawPolyhedronWireframe(poly, options.normal, i);
+          drawMeshSetWireframe(poly, options.normal, i);
           glEndList();
         }
       }
@@ -260,7 +260,7 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
       glEndList();
       is_wireframe[list_num] = true;
       glNewList(dlist + list_num++, GL_COMPILE);
-      glPointSize(2.0);
+      glPointSize(4.0);
       glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
       glBegin(GL_POINTS);
       for (carve::line::polyline_vertex_iter j = (*i)->vbegin(); j != (*i)->vend(); ++j) {
@@ -279,7 +279,7 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
 
     is_wireframe[list_num] = false;
     glNewList(dlist + list_num++, GL_COMPILE);
-    glPointSize(2.0);
+    glPointSize(4.0);
     glBegin(GL_POINTS);
     for (size_t i = 0; i < point->vertices.size(); ++i) {
       carve::geom3d::Vector v = point->vertices[i].v;

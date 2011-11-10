@@ -559,7 +559,7 @@ int main(int argc, char **argv) {
   typedef carve::geom::RTreeNode<3, carve::mesh::Face<3> *> face_rtree_t;
   face_rtree_t *tree = face_rtree_t::construct_STR(poly->faceBegin(), poly->faceEnd(), 4, 4);
 
-  for (carve::mesh::MeshSet<3>::FaceIter f = poly->faceBegin(); f != poly->faceEnd(); ++f) {
+  for (carve::mesh::MeshSet<3>::face_iter f = poly->faceBegin(); f != poly->faceEnd(); ++f) {
     carve::mesh::MeshSet<3>::face_t *fa = *f;
     if (fa->nVertices() != 3) continue;
 

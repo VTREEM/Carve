@@ -22,7 +22,7 @@
 #include <carve/carve.hpp>
 
 #include <carve/math.hpp>
-#include <carve/vector.hpp>
+#include <carve/geom.hpp>
 
 namespace carve {
   namespace math {
@@ -33,7 +33,7 @@ namespace carve {
       Quaternion(double _x, double _y, double _z, double _w) : x(_x), y(_y), z(_z), w(_w) {
       }
 
-      Quaternion(double angle, const carve::geom3d::Vector &axis) {
+      Quaternion(double angle, const carve::geom::vector<3> &axis) {
         double s = axis.length();
         if (!carve::math::ZERO(s)) {
           double c = 1.0 / s;
@@ -152,7 +152,7 @@ namespace carve {
                       2*x*z - 2*y*w,       2*y*z + 2*x*w,       1 - 2*x*x - 2*y*y,   0.0,  
                       0.0,                 0.0,                 0.0,                 1.0);
       }
-      static Matrix ROT(double angle, const carve::geom3d::Vector &axis) {
+      static Matrix ROT(double angle, const carve::geom::vector<3> &axis) {
         return ROT(Quaternion(angle, axis));
       }
       static Matrix ROT(double angle, double x, double y, double z) {
@@ -164,7 +164,7 @@ namespace carve {
                       0.0,   0.0,   1.0,   z,
                       0.0,   0.0,   0.0,   1.0);
       }
-      static Matrix TRANS(const carve::geom3d::Vector &v) {
+      static Matrix TRANS(const carve::geom::vector<3> &v) {
         return TRANS(v.x, v.y, v.z);
       }
       static Matrix SCALE(double x, double y, double z) {
@@ -173,7 +173,7 @@ namespace carve {
                       0.0,   0.0,   z,     0.0,
                       0.0,   0.0,   0.0,   1.0);
       }
-      static Matrix SCALE(const carve::geom3d::Vector &v) {
+      static Matrix SCALE(const carve::geom::vector<3> &v) {
         return SCALE(v.x, v.y, v.z);
       }
       static Matrix IDENT() {
@@ -191,7 +191,7 @@ namespace carve {
     static inline bool operator!=(const Matrix &A, const Matrix &B) {
       return !(A == B);
     }
-    static inline carve::geom3d::Vector operator*(const Matrix &A, const carve::geom3d::Vector &b) {
+    static inline carve::geom::vector<3> operator*(const Matrix &A, const carve::geom::vector<3> &b) {
       return carve::geom::VECTOR(
                     A._11 * b.x + A._21 * b.y + A._31 * b.z + A._41,
                     A._12 * b.x + A._22 * b.y + A._32 * b.z + A._42,
@@ -199,12 +199,12 @@ namespace carve {
                     );
     }
 
-    static inline carve::geom3d::Vector &operator*=(carve::geom3d::Vector &b, const Matrix &A) {
+    static inline carve::geom::vector<3> &operator*=(carve::geom::vector<3> &b, const Matrix &A) {
       b = A * b;
       return b;
     }
 
-    static inline carve::geom3d::Vector operator*(const Matrix3 &A, const carve::geom3d::Vector &b) {
+    static inline carve::geom::vector<3> operator*(const Matrix3 &A, const carve::geom::vector<3> &b) {
       return carve::geom::VECTOR(
                     A._11 * b.x + A._21 * b.y + A._31 * b.z,
                     A._12 * b.x + A._22 * b.y + A._32 * b.z,
@@ -212,7 +212,7 @@ namespace carve {
                     );
     }
 
-    static inline carve::geom3d::Vector &operator*=(carve::geom3d::Vector &b, const Matrix3 &A) {
+    static inline carve::geom::vector<3> &operator*=(carve::geom::vector<3> &b, const Matrix3 &A) {
       b = A * b;
       return b;
     }
@@ -242,6 +242,21 @@ namespace carve {
       }
       return c;
     }
+
+
+
+    struct matrix_transformation {
+      Matrix matrix;
+
+      matrix_transformation(const Matrix &_matrix) : matrix(_matrix) {
+      }
+
+      carve::geom::vector<3> operator()(const carve::geom::vector<3> &vector) const {
+        return matrix * vector;
+      }
+    };
+
+
 
   }
 }

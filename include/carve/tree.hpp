@@ -1,3 +1,4 @@
+
 // Begin License:
 // Copyright (C) 2006-2011 Tobias Sargeant (tobias.sargeant@gmail.com).
 // All rights reserved.
@@ -39,12 +40,12 @@ namespace carve {
       virtual ~CSG_TreeNode() {
       }
 
-      virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) =0;
+      virtual carve::mesh::MeshSet<3> *eval(bool &is_temp, CSG &csg) =0;
 
-      virtual carve::poly::Polyhedron *eval(CSG &csg) {
+      virtual carve::mesh::MeshSet<3> *eval(CSG &csg) {
         bool temp;
-        carve::poly::Polyhedron *r = eval(temp, csg);
-        if (!temp) r = new carve::poly::Polyhedron(*r);
+        carve::mesh::MeshSet<3> *r = eval(temp, csg);
+        if (!temp) r = r->clone();
         return r;
       }
     };
@@ -62,13 +63,13 @@ namespace carve {
         delete child;
       }
 
-      virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
-        carve::poly::Polyhedron *result = child->eval(is_temp, csg);
+      virtual carve::mesh::MeshSet<3> *eval(bool &is_temp, CSG &csg) {
+        carve::mesh::MeshSet<3> *result = child->eval(is_temp, csg);
         if (!is_temp) {
-          result = new carve::poly::Polyhedron(*result);
+          result = result->clone();
           is_temp = true;
         }
-        result->transform(transform);
+        result->transform(carve::math::matrix_transformation(transform));
         return result;
       }
     };
@@ -77,46 +78,45 @@ namespace carve {
 
 
     class CSG_InvertNode : public CSG_TreeNode {
-      std::vector<bool> selected_groups;
+      std::vector<bool> selected_meshes;
       CSG_TreeNode *child;
 
     public:
-      CSG_InvertNode(CSG_TreeNode *_child) : selected_groups(), child(_child) {
+      CSG_InvertNode(CSG_TreeNode *_child) : selected_meshes(), child(_child) {
       }
-      CSG_InvertNode(int g_id, CSG_TreeNode *_child) : selected_groups(), child(_child) {
-        selected_groups.resize(g_id + 1, false);
-        selected_groups[g_id] = true;
+      CSG_InvertNode(int g_id, CSG_TreeNode *_child) : selected_meshes(), child(_child) {
+        selected_meshes.resize(g_id + 1, false);
+        selected_meshes[g_id] = true;
       }
       virtual ~CSG_InvertNode() {
         delete child;
       }
 
       template<typename T>
-      CSG_InvertNode(T start, T end, CSG_TreeNode *_child) : selected_groups(), child(_child) {
+      CSG_InvertNode(T start, T end, CSG_TreeNode *_child) : selected_meshes(), child(_child) {
         while (start != end) {
           int g_id = (int)(*start);
-          if (selected_groups.size() < g_id + 1) selected_groups.resize(g_id + 1, false);
-          selected_groups[g_id] = true;
+          if (selected_meshes.size() < g_id + 1) selected_meshes.resize(g_id + 1, false);
+          selected_meshes[g_id] = true;
           ++start;
         }
       }
 
-      virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
+      virtual carve::mesh::MeshSet<3> *eval(bool &is_temp, CSG &csg) {
         bool c_temp;
-        carve::poly::Polyhedron *c = child->eval(c_temp, csg);
-        carve::poly::Polyhedron *result;
-        if (!c_temp) {
-          result = new carve::poly::Polyhedron(*c);
+        carve::mesh::MeshSet<3> *c = child->eval(c_temp, csg);
+        if (!c_temp) c = c->clone();
+        if (!selected_meshes.size()) {
+          c->invert();
         } else {
-          result = c;
-        }
-        if (!selected_groups.size()) {
-          result->invertAll();
-        } else {
-          result->invert(selected_groups);
+          for (size_t i = 0; i < c->meshes.size() && i < selected_meshes.size(); ++i) {
+            if (selected_meshes[i]) {
+              c->meshes[i]->invert();
+            }
+          }
         }
         is_temp = true;
-        return result;
+        return c;
       }
     };
 
@@ -124,21 +124,21 @@ namespace carve {
 
 
     class CSG_SelectNode : public CSG_TreeNode {
-      std::vector<bool> selected_manifolds;
+      std::vector<bool> selected_meshes;
       CSG_TreeNode *child;
 
     public:
-      CSG_SelectNode(int m_id, CSG_TreeNode *_child) : selected_manifolds(), child(_child) {
-        selected_manifolds.resize(m_id + 1, false);
-        selected_manifolds[m_id] = true;
+      CSG_SelectNode(int m_id, CSG_TreeNode *_child) : selected_meshes(), child(_child) {
+        selected_meshes.resize(m_id + 1, false);
+        selected_meshes[m_id] = true;
       }
 
       template<typename T>
-      CSG_SelectNode(T start, T end, CSG_TreeNode *_child) : selected_manifolds(), child(_child) {
+      CSG_SelectNode(T start, T end, CSG_TreeNode *_child) : selected_meshes(), child(_child) {
         while (start != end) {
           int m_id = (int)(*start);
-          if ((int)selected_manifolds.size() < m_id + 1) selected_manifolds.resize(m_id + 1, false);
-          selected_manifolds[m_id] = true;
+          if ((int)selected_meshes.size() < m_id + 1) selected_meshes.resize(m_id + 1, false);
+          selected_meshes[m_id] = true;
           ++start;
         }
       }
@@ -147,13 +147,24 @@ namespace carve {
         delete child;
       }
 
-      virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
+      virtual carve::mesh::MeshSet<3> *eval(bool &is_temp, CSG &csg) {
         bool c_temp;
-        carve::poly::Polyhedron *c = child->eval(c_temp, csg);
-        carve::poly::Polyhedron *result = new carve::poly::Polyhedron(*c, selected_manifolds);
-        if (c_temp) delete c;
+        carve::mesh::MeshSet<3> *c = child->eval(c_temp, csg);
+        if (!c_temp) c = c->clone();
+        size_t i = 0;
+        size_t j = 0;
+        for (size_t i = 0; i < c->meshes.size(); ++i) {
+          if (i >= selected_meshes.size() || !selected_meshes[i]) {
+            delete c->meshes[i];
+            c->meshes[i] = NULL;
+          } else {
+            c->meshes[j++] = c->meshes[i];
+          }
+        }
+        c->meshes.erase(c->meshes.begin() + j, c->meshes.end());
+        c->collectVertices();
         is_temp = true;
-        return result;
+        return c;
       }
     };
 
@@ -161,20 +172,22 @@ namespace carve {
 
 
     class CSG_PolyNode : public CSG_TreeNode {
-      carve::poly::Polyhedron *poly;
+      carve::mesh::MeshSet<3> *poly;
       bool del;
 
     public:
-      CSG_PolyNode(carve::poly::Polyhedron *_poly, bool _del) : poly(_poly), del(_del)  {
+      CSG_PolyNode(carve::mesh::MeshSet<3> *_poly, bool _del) : poly(_poly), del(_del)  {
       }
       virtual ~CSG_PolyNode() {
         static carve::TimingName FUNC_NAME("delete polyhedron");
         carve::TimingBlock block(FUNC_NAME);
     
-        if (del) delete poly;
+        if (del) {
+          delete poly;
+        }
       }
 
-      virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
+      virtual carve::mesh::MeshSet<3> *eval(bool &is_temp, CSG &csg) {
         is_temp = false;
         return poly;
       }
@@ -214,28 +227,28 @@ namespace carve {
         }
       }
 
-      virtual carve::poly::Polyhedron *evalScaled(bool &is_temp, CSG &csg) {
-        carve::poly::Polyhedron *l, *r;
+      virtual carve::mesh::MeshSet<3> *evalScaled(bool &is_temp, CSG &csg) {
+        carve::mesh::MeshSet<3> *l, *r;
         bool l_temp, r_temp;
 
         l = left->eval(l_temp, csg);
         r = right->eval(r_temp, csg);
 
-        if (!l_temp) { l = new carve::poly::Polyhedron(*l); }
-        if (!r_temp) { r = new carve::poly::Polyhedron(*r); }
+        if (!l_temp) { l = l->clone(); }
+        if (!r_temp) { r = r->clone(); }
 
         carve::geom3d::Vector min, max;
         carve::geom3d::Vector min_l, max_l;
         carve::geom3d::Vector min_r, max_r;
 
-        carve::geom::bounds<3>(l->vertices.begin(),
-                               l->vertices.end(),
-                               carve::poly::vec_adapt_vertex_ref(),
+        carve::geom::bounds<3>(l->vertex_storage.begin(),
+                               l->vertex_storage.end(),
+                               carve::mesh::Face<3>::vector_mapping(),
                                min_l,
                                max_l);
-        carve::geom::bounds<3>(r->vertices.begin(),
-                               r->vertices.end(),
-                               carve::poly::vec_adapt_vertex_ref(),
+        carve::geom::bounds<3>(r->vertex_storage.begin(),
+                               r->vertex_storage.end(),
+                               carve::mesh::Face<3>::vector_mapping(),
                                min_r,
                                max_r);
 
@@ -250,7 +263,7 @@ namespace carve {
         l->transform(fwd_r);
         r->transform(fwd_r);
 
-        carve::poly::Polyhedron *result = NULL;
+        carve::mesh::MeshSet<3> *result = NULL;
         {
           static carve::TimingName FUNC_NAME("csg.compute()");
           carve::TimingBlock block(FUNC_NAME);
@@ -271,14 +284,14 @@ namespace carve {
         return result;
       }
   
-      virtual carve::poly::Polyhedron *evalUnscaled(bool &is_temp, CSG &csg) {
-        carve::poly::Polyhedron *l, *r;
+      virtual carve::mesh::MeshSet<3> *evalUnscaled(bool &is_temp, CSG &csg) {
+        carve::mesh::MeshSet<3> *l, *r;
         bool l_temp, r_temp;
 
         l = left->eval(l_temp, csg);
         r = right->eval(r_temp, csg);
 
-        carve::poly::Polyhedron *result = NULL;
+        carve::mesh::MeshSet<3> *result = NULL;
         {
           static carve::TimingName FUNC_NAME("csg.compute()");
           carve::TimingBlock block(FUNC_NAME);
@@ -298,7 +311,7 @@ namespace carve {
       }
   
 
-      virtual carve::poly::Polyhedron *eval(bool &is_temp, CSG &csg) {
+      virtual carve::mesh::MeshSet<3> *eval(bool &is_temp, CSG &csg) {
         if (rescale) {
           return evalScaled(is_temp, csg);
         } else {

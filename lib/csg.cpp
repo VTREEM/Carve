@@ -46,7 +46,7 @@ const char *carve::csg::ENUM(carve::PointClass p) {
 
 
 void carve::csg::detail::LoopEdges::addFaceLoop(FaceLoop *fl) {
-  const carve::poly::Polyhedron::vertex_t *v1, *v2;
+  carve::mesh::MeshSet<3>::vertex_t *v1, *v2;
   v1 = fl->vertices[fl->vertices.size() - 1];
   for (unsigned j = 0; j < fl->vertices.size(); ++j) {
     v2 = fl->vertices[j];
@@ -66,7 +66,7 @@ void carve::csg::detail::LoopEdges::sortFaceLoopLists() {
 
 
 void carve::csg::detail::LoopEdges::removeFaceLoop(FaceLoop *fl) {
-  const carve::poly::Polyhedron::vertex_t *v1, *v2;
+  carve::mesh::MeshSet<3>::vertex_t *v1, *v2;
   v1 = fl->vertices[fl->vertices.size() - 1];
   for (unsigned j = 0; j < fl->vertices.size(); ++j) {
     v2 = fl->vertices[j];
@@ -83,9 +83,9 @@ void carve::csg::detail::LoopEdges::removeFaceLoop(FaceLoop *fl) {
 
 
 
-carve::csg::FaceClass carve::csg::FaceLoopGroup::classificationAgainst(const carve::poly::Polyhedron *poly, int m_id) const {
+carve::csg::FaceClass carve::csg::FaceLoopGroup::classificationAgainst(const carve::mesh::MeshSet<3>::mesh_t *mesh) const {
   for (std::list<ClassificationInfo>::const_iterator i = classification.begin(); i != classification.end(); ++i) {
-    if ((*i).intersected_poly == poly && (*i).intersected_manifold == m_id) {
+    if ((*i).intersected_mesh == mesh) {
       return (*i).classification;
     }
   }

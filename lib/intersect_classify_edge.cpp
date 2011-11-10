@@ -60,9 +60,9 @@ namespace carve {
       };
 
 
-      typedef std::map<int, EdgeSurface> GrpEdgeSurfMap;
+      typedef std::map<const carve::mesh::MeshSet<3>::mesh_t *, EdgeSurface> GrpEdgeSurfMap;
 
-      typedef std::pair<FaceLoopGroup *, int> ClassificationKey;
+      typedef std::pair<FaceLoopGroup *, const carve::mesh::MeshSet<3>::mesh_t *> ClassificationKey;
 
       struct ClassificationData {
         uint32_t class_bits : 5;
@@ -93,7 +93,7 @@ namespace carve {
       };
 
 
-      typedef std::pair<size_t, const carve::poly::Polyhedron::vertex_t *> PerimKey;
+      typedef std::pair<size_t, const carve::mesh::MeshSet<3>::vertex_t *> PerimKey;
 
       struct hash_perim_key {
         size_t operator()(const PerimKey &v) const {
@@ -101,7 +101,7 @@ namespace carve {
         }
       };
 
-      typedef std::unordered_map<std::pair<size_t, const carve::poly::Polyhedron::vertex_t *>,
+      typedef std::unordered_map<std::pair<size_t, const carve::mesh::MeshSet<3>::vertex_t *>,
                                  std::unordered_set<FaceLoopGroup *, hash_group_ptr>,
                                  hash_perim_key> PerimMap;
 
@@ -119,8 +119,8 @@ namespace carve {
 
 
 
-      static inline void remove(const carve::poly::Polyhedron::vertex_t *a,
-                                const carve::poly::Polyhedron::vertex_t *b,
+      static inline void remove(carve::mesh::MeshSet<3>::vertex_t *a,
+                                carve::mesh::MeshSet<3>::vertex_t *b,
                                 carve::csg::detail::VVSMap &shared_edge_graph) {
         carve::csg::detail::VVSMap::iterator i = shared_edge_graph.find(a);
         CARVE_ASSERT(i != shared_edge_graph.end());
@@ -248,7 +248,7 @@ namespace carve {
             for (GrpEdgeSurfMap::const_iterator ia = a_edge_surfaces.begin(), ea = a_edge_surfaces.end(); ia != ea; ++ia) {
 
               if ((*ia).second.fwd && (*ia).second.rev) {
-                int a_gid = (*ia).first;
+                const carve::mesh::MeshSet<3>::mesh_t *a_gid = (*ia).first;
 
                 ClassificationData &data = classifications[std::make_pair(b_grp, a_gid)];
                 if (data.class_decided) continue;
@@ -288,7 +288,7 @@ namespace carve {
             for (GrpEdgeSurfMap::const_iterator ia = a_edge_surfaces.begin(), ea = a_edge_surfaces.end(); ia != ea; ++ia) {
 
               if ((*ia).second.fwd && (*ia).second.rev) {
-                int a_gid = (*ia).first;
+                const carve::mesh::MeshSet<3>::mesh_t *a_gid = (*ia).first;
 
                 ClassificationData &data = (classifications[std::make_pair(b_grp, a_gid)]);
                 if (data.class_decided) continue;
@@ -330,10 +330,10 @@ namespace carve {
                                              const carve::geom3d::Vector &edge_vector,
                                              const carve::geom3d::Vector &base_vector) {
         for (std::list<FaceLoop *>::const_iterator i = fwd.begin(), e = fwd.end(); i != e; ++i) {
-          EdgeSurface &es = (edge_surfaces[(*i)->orig_face->manifold_id]);
+          EdgeSurface &es = (edge_surfaces[(*i)->orig_face->mesh]);
           if (es.fwd != NULL) return false;
           es.fwd = (*i);
-          es.fwd_ang = carve::geom3d::antiClockwiseAngle((*i)->orig_face->plane_eqn.N, base_vector, edge_vector);
+          es.fwd_ang = carve::geom3d::antiClockwiseAngle((*i)->orig_face->plane.N, base_vector, edge_vector);
         }
         return true;
       }
@@ -343,10 +343,10 @@ namespace carve {
                                              const carve::geom3d::Vector &edge_vector,
                                              const carve::geom3d::Vector &base_vector) {
         for (std::list<FaceLoop *>::const_iterator i = rev.begin(), e = rev.end(); i != e; ++i) {
-          EdgeSurface &es = (edge_surfaces[(*i)->orig_face->manifold_id]);
+          EdgeSurface &es = (edge_surfaces[(*i)->orig_face->mesh]);
           if (es.rev != NULL) return false;
           es.rev = (*i);
-          es.rev_ang = carve::geom3d::antiClockwiseAngle(-(*i)->orig_face->plane_eqn.N, base_vector, edge_vector);
+          es.rev_ang = carve::geom3d::antiClockwiseAngle(-(*i)->orig_face->plane.N, base_vector, edge_vector);
         }
         return true;
       }
@@ -411,8 +411,8 @@ namespace carve {
         std::list<V2> out;
         while (shared_edge_graph.size()) {
           carve::csg::detail::VVSMap::iterator i = shared_edge_graph.begin();
-          const carve::poly::Polyhedron::vertex_t *v1 = (*i).first;
-          const carve::poly::Polyhedron::vertex_t *v2 = *((*i).second.begin());
+          carve::mesh::MeshSet<3>::vertex_t *v1 = (*i).first;
+          carve::mesh::MeshSet<3>::vertex_t *v2 = *((*i).second.begin());
           walkGraphSegment(shared_edge_graph, branch_points, V2(v1, v2), a_edge_map, b_edge_map, out);
         }
       }
@@ -422,7 +422,7 @@ namespace carve {
           size_t perim_size = (*i).perimeter.size();
           // can be the case for non intersecting groups. (and groups that intersect at a point?)
           if (!perim_size) continue;
-          const carve::poly::Polyhedron::vertex_t *perim_min = std::min_element((*i).perimeter.begin(), (*i).perimeter.end())->first;
+          const carve::mesh::MeshSet<3>::vertex_t *perim_min = std::min_element((*i).perimeter.begin(), (*i).perimeter.end())->first;
           perim_map[std::make_pair(perim_size, perim_min)].insert(&(*i));
         }
       }
@@ -483,10 +483,10 @@ namespace carve {
                 std::cerr << "paired groups: " << (*a) << ", " << (*b) << std::endl;
 #endif
 
-                ClassificationData &a_data = a_classification[std::make_pair((*a), (*b)->face_loops.head->orig_face->manifold_id)];
+                ClassificationData &a_data = a_classification[std::make_pair((*a), (*b)->face_loops.head->orig_face->mesh)];
                 a_data.class_bits = fcb; a_data.class_decided = 1;
 
-                ClassificationData &b_data = b_classification[std::make_pair((*b), (*a)->face_loops.head->orig_face->manifold_id)];
+                ClassificationData &b_data = b_classification[std::make_pair((*b), (*a)->face_loops.head->orig_face->mesh)];
                 b_data.class_bits = fcb; b_data.class_decided = 1;
               }
             }
@@ -506,13 +506,13 @@ namespace carve {
       FaceClass fc = FACE_UNCLASSIFIED;
 
       for (std::list<ClassificationInfo>::const_iterator i = grp->classification.begin(), e = grp->classification.end(); i != e; ++i) {
-        if ((*i).intersected_manifold < 0) {
+        if ((*i).intersected_mesh == NULL) {
           // classifier only returns global info
           fc = (*i).classification;
           break;
         }
 
-        if ((*i).intersectedManifoldIsClosed()) {
+        if ((*i).intersectedMeshIsClosed()) {
           if ((*i).classification == FACE_UNCLASSIFIED) continue;
           if (fc == FACE_UNCLASSIFIED) {
             fc = (*i).classification;
@@ -530,10 +530,12 @@ namespace carve {
 
     void CSG::classifyFaceGroupsEdge(const V2Set &shared_edges,
                                      VertexClassification &vclass,
-                                     const carve::poly::Polyhedron *poly_a,
+                                     carve::mesh::MeshSet<3> *poly_a,
+                                     const face_rtree_t *poly_a_rtree,
                                      FLGroupList &a_loops_grouped,
                                      const detail::LoopEdges &a_edge_map,
-                                     const carve::poly::Polyhedron *poly_b,
+                                     carve::mesh::MeshSet<3> *poly_b,
+                                     const face_rtree_t *poly_b_rtree,
                                      FLGroupList &b_loops_grouped,
                                      const detail::LoopEdges &b_edge_map,
                                      CSG::Collector &collector) {
@@ -694,8 +696,7 @@ namespace carve {
         grp->classification.push_back(ClassificationInfo());
         ClassificationInfo &info = grp->classification.back();
 
-        info.intersected_poly = poly_b;
-        info.intersected_manifold = (*i).first.second;
+        info.intersected_mesh = (*i).first.second;
 
         if ((*i).second.class_decided) {
           info.classification = class_bit_to_class((*i).second.class_bits);
@@ -710,8 +711,7 @@ namespace carve {
         grp->classification.push_back(ClassificationInfo());
         ClassificationInfo &info = grp->classification.back();
 
-        info.intersected_poly = poly_a;
-        info.intersected_manifold = (*i).first.second;
+        info.intersected_mesh = (*i).first.second;
 
         if ((*i).second.class_decided) {
           info.classification = class_bit_to_class((*i).second.class_bits);
@@ -729,15 +729,15 @@ namespace carve {
           for (FaceLoop *fl = (*i).face_loops.head; !classified && fl != NULL; fl = fl->next) {
             for (size_t fli = 0; !classified && fli < fl->vertices.size(); ++fli) {
               if (vclass[fl->vertices[fli]].cls[1] == POINT_UNK) { 
-                vclass[fl->vertices[fli]].cls[1] = poly_b->containsVertex(fl->vertices[fli]->v);
+                vclass[fl->vertices[fli]].cls[1] = carve::mesh::classifyPoint(poly_b, poly_b_rtree, fl->vertices[fli]->v);
               }
               switch (vclass[fl->vertices[fli]].cls[1]) {
                 case POINT_IN:
-                  (*i).classification.push_back(ClassificationInfo(poly_b, -1, FACE_IN));
+                  (*i).classification.push_back(ClassificationInfo(NULL, FACE_IN));
                   classified = true;
                   break;
                 case POINT_OUT:
-                  (*i).classification.push_back(ClassificationInfo(poly_b, -1, FACE_OUT));
+                  (*i).classification.push_back(ClassificationInfo(NULL, FACE_OUT));
                   classified = true;
                   break;
                 default:
@@ -760,15 +760,15 @@ namespace carve {
           for (FaceLoop *fl = (*i).face_loops.head; !classified && fl != NULL; fl = fl->next) {
             for (size_t fli = 0; !classified && fli < fl->vertices.size(); ++fli) {
               if (vclass[fl->vertices[fli]].cls[0] == POINT_UNK) { 
-                vclass[fl->vertices[fli]].cls[0] = poly_a->containsVertex(fl->vertices[fli]->v);
+                vclass[fl->vertices[fli]].cls[0] = carve::mesh::classifyPoint(poly_a, poly_a_rtree, fl->vertices[fli]->v);
               }
               switch (vclass[fl->vertices[fli]].cls[0]) {
                 case POINT_IN:
-                  (*i).classification.push_back(ClassificationInfo(poly_a, -1, FACE_IN));
+                  (*i).classification.push_back(ClassificationInfo(NULL, FACE_IN));
                   classified = true;
                   break;
                 case POINT_OUT:
-                  (*i).classification.push_back(ClassificationInfo(poly_a, -1, FACE_OUT));
+                  (*i).classification.push_back(ClassificationInfo(NULL, FACE_OUT));
                   classified = true;
                   break;
                 default:

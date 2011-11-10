@@ -18,7 +18,7 @@
 namespace carve {
   namespace csg {
     CSG::Collector *makeCollector(CSG::OP op,
-                                  const carve::poly::Polyhedron *poly_a,
-                                  const carve::poly::Polyhedron *poly_b);
+                                  const carve::mesh::MeshSet<3> *poly_a,
+                                  const carve::mesh::MeshSet<3> *poly_b);
   }
 }

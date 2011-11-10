@@ -21,6 +21,7 @@
 
 #include <carve/mesh.hpp>
 #include <carve/mesh_impl.hpp>
+#include <carve/rtree.hpp>
 
 #include <carve/poly.hpp>
 
@@ -95,29 +96,143 @@ namespace carve {
 
 
     template<unsigned ndim>
-    typename Face<ndim>::project_t Face<ndim>::getProjector(bool positive_facing, int axis) {
+    typename Face<ndim>::project_t Face<ndim>::getProjector(bool positive_facing, int axis) const {
       return NULL;
     }
 
 
 
     template<>
-    Face<3>::project_t Face<3>::getProjector(bool positive_facing, int axis) {
+    Face<3>::project_t Face<3>::getProjector(bool positive_facing, int axis) const {
       return project_tab[positive_facing ? 1 : 0][axis];
     }
 
 
 
     template<unsigned ndim>
-    typename Face<ndim>::unproject_t Face<ndim>::getUnprojector(bool positive_facing, int axis) {
+    typename Face<ndim>::unproject_t Face<ndim>::getUnprojector(bool positive_facing, int axis) const {
       return NULL;
     }
 
 
 
     template<>
-    Face<3>::unproject_t Face<3>::getUnprojector(bool positive_facing, int axis) {
+    Face<3>::unproject_t Face<3>::getUnprojector(bool positive_facing, int axis) const {
       return unproject_tab[positive_facing ? 1 : 0][axis];
+    }
+
+
+
+    template<unsigned ndim>
+    bool Face<ndim>::containsPoint(const vector_t &p) const {
+      if (!carve::math::ZERO(carve::geom::distance(plane, p))) return false;
+      // return pointInPolySimple(vertices, projector(), (this->*project)(p));
+      std::vector<carve::geom::vector<2> > verts;
+      getProjectedVertices(verts);
+      return carve::geom2d::pointInPoly(verts, project(p)).iclass != carve::POINT_OUT;
+    }
+
+
+
+    template<unsigned ndim>
+    bool Face<ndim>::containsPointInProjection(const vector_t &p) const {
+      std::vector<carve::geom::vector<2> > verts;
+      getProjectedVertices(verts);
+      return carve::geom2d::pointInPoly(verts, project(p)).iclass != carve::POINT_OUT;
+    }
+
+
+
+    template<unsigned ndim>
+    bool Face<ndim>::simpleLineSegmentIntersection(
+        const carve::geom::linesegment<ndim> &line,
+        vector_t &intersection) const {
+      if (!line.OK()) return false;
+
+      carve::mesh::MeshSet<3>::vertex_t::vector_t p;
+      carve::IntersectionClass intersects =
+        carve::geom3d::lineSegmentPlaneIntersection(plane, line, p);
+      if (intersects == carve::INTERSECT_NONE || intersects == carve::INTERSECT_BAD) {
+        return false;
+      }
+
+      std::vector<carve::geom::vector<2> > verts;
+      getProjectedVertices(verts);
+      if (carve::geom2d::pointInPolySimple(verts, project(p))) {
+        intersection = p;
+        return true;
+      }
+      return false;
+    }
+
+
+
+    template<unsigned ndim>
+    IntersectionClass Face<ndim>::lineSegmentIntersection(const carve::geom::linesegment<ndim> &line,
+                                                          vector_t &intersection) const {
+      if (!line.OK()) return INTERSECT_NONE;
+
+  
+      vector_t p;
+      IntersectionClass intersects = carve::geom3d::lineSegmentPlaneIntersection(plane, line, p);
+      if (intersects == INTERSECT_NONE || intersects == INTERSECT_BAD) {
+        return intersects;
+      }
+
+      std::vector<carve::geom::vector<2> > verts;
+      getProjectedVertices(verts);
+      carve::geom2d::PolyInclusionInfo pi = carve::geom2d::pointInPoly(verts, project(p));
+      switch (pi.iclass) {
+      case POINT_VERTEX:
+        intersection = p;
+        return INTERSECT_VERTEX;
+
+      case POINT_EDGE:
+        intersection = p;
+        return INTERSECT_EDGE;
+
+      case POINT_IN:
+        intersection = p;
+        return INTERSECT_FACE;
+      
+      case POINT_OUT:
+        return INTERSECT_NONE;
+
+      default:
+        break;
+      }
+      return INTERSECT_NONE;
+    }
+
+
+
+    template<unsigned ndim>
+    Face<ndim> *Face<ndim>::closeLoop(Face<ndim>::edge_t *start) {
+      edge_t *e = start;
+      std::vector<edge_t *> loop_edges;
+      do {
+        CARVE_ASSERT(e->rev == NULL);
+        loop_edges.push_back(e);
+        e = e->perimNext();
+      } while (e != start);
+
+      const size_t N = loop_edges.size();
+      for (size_t i = 0; i < N; ++i) {
+        loop_edges[i]->rev = new edge_t(loop_edges[i]->v2(), NULL);
+      }
+
+      for (size_t i = 0; i < N; ++i) {
+        edge_t *e1 = loop_edges[i]->rev;
+        edge_t *e2 = loop_edges[(i+1)%N]->rev;
+        e1->prev = e2;
+        e2->next = e1;
+      }
+
+      Face *f = new Face(start->rev);
+
+      CARVE_ASSERT(f->n_edges == N);
+
+      return f;
     }
 
 
@@ -807,7 +922,8 @@ namespace carve {
 
     poly->edges.reserve(n_edges);
     for (std::unordered_map<std::pair<size_t, size_t>, std::list<mesh::Edge<3> *> >::iterator i = edges.begin(); i != edges.end(); ++i) {
-      if ((*i).first.first < (*i).first.second || edges.find(std::make_pair((*i).first.second, (*i).first.first)) == edges.end()) {
+      if ((*i).first.first < (*i).first.second ||
+          edges.find(std::make_pair((*i).first.second, (*i).first.first)) == edges.end()) {
         poly->edges.push_back(edge_t(&poly->vertices[(*i).first.first],
                                      &poly->vertices[(*i).first.second],
                                      poly));
@@ -870,6 +986,9 @@ namespace carve {
 
     return poly;
   }
+
+
+
 }
 
 
@@ -889,3 +1008,196 @@ template class carve::mesh::Edge<3>;
 template class carve::mesh::Face<3>;
 template class carve::mesh::Mesh<3>;
 template class carve::mesh::MeshSet<3>;
+
+
+
+carve::PointClass carve::mesh::classifyPoint(
+    const carve::mesh::MeshSet<3> *meshset,
+    const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *face_rtree,
+    const carve::geom::vector<3> &v,
+    bool even_odd,
+    const carve::mesh::Mesh<3> *mesh,
+    const carve::mesh::Face<3> **hit_face) {
+
+  if (hit_face) *hit_face = NULL;
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+  std::cerr << "{containsVertex " << v << "}" << std::endl;
+#endif
+
+  if (!face_rtree->bbox.containsPoint(v)) {
+#if defined(DEBUG_CONTAINS_VERTEX)
+    std::cerr << "{final:OUT(aabb short circuit)}" << std::endl;
+#endif
+    // XXX: if the top level manifolds are negative, this should be POINT_IN.
+    // for the moment, this only works for a single manifold.
+    if (meshset->meshes.size() == 1 && meshset->meshes[0]->isNegative()) {
+      return POINT_IN;
+    }
+    return POINT_OUT;
+  }
+
+  std::vector<carve::mesh::Face<3> *> near_faces;
+  face_rtree->search(v, std::back_inserter(near_faces));
+
+  for (size_t i = 0; i < near_faces.size(); i++) {
+    if (mesh != NULL && mesh != near_faces[i]->mesh) continue;
+
+    // XXX: Do allow the tested vertex to be ON an open
+    // manifold. This was here originally because of the
+    // possibility of an open manifold contained within a closed
+    // manifold.
+
+    // if (!near_faces[i]->mesh->isClosed()) continue;
+
+    if (near_faces[i]->containsPoint(v)) {
+#if defined(DEBUG_CONTAINS_VERTEX)
+      std::cerr << "{final:ON(hits face " << near_faces[i] << ")}" << std::endl;
+#endif
+      if (hit_face) *hit_face = near_faces[i];
+      return POINT_ON;
+    }
+  }
+
+  double ray_len = face_rtree->bbox.extent.length() * 2;
+
+
+  std::vector<std::pair<const carve::mesh::Face<3> *, carve::geom::vector<3> > > manifold_intersections;
+
+  for (;;) {
+    double a1 = random() / double(RAND_MAX) * M_TWOPI;
+    double a2 = random() / double(RAND_MAX) * M_TWOPI;
+
+    carve::geom3d::Vector ray_dir = carve::geom::VECTOR(sin(a1) * sin(a2), cos(a1) * sin(a2), cos(a2));
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+    std::cerr << "{testing ray: " << ray_dir << "}" << std::endl;
+#endif
+
+    carve::geom::vector<3> v2 = v + ray_dir * ray_len;
+
+    bool failed = false;
+    carve::geom::linesegment<3> line(v, v2);
+    carve::geom::vector<3> intersection;
+
+    near_faces.clear();
+    manifold_intersections.clear();
+    face_rtree->search(line, std::back_inserter(near_faces));
+
+    for (unsigned i = 0; !failed && i < near_faces.size(); i++) {
+      if (mesh != NULL && mesh != near_faces[i]->mesh) continue;
+
+      if (!near_faces[i]->mesh->isClosed()) continue;
+
+      switch (near_faces[i]->lineSegmentIntersection(line, intersection)) {
+      case INTERSECT_FACE: {
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+        std::cerr << "{intersects face: " << near_faces[i]
+                  << " dp: " << dot(ray_dir, near_faces[i]->plane.N) << "}" << std::endl;
+#endif
+
+        if (!even_odd && fabs(dot(ray_dir, near_faces[i]->plane.N)) < EPSILON) {
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+          std::cerr << "{failing(small dot product)}" << std::endl;
+#endif
+
+          failed = true;
+          break;
+        }
+        manifold_intersections.push_back(std::make_pair(near_faces[i], intersection));
+        break;
+      }
+      case INTERSECT_NONE: {
+        break;
+      }
+      default: {
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+        std::cerr << "{failing(degenerate intersection)}" << std::endl;
+#endif
+        failed = true;
+        break;
+      }
+      }
+    }
+
+    if (!failed) {
+      if (even_odd) {
+        return (manifold_intersections.size() & 1) ? POINT_IN : POINT_OUT;
+      }
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+      std::cerr << "{intersections ok [count:"
+                << manifold_intersections.size()
+                << "], sorting}"
+                << std::endl;
+#endif
+
+      carve::geom3d::sortInDirectionOfRay(ray_dir,
+                                          manifold_intersections.begin(),
+                                          manifold_intersections.end(),
+                                          carve::geom3d::vec_adapt_pair_second());
+
+      std::map<const carve::mesh::Mesh<3> *, int> crossings;
+
+      for (size_t i = 0; i < manifold_intersections.size(); ++i) {
+        const carve::mesh::Face<3> *f = manifold_intersections[i].first;
+        if (dot(ray_dir, f->plane.N) < 0.0) {
+          crossings[f->mesh]++;
+        } else {
+          crossings[f->mesh]--;
+        }
+      }
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+      for (std::map<const carve::mesh::Mesh<3> *, int>::const_iterator i = crossings.begin(); i != crossings.end(); ++i) {
+        std::cerr << "{mesh " << (*i).first << " crossing count: " << (*i).second << "}" << std::endl;
+      }
+#endif
+
+      for (size_t i = 0; i < manifold_intersections.size(); ++i) {
+        const carve::mesh::Face<3> *f = manifold_intersections[i].first;
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+        std::cerr << "{intersection at "
+                  << manifold_intersections[i].second
+                  << " mesh: "
+                  << f->mesh
+                  << " count: "
+                  << crossings[f->mesh]
+                  << "}"
+                  << std::endl;
+#endif
+
+        if (crossings[f->mesh] < 0) {
+          // inside this manifold.
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+          std::cerr << "{final:IN}" << std::endl;
+#endif
+
+          return POINT_IN;
+        } else if (crossings[f->mesh] > 0) {
+          // outside this manifold, but it's an infinite manifold. (for instance, an inverted cube)
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+          std::cerr << "{final:OUT}" << std::endl;
+#endif
+
+          return POINT_OUT;
+        }
+      }
+
+#if defined(DEBUG_CONTAINS_VERTEX)
+      std::cerr << "{final:OUT(default)}" << std::endl;
+#endif
+
+      return POINT_OUT;
+    }
+  }
+}
+
+
+

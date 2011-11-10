@@ -23,8 +23,8 @@
 #include <carve/geom3d.hpp>
 #include <carve/tag.hpp>
 #include <carve/djset.hpp>
-
 #include <carve/aabb.hpp>
+#include <carve/rtree.hpp>
 
 #include <iostream>
 
@@ -105,14 +105,23 @@ namespace carve {
 
 
 
+    struct vertex_distance {
+      template<unsigned ndim>
+      double operator()(const Vertex<ndim> &a, const Vertex<ndim> &b) const {
+        return carve::geom::distance(a.v, b.v);
+      }
+
+      template<unsigned ndim>
+      double operator()(const Vertex<ndim> *a, const Vertex<ndim> *b) const {
+        return carve::geom::distance(a->v, b->v);
+      }
+    };
+
+
+
     namespace detail {
-      template<typename list_t> struct circlist_iter_t;
-      template<typename list_t> struct fwd_circlist_iter_t;
-
-      template<typename iter_t, typename mapping_t> struct mapped_iter_t;
-
-      template<unsigned ndim> struct edge_vertex_mapping;
-      template<unsigned ndim> struct const_edge_vertex_mapping;
+      template<typename list_t> struct list_iter_t;
+      template<typename list_t, typename mapping_t> struct mapped_list_iter_t;
     }
 
 
@@ -126,18 +135,6 @@ namespace carve {
     public:
       typedef Vertex<ndim> vertex_t;
       typedef Face<ndim> face_t;
-
-      typedef detail::circlist_iter_t<Edge<ndim> > iter_t;
-      typedef detail::circlist_iter_t<const Edge<ndim> > const_iter_t;
-
-      typedef detail::fwd_circlist_iter_t<Edge<ndim> > fwd_iter_t;
-      typedef detail::fwd_circlist_iter_t<const Edge<ndim> > const_fwd_iter_t;
-
-      typedef detail::mapped_iter_t<iter_t, detail::edge_vertex_mapping<ndim> > vert_iter_t;
-      typedef detail::mapped_iter_t<const_iter_t, detail::const_edge_vertex_mapping<ndim> > const_vert_iter_t;
-
-      typedef detail::mapped_iter_t<fwd_iter_t, detail::edge_vertex_mapping<ndim> > fwd_vert_iter_t;
-      typedef detail::mapped_iter_t<const_fwd_iter_t, detail::const_edge_vertex_mapping<ndim> > const_fwd_vert_iter_t;
 
       vertex_t *vert;
       face_t *face;
@@ -221,24 +218,6 @@ namespace carve {
       // already in a loop, it needs to be removed first.
       void insertAfter(Edge *other);
 
-      iter_t iter();
-      const_iter_t iter() const;
-
-      fwd_iter_t begin();
-      const_fwd_iter_t begin() const;
-
-      fwd_iter_t end();
-      const_fwd_iter_t end() const;
-
-      vert_iter_t viter();
-      const_vert_iter_t viter() const;
-
-      fwd_vert_iter_t vbegin();
-      const_fwd_vert_iter_t vbegin() const;
-
-      fwd_vert_iter_t vend();
-      const_fwd_vert_iter_t vend() const;
-
       size_t loopSize() const;
 
       vertex_t *v1() { return vert; }
@@ -316,14 +295,35 @@ namespace carve {
       Face &operator=(const Face &other);
 
     protected:
+      Face() : edge(NULL), n_edges(0), mesh(NULL), id(0), plane(), project(NULL), unproject(NULL) {
+      }
+
       Face(const Face &other) :
         edge(NULL), n_edges(other.n_edges), mesh(NULL), id(other.id),
         plane(other.plane), project(other.project), unproject(other.unproject) {
       }
 
+      project_t getProjector(bool positive_facing, int axis) const;
+      unproject_t getUnprojector(bool positive_facing, int axis) const;
+
     public:
-      project_t getProjector(bool positive_facing, int axis);
-      unproject_t getUnprojector(bool positive_facing, int axis);
+      typedef detail::list_iter_t<Edge<ndim> > edge_iter_t;
+      typedef detail::list_iter_t<const Edge<ndim> > const_edge_iter_t;
+
+      edge_iter_t begin() { return edge_iter_t(edge, 0); }
+      edge_iter_t end() { return edge_iter_t(edge, n_edges); }
+
+      const_edge_iter_t begin() const { return const_edge_iter_t(edge, 0); }
+      const_edge_iter_t end() const { return const_edge_iter_t(edge, n_edges); }
+
+      bool containsPoint(const vector_t &p) const;
+      bool containsPointInProjection(const vector_t &p) const;
+      bool simpleLineSegmentIntersection(
+          const carve::geom::linesegment<ndim> &line,
+          vector_t &intersection) const;
+      IntersectionClass lineSegmentIntersection(
+          const carve::geom::linesegment<ndim> &line,
+          vector_t &intersection) const;
 
       aabb_t getAABB() const;
 
@@ -349,8 +349,12 @@ namespace carve {
       // initialization of a quad face.
       void init(vertex_t *a, vertex_t *b, vertex_t *c, vertex_t *d);
 
-      void getVertices(std::vector<const vertex_t *> &verts) const;
+      void getVertices(std::vector<vertex_t *> &verts) const;
       void getProjectedVertices(std::vector<carve::geom::vector<2> > &verts) const;
+
+      projection_mapping projector() const {
+        return projection_mapping(project);
+      }
 
       std::pair<double, double> rangeInDirection(const vector_t &v, const vector_t &b) const {
         edge_t *e = edge;
@@ -374,7 +378,9 @@ namespace carve {
       }
 
       vector_t centroid() const;
-      
+
+      static Face *closeLoop(edge_t *open_edge);
+
       Face(edge_t *e) : edge(e), n_edges(0), mesh(NULL) {
         do {
           e->face = this;
@@ -400,6 +406,9 @@ namespace carve {
         recalc();
       }
 
+      template<typename iter_t>
+      Face *create(iter_t beg, iter_t end, bool reversed) const;
+
       Face *clone(const vertex_t *old_base, vertex_t *new_base, std::unordered_map<const edge_t *, edge_t *> &edge_map) const;
 
       void remove() {
@@ -409,6 +418,44 @@ namespace carve {
           e = e->next;
         } while (e != edge);
       }
+
+      void invert() {
+        // We invert the direction of the edges of the face in this
+        // way so that the edge rev pointers (if any) are still
+        // correct. It is expected that invert() will be called on
+        // every other face in the mesh, too, otherwise everything
+        // will get messed up.
+
+        {
+          // advance vertices.
+          edge_t *e = edge;
+          vertex_t *va = e->vert;
+          do {
+            e->vert = e->next->vert;
+            e = e->next;
+          } while (e != edge);
+          edge->prev->vert = va;
+        }
+
+        {
+          // swap prev and next pointers.
+          edge_t *e = edge;
+          do {
+            edge_t *n = e->next;
+            std::swap(e->prev, e->next);
+            e = n;
+          } while (e != edge);
+        }
+
+        plane.negate();
+
+        int da = carve::geom::largestAxis(plane.N);
+
+        project = getProjector(plane.N.v[da] > 0, da);
+        unproject = getUnprojector(plane.N.v[da] > 0, da);
+      }
+
+      void canonicalize();
 
       ~Face() {
         clearEdges();
@@ -548,9 +595,20 @@ namespace carve {
       typedef MeshSet<ndim> meshset_t;
 
       std::vector<face_t *> faces;
+
+      // open_edges is a vector of all the edges in the mesh that
+      // don't have a matching edge in the opposite direction.
       std::vector<edge_t *> open_edges;
+
+      // closed_edges is a vector of all the edges in the mesh that
+      // have a matching edge in the opposite direction, and whose
+      // address is lower than their counterpart. (i.e. for each pair
+      // of adjoining faces, one of the two half edges is stored in
+      // closed_edges).
       std::vector<edge_t *> closed_edges;
+
       bool is_negative;
+
       meshset_t *meshset;
 
     protected:
@@ -614,6 +672,13 @@ namespace carve {
         calcOrientation();
       }
 
+      void invert() {
+        for (size_t i = 0; i < faces.size(); ++i) {
+          faces[i]->invert();
+        }
+        if (isClosed()) is_negative = !is_negative;
+      }
+
       Mesh *clone(const vertex_t *old_base, vertex_t *new_base) const;
     };
 
@@ -622,6 +687,13 @@ namespace carve {
     // its MeshSet vertex_storage.
     template<unsigned ndim>
     class MeshSet {
+      MeshSet();
+      MeshSet(const MeshSet &);
+      MeshSet &operator=(const MeshSet &);
+
+      template<typename iter_t>
+      void _init_from_faces(iter_t begin, iter_t end);
+
     public:
       typedef Vertex<ndim> vertex_t;
       typedef Edge<ndim> edge_t;
@@ -633,9 +705,11 @@ namespace carve {
       std::vector<mesh_t *> meshes;
 
     public:
-      struct FaceIter : public std::iterator<std::random_access_iterator_tag, face_t *> {
-        typedef std::iterator<std::random_access_iterator_tag, face_t *> super;
-		typedef typename super::difference_type difference_type;
+      template<typename face_type>
+      struct FaceIter : public std::iterator<std::random_access_iterator_tag, face_type> {
+        typedef std::iterator<std::random_access_iterator_tag, face_type> super;
+        typedef typename super::difference_type difference_type;
+
         const MeshSet<ndim> *obj;
         size_t mesh, face;
 
@@ -677,13 +751,19 @@ namespace carve {
           return !(*this < other);
         }
 
-        face_t *operator*() const {
+        face_type operator*() const {
           return obj->meshes[mesh]->faces[face];
         }
       };
 
-      FaceIter faceBegin() { return FaceIter(this, 0, 0); }
-      FaceIter faceEnd() { return FaceIter(this, meshes.size(), 0); }
+      typedef FaceIter<const face_t *> const_face_iter;
+      typedef FaceIter<face_t *> face_iter;
+
+      face_iter faceBegin() { return face_iter(this, 0, 0); }
+      face_iter faceEnd() { return face_iter(this, meshes.size(), 0); }
+
+      const_face_iter faceBegin() const { return const_face_iter(this, 0, 0); }
+      const_face_iter faceEnd() const { return const_face_iter(this, meshes.size(), 0); }
 
       aabb_t getAABB() const {
         return aabb_t(meshes.begin(), meshes.end());
@@ -703,6 +783,12 @@ namespace carve {
               size_t n_faces,
               const std::vector<int> &face_indices);
 
+      // Construct a mesh set from a set of disconnected faces. Takes
+      // posession of the face pointers.
+      MeshSet(std::vector<face_t *> &faces);
+
+      MeshSet(std::list<face_t *> &faces);
+
       MeshSet(std::vector<vertex_t> &_vertex_storage,
               std::vector<mesh_t *> &_meshes);
 
@@ -713,13 +799,47 @@ namespace carve {
       MeshSet *clone() const;
 
       ~MeshSet();
+
+      bool isClosed() const {
+        for (size_t i = 0; i < meshes.size(); ++i) {
+          if (!meshes[i]->isClosed()) return false;
+        }
+        return true;
+      }
+
+
+      void invert() {
+        for (size_t i = 0; i < meshes.size(); ++i) {
+          meshes[i]->invert();
+        }
+      }
+
+      void collectVertices();
+
+      void canonicalize();
     };
 
 
 
+    carve::PointClass classifyPoint(
+        const carve::mesh::MeshSet<3> *meshset,
+        const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *face_rtree,
+        const carve::geom::vector<3> &v,
+        bool even_odd = false,
+        const carve::mesh::Mesh<3> *mesh = NULL,
+        const carve::mesh::Face<3> **hit_face = NULL);
+
+
+
   }
+
+
+
   mesh::MeshSet<3> *meshFromPolyhedron(const poly::Polyhedron *, int manifold_id);
   poly::Polyhedron *polyhedronFromMesh(const mesh::MeshSet<3> *, int manifold_id);
+
+
+
 };
 
 #include <carve/mesh_impl.hpp>

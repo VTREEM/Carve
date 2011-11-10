@@ -92,7 +92,7 @@ struct Options : public opt::Parser {
 static Options options;
 
 
-carve::poly::Polyhedron *g_result = NULL;
+carve::mesh::MeshSet<3> *g_result = NULL;
 
 std::vector<carve::geom3d::LineSegment> rays;
 
@@ -156,31 +156,31 @@ struct TestScene : public Scene {
   }
 
   virtual void click(int button, int state, int x, int y) {
-    if ((glutGetModifiers() & GLUT_ACTIVE_CTRL) != 0 && state == GLUT_DOWN) {
+//     if ((glutGetModifiers() & GLUT_ACTIVE_CTRL) != 0 && state == GLUT_DOWN) {
 
-      carve::geom3d::Ray r = getRay(x, y);
+//       carve::geom3d::Ray r = getRay(x, y);
 
-      r.v = r.v / g_scale;
-      r.v = r.v - g_translation;
-      carve::geom3d::Vector from = r.v;
-      carve::geom3d::Vector to = r.v - r.D * 1000;
+//       r.v = r.v / g_scale;
+//       r.v = r.v - g_translation;
+//       carve::geom3d::Vector from = r.v;
+//       carve::geom3d::Vector to = r.v - r.D * 1000;
 
-      //rays.push_back(LineSegment(g_scale * (from + g_translation), g_scale * (to + g_translation)));
-      std::vector<const carve::poly::Face<3> *> faces;
+//       //rays.push_back(LineSegment(g_scale * (from + g_translation), g_scale * (to + g_translation)));
+//       std::vector<const carve::poly::Face<3> *> faces;
 
-      g_result->findFacesNear(carve::geom3d::LineSegment(from, to), faces);
+//       g_result->findFacesNear(carve::geom3d::LineSegment(from, to), faces);
 
-      // see if any of the faces intersect our ray
-      for (size_t i = 0; i < faces.size();++i) {
-        const carve::poly::Face<3> *f = faces[i];
-        carve::geom3d::Vector pos;
-        if (f->lineSegmentIntersection(carve::geom3d::LineSegment(from, to), pos) > 0) {
-          pos = g_scale * (pos + g_translation);
-          carve::geom3d::Vector fromWorld = g_scale * (from + g_translation);
-          zoomTo(pos, 0.7 * (fromWorld - pos).length());
-        }
-      }
-    }
+//       // see if any of the faces intersect our ray
+//       for (size_t i = 0; i < faces.size();++i) {
+//         const carve::poly::Face<3> *f = faces[i];
+//         carve::geom3d::Vector pos;
+//         if (f->lineSegmentIntersection(carve::geom3d::LineSegment(from, to), pos) > 0) {
+//           pos = g_scale * (pos + g_translation);
+//           carve::geom3d::Vector fromWorld = g_scale * (from + g_translation);
+//           zoomTo(pos, 0.7 * (fromWorld - pos).length());
+//         }
+//       }
+//     }
   }
 
   TestScene(int argc, char **argv, int n_dlist) : Scene(argc, argv) {
@@ -219,7 +219,7 @@ public:
     ownsPoly = true;
   }
 
-  Input(carve::poly::Polyhedron *p, carve::csg::CSG::OP o, bool becomeOwner = true) {
+  Input(carve::mesh::MeshSet<3> *p, carve::csg::CSG::OP o, bool becomeOwner = true) {
     poly = p;
     op = o;
     ownsPoly = becomeOwner;
@@ -231,7 +231,7 @@ public:
     }
   }
 
-  carve::poly::Polyhedron *poly;
+  carve::mesh::MeshSet<3> *poly;
   carve::csg::CSG::OP op;
   mutable bool ownsPoly;
 
@@ -240,9 +240,9 @@ private:
 
 void getInputsFromTest(int test, std::list<Input> &inputs) {
   carve::csg::CSG::OP op = carve::csg::CSG::INTERSECTION;
-  carve::poly::Polyhedron *a = NULL;
-  carve::poly::Polyhedron *b = NULL;
-  carve::poly::Polyhedron *c = NULL;
+  carve::mesh::MeshSet<3> *a = NULL;
+  carve::mesh::MeshSet<3> *b = NULL;
+  carve::mesh::MeshSet<3> *c = NULL;
 
   switch (test) {
   case 0:
@@ -319,51 +319,51 @@ void getInputsFromTest(int test, std::list<Input> &inputs) {
     break;
 
   case 16:
-    a = readPLY(data_path + "cylinderx.ply");
-    b = readPLY(data_path + "cylindery.ply");
+    a = readPLYasMesh(data_path + "cylinderx.ply");
+    b = readPLYasMesh(data_path + "cylindery.ply");
     op = carve::csg::CSG::UNION;
     break;
 
   case 17:
-    a = readPLY(data_path + "coneup.ply");
-    b = readPLY(data_path + "conedown.ply");
+    a = readPLYasMesh(data_path + "coneup.ply");
+    b = readPLYasMesh(data_path + "conedown.ply");
     op = carve::csg::CSG::UNION;
     break;
 
   case 18:
-    a = readPLY(data_path + "coneup.ply");
-    b = readPLY(data_path + "conedown.ply");
+    a = readPLYasMesh(data_path + "coneup.ply");
+    b = readPLYasMesh(data_path + "conedown.ply");
     op = carve::csg::CSG::A_MINUS_B;
     break;
 
   case 19:
-    a = readPLY(data_path + "sphere.ply");
-    b = readPLY(data_path + "sphere.ply");
+    a = readPLYasMesh(data_path + "sphere.ply");
+    b = readPLYasMesh(data_path + "sphere.ply");
     op = carve::csg::CSG::UNION;
     break;
 
   case 20:
-    a = readPLY(data_path + "sphere.ply");
-    b = readPLY(data_path + "sphere.ply");
+    a = readPLYasMesh(data_path + "sphere.ply");
+    b = readPLYasMesh(data_path + "sphere.ply");
     op = carve::csg::CSG::A_MINUS_B;
     break;
 
   case 21:
-    a = readPLY(data_path + "sphere.ply");
-    b = readPLY(data_path + "sphere.ply", carve::math::Matrix::TRANS(0.01, 0.01, 0.01));
+    a = readPLYasMesh(data_path + "sphere.ply");
+    b = readPLYasMesh(data_path + "sphere.ply", carve::math::Matrix::TRANS(0.01, 0.01, 0.01));
     op = carve::csg::CSG::A_MINUS_B;
     break;
 
   case 22:
-    a = readPLY(data_path + "cylinderx.ply");
-    b = readPLY(data_path + "cylindery.ply");
+    a = readPLYasMesh(data_path + "cylinderx.ply");
+    b = readPLYasMesh(data_path + "cylindery.ply");
     op = carve::csg::CSG::UNION;
     break;
 
   case 23:
-    a = readPLY(data_path + "cylinderx.ply");
-    b = readPLY(data_path + "cylindery.ply");
-    c = readPLY(data_path + "cylinderz.ply");
+    a = readPLYasMesh(data_path + "cylinderx.ply");
+    b = readPLYasMesh(data_path + "cylindery.ply");
+    c = readPLYasMesh(data_path + "cylinderz.ply");
     op = carve::csg::CSG::UNION;
     break;
 
@@ -405,8 +405,8 @@ void getInputsFromTest(int test, std::list<Input> &inputs) {
     break;
 
   case 30:
-    inputs.push_back(Input(readPLY(data_path + "sphere.ply"), carve::csg::CSG::UNION));
-    inputs.push_back(Input(readPLY(data_path + "sphere.ply", carve::math::Matrix::SCALE(0.9, 0.9, 0.9)), carve::csg::CSG::A_MINUS_B));
+    inputs.push_back(Input(readPLYasMesh(data_path + "sphere.ply"), carve::csg::CSG::UNION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "sphere.ply", carve::math::Matrix::SCALE(0.9, 0.9, 0.9)), carve::csg::CSG::A_MINUS_B));
     inputs.push_back(Input(makeCube(carve::math::Matrix::TRANS(5.5, 0.0, 0.0) * carve::math::Matrix::SCALE(5.0, 5.0, 5.0)), carve::csg::CSG::A_MINUS_B));
     break;
 
@@ -417,36 +417,36 @@ void getInputsFromTest(int test, std::list<Input> &inputs) {
     break;
 
   case 32:
-    inputs.push_back(Input(readPLY(data_path + "ico.ply"), carve::csg::CSG::UNION));
-    inputs.push_back(Input(readPLY(data_path + "ico.ply", carve::math::Matrix::SCALE(0.9, 0.9, 0.9)), carve::csg::CSG::A_MINUS_B));
+    inputs.push_back(Input(readPLYasMesh(data_path + "ico.ply"), carve::csg::CSG::UNION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "ico.ply", carve::math::Matrix::SCALE(0.9, 0.9, 0.9)), carve::csg::CSG::A_MINUS_B));
     inputs.push_back(Input(makeCube(carve::math::Matrix::TRANS(5.5, 0.0, 0.0) * carve::math::Matrix::SCALE(5.0, 5.0, 5.0)), carve::csg::CSG::A_MINUS_B));
     break;
 
   case 33:
-    inputs.push_back(Input(readPLY(data_path + "ico2.ply"), carve::csg::CSG::UNION));
-    inputs.push_back(Input(readPLY(data_path + "ico2.ply", carve::math::Matrix::SCALE(0.9, 0.9, 0.9)), carve::csg::CSG::A_MINUS_B));
+    inputs.push_back(Input(readPLYasMesh(data_path + "ico2.ply"), carve::csg::CSG::UNION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "ico2.ply", carve::math::Matrix::SCALE(0.9, 0.9, 0.9)), carve::csg::CSG::A_MINUS_B));
     inputs.push_back(Input(makeCube(carve::math::Matrix::TRANS(5.5, 0.0, 0.0) * carve::math::Matrix::SCALE(5.0, 5.0, 5.0)), carve::csg::CSG::A_MINUS_B));
     break;
 
   case 34:
-    inputs.push_back(Input(readPLY(data_path + "cow2.ply"), carve::csg::CSG::UNION));
-    inputs.push_back(Input(readPLY(data_path + "cow2.ply", carve::math::Matrix::TRANS(0.5, 0.5, 0.5)), carve::csg::CSG::UNION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "cow2.ply"), carve::csg::CSG::UNION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "cow2.ply", carve::math::Matrix::TRANS(0.5, 0.5, 0.5)), carve::csg::CSG::UNION));
     break;
 
   case 35:
-    inputs.push_back(Input(readPLY(data_path + "201addon.ply"), carve::csg::CSG::UNION));
-    inputs.push_back(Input(readPLY(data_path + "addontun.ply"), carve::csg::CSG::UNION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "201addon.ply"), carve::csg::CSG::UNION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "addontun.ply"), carve::csg::CSG::UNION));
     break;
 
   case 36:
-    inputs.push_back(Input(readPLY(data_path + "../Bloc/block1.ply"), carve::csg::CSG::INTERSECTION));
-    inputs.push_back(Input(readPLY(data_path + "../Bloc/debug1.ply"), carve::csg::CSG::INTERSECTION));
-    inputs.push_back(Input(readPLY(data_path + "../Bloc/debug2.ply"), carve::csg::CSG::INTERSECTION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "../Bloc/block1.ply"), carve::csg::CSG::INTERSECTION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "../Bloc/debug1.ply"), carve::csg::CSG::INTERSECTION));
+    inputs.push_back(Input(readPLYasMesh(data_path + "../Bloc/debug2.ply"), carve::csg::CSG::INTERSECTION));
     break;
 
   case 37:
-    a = readPLY("../data/sphere_one_point_moved.ply");
-    b = readPLY("../data/sphere.ply");
+    a = readPLYasMesh("../data/sphere_one_point_moved.ply");
+    b = readPLYasMesh("../data/sphere.ply");
     op = carve::csg::CSG::A_MINUS_B;
     break;
   }
@@ -489,7 +489,7 @@ static bool endswith(const std::string &a, const std::string &b) {
   return true;
 }
 
-void testCSG(GLuint &dlist, std::list<Input>::const_iterator begin, std::list<Input>::const_iterator end, carve::poly::Polyhedron *&finalResult, TestScene *scene) {
+void testCSG(GLuint &dlist, std::list<Input>::const_iterator begin, std::list<Input>::const_iterator end, carve::mesh::MeshSet<3> *&finalResult, TestScene *scene) {
   // Can't do anything with the terminating iterator
   if (begin == end) {
     return;
@@ -510,25 +510,36 @@ void testCSG(GLuint &dlist, std::list<Input>::const_iterator begin, std::list<In
     // Okay, we have a polyhedron in result that will be our first operand, and also our output,
     // and we have a list of operations and second operands in our iterator list.
 
-    carve::poly::Polyhedron *a = finalResult;
-    carve::poly::Polyhedron *b = begin->poly;
+    carve::mesh::MeshSet<3> *a = finalResult;
+    carve::mesh::MeshSet<3> *b = begin->poly;
     carve::csg::CSG::OP op = begin->op;
 
     glNewList(dlist++, GL_COMPILE);
     scene->draw_flags.push_back(group->createOption("Debug data visible", false));
     scene->wireframe_flags.push_back(true);
     if (a && b) {
-      carve::poly::Polyhedron *result = NULL;
+      carve::mesh::MeshSet<3> *result = NULL;
       try {
         result = carve::csg::CSG().compute(a, b, op, NULL, options.edge_classifier ? carve::csg::CSG::CLASSIFY_EDGE : carve::csg::CSG::CLASSIFY_NORMAL);
 
-        std::cerr << "a->octree.root->is_leaf = " << a->octree.root->is_leaf << std::endl;
-        std::cerr << "b->octree.root->is_leaf = " << b->octree.root->is_leaf << std::endl;
-        std::cerr << "result = " << result << std::endl
-                  << "       n(manifolds) = " << result->manifold_is_closed.size() << std::endl
-                  << "       n(open manifolds) = " << std::count(result->manifold_is_closed.begin(),
-                                                                 result->manifold_is_closed.end(),
-                                                                 false) << std::endl;
+        std::cerr << "result "
+                  << result << " has " << result->meshes.size()
+                  << " manifolds (" << std::count_if(result->meshes.begin(),
+                                                     result->meshes.end(),
+                                                     carve::mesh::Mesh<3>::IsClosed()) << " closed)" << std::endl; 
+    
+        std::cerr << "closed:    ";
+        for (size_t i = 0; i < result->meshes.size(); ++i) {
+          std::cerr << (result->meshes[i]->isClosed() ? '+' : '-');
+        }
+        std::cerr << std::endl;
+    
+        std::cerr << "negative:  ";
+        for (size_t i = 0; i < result->meshes.size(); ++i) {
+          std::cerr << (result->meshes[i]->isNegative() ? '+' : '-');
+        }
+        std::cerr << std::endl;
+
         writePLY(std::cout, result, true);
 
         // Place the result of this CSG into our final result, and get rid of our last one
@@ -600,12 +611,12 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
   carve::geom3d::Vector min, max;
 
   if (i != inputs.end()) {
-    carve::geom3d::AABB aabb = i->poly->aabb;
+    carve::geom3d::AABB aabb = i->poly->getAABB();
     min = aabb.min();
     max = aabb.max();
 
     for (;i != inputs.end(); ++i) {
-      aabb = i->poly->aabb;
+      aabb = i->poly->getAABB();
 
       assign_op(min, min, aabb.min(), carve::util::min_functor());
       assign_op(max, max, aabb.max(), carve::util::max_functor());
@@ -636,15 +647,14 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
   {
     OptionGroup *group;
     group = scene->createOptionGroup("Result");
-    carve::mesh::MeshSet<3> *g_result_mesh = carve::meshFromPolyhedron(g_result, -1);
     scene->draw_flags.push_back(group->createOption("Result visible", true));
     scene->wireframe_flags.push_back(false);
     glNewList(currentList++, GL_COMPILE);
     if (g_result) {
       glCullFace(GL_BACK);
-      drawPolyhedron(g_result_mesh, 0.3f, 0.5f, 0.8f, 1.0f);
+      drawMeshSet(g_result, 0.3f, 0.5f, 0.8f, 1.0f);
       glCullFace(GL_FRONT);
-      drawPolyhedron(g_result_mesh, 0.8f, 0.5f, 0.3f, 1.0f);
+      drawMeshSet(g_result, 0.8f, 0.5f, 0.3f, 1.0f);
       glCullFace(GL_BACK);
     }
     glEndList();
@@ -653,10 +663,9 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
     scene->wireframe_flags.push_back(true);
     glNewList(currentList++, GL_COMPILE);
     if (g_result) {
-      drawPolyhedronWireframe(g_result_mesh);
+      drawMeshSetWireframe(g_result);
     }
     glEndList();
-    delete g_result_mesh;
   }
 
   {
@@ -670,37 +679,27 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
       S = 0.5 + fmod((S - 0.37), 0.5);
       cRGB colour = HSV2RGB(H, S, V);
 
-      carve::mesh::MeshSet<3> *poly_mesh = NULL;
-      if (it->poly) poly_mesh = carve::meshFromPolyhedron(it->poly, -1);
-
       count++;
       sprintf(buf, "Input %d wireframe", count);
       scene->draw_flags.push_back(group->createOption(buf, false));
       scene->wireframe_flags.push_back(true);
       glNewList(currentList++, GL_COMPILE);
-      if (poly_mesh) {
-        drawPolyhedronWireframe(poly_mesh);
-      }
+      drawMeshSetWireframe(it->poly);
       glEndList();
 
       sprintf(buf, "Input %d solid", count);
       scene->draw_flags.push_back(group->createOption(buf, false));
       scene->wireframe_flags.push_back(false);
       glNewList(currentList++, GL_COMPILE);
-      if (poly_mesh) drawPolyhedron(poly_mesh, colour.r, colour.g, colour.b, true);
+      drawMeshSet(it->poly, colour.r, colour.g, colour.b, true);
       glEndList();
 
-      if (it->poly && it->poly->octree.root->is_leaf) {
-        sprintf(buf, "Input %d octree (unsplit)", count);
-      } else {
-        sprintf(buf, "Input %d octree", count);
-      }
+      sprintf(buf, "Input %d spatial index", count);
       scene->draw_flags.push_back(group->createOption(buf, false));
       scene->wireframe_flags.push_back(true);
       glNewList(currentList++, GL_COMPILE);
-      if (it->poly) { drawOctree(it->poly->octree); }
+//    drawOctree(it->poly->octree);
       glEndList();
-      if (poly_mesh) delete poly_mesh;
     }
   }
 }

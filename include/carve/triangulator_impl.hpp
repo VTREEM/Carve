@@ -27,11 +27,15 @@ namespace carve {
   namespace triangulate {
     namespace detail {
 
+
+
       static inline bool axisOrdering(const carve::geom2d::P2 &a,
                                       const carve::geom2d::P2 &b,
                                       int axis) {
           return a.v[axis] < b.v[axis] || (a.v[axis] == b.v[axis] && a.v[1-axis] < b.v[1-axis]);
       }
+
+
 
       /**
        * \class order_h_loops
@@ -158,6 +162,7 @@ namespace carve {
       }
 
 
+
       struct vertex_info;
 
 
@@ -262,7 +267,10 @@ namespace carve {
       bool doTriangulate(vertex_info *begin, std::vector<carve::triangulate::tri_idx> &result);
 
 
+
       typedef std::pair<unsigned, unsigned> vert_edge_t;
+
+
 
       struct hash_vert_edge_t {
         size_t operator()(const vert_edge_t &e) const {
@@ -272,9 +280,13 @@ namespace carve {
         }
       };
 
+
+
       static inline vert_edge_t ordered_vert_edge_t(unsigned a, unsigned b) {
         return (a < b) ? vert_edge_t(a, b) : vert_edge_t(b, a);
       }
+
+
 
       struct tri_pair_t {
         carve::triangulate::tri_idx *a, *b;
@@ -301,9 +313,10 @@ namespace carve {
                   vert_edge_t &new_edge,
                   vert_edge_t perim[4]);
 
-        template<typename project_t, typename vert_t>
+        template<typename project_t, typename vert_t, typename distance_calc_t>
         double calc(const project_t &project,
-                    const std::vector<vert_t> &poly) {
+                    const std::vector<vert_t> &poly,
+                    distance_calc_t dist) {
           unsigned ai, bi;
           unsigned cross_ai, cross_bi;
           unsigned ea, eb;
@@ -332,24 +345,29 @@ namespace carve {
             score = -1;
           } else {
             score =
-              distance(poly[a->v[ai]], poly[b->v[bi]]) -
-              distance(poly[a->v[cross_ai]], poly[b->v[cross_bi]]);
+              dist(poly[a->v[ai]], poly[b->v[bi]]) -
+              dist(poly[a->v[cross_ai]], poly[b->v[cross_bi]]);
           }
           return score;
         }
 
-        template<typename project_t, typename vert_t>
+        template<typename project_t, typename vert_t, typename distance_calc_t>
         double edgeLen(const project_t &project,
-                       const std::vector<vert_t> &poly) const {
+                       const std::vector<vert_t> &poly,
+                       distance_calc_t dist) const {
           unsigned ai, bi;
           findSharedEdge(ai, bi);
-          return distance(poly[a->v[ai]], poly[b->v[bi]]);
+          return dist(poly[a->v[ai]], poly[b->v[bi]]);
         }
       };
+
+
 
       struct max_score {
         bool operator()(const tri_pair_t *a, const tri_pair_t *b) const { return a->score < b->score; }
       };
+
+
 
       struct tri_pairs_t {
         typedef std::unordered_map<vert_edge_t, tri_pair_t *, hash_vert_edge_t> storage_t;
@@ -366,14 +384,15 @@ namespace carve {
 
         void insert(unsigned a, unsigned b, carve::triangulate::tri_idx *t);
 
-        template<typename project_t, typename vert_t>
+        template<typename project_t, typename vert_t, typename distance_calc_t>
         void updateEdge(tri_pair_t *tp,
                         const project_t &project,
                         const std::vector<vert_t> &poly,
+                        distance_calc_t dist,
                         std::vector<tri_pair_t *> &edges,
                         size_t &n) {
           double old_score = tp->score;
-          double new_score = tp->calc(project, poly);
+          double new_score = tp->calc(project, poly, dist);
 #if defined(CARVE_DEBUG)
           std::cerr << "tp:" << tp << " old_score: " << old_score << " new_score: " << new_score << std::endl;
 #endif
@@ -393,9 +412,10 @@ namespace carve {
           return (*i).second;
         }
 
-        template<typename project_t, typename vert_t>
+        template<typename project_t, typename vert_t, typename distance_calc_t>
         void flip(const project_t &project,
                   const std::vector<vert_t> &poly,
+                  distance_calc_t dist,
                   std::vector<tri_pair_t *> &edges,
                   size_t &n) {
           vert_edge_t old_e, new_e;
@@ -428,39 +448,40 @@ namespace carve {
 
           tp2 = get(perim[0]);
           if (tp2 != NULL) {
-            updateEdge(tp2, project, poly, edges, n);
+            updateEdge(tp2, project, poly, dist, edges, n);
           }
 
           tp2 = get(perim[1]);
           if (tp2 != NULL) {
             CARVE_ASSERT(tp2->a == tp->b || tp2->b == tp->b);
             if (tp2->a == tp->b) { tp2->a = tp->a; } else { tp2->b = tp->a; }
-            updateEdge(tp2, project, poly, edges, n);
+            updateEdge(tp2, project, poly, dist, edges, n);
           }
 
           tp2 = get(perim[2]);
           if (tp2 != NULL) {
-            updateEdge(tp2, project, poly, edges, n);
+            updateEdge(tp2, project, poly, dist, edges, n);
           }
 
           tp2 = get(perim[3]);
           if (tp2 != NULL) {
             CARVE_ASSERT(tp2->a == tp->a || tp2->b == tp->a);
             if (tp2->a == tp->a) { tp2->a = tp->b; } else { tp2->b = tp->b; }
-            updateEdge(tp2, project, poly, edges, n);
+            updateEdge(tp2, project, poly, dist, edges, n);
           }
         }
 
-        template<typename project_t, typename vert_t>
+        template<typename project_t, typename vert_t, typename distance_calc_t>
         size_t getInternalEdges(const project_t &project,
                                 const std::vector<vert_t> &poly,
+                                distance_calc_t dist,
                                 std::vector<tri_pair_t *> &edges) {
           size_t count = 0;
 
           for (storage_t::iterator i = storage.begin(); i != storage.end();) {
             tri_pair_t *tp = (*i).second;
             if (tp->a && tp->b) {
-              tp->calc(project, poly);
+              tp->calc(project, poly, dist);
               count++;
 #if defined(CARVE_DEBUG)
               std::cerr << "internal edge: " << (*i).first.first << "," << (*i).first.second << " -> " << tp << " " << tp->score << std::endl;
@@ -686,9 +707,10 @@ namespace carve {
 
 
 
-    template<typename project_t, typename vert_t>
+    template<typename project_t, typename vert_t, typename distance_calc_t>
     void improve(const project_t &project,
                  const std::vector<vert_t> &poly,
+                 distance_calc_t dist,
                  std::vector<tri_idx> &result) {
       detail::tri_pairs_t tri_pairs;
 
@@ -713,7 +735,7 @@ namespace carve {
       }
 
       std::vector<detail::tri_pair_t *> edges;
-      size_t n = tri_pairs.getInternalEdges(project, poly, edges);
+      size_t n = tri_pairs.getInternalEdges(project, poly, dist, edges);
       for (size_t i = 0; i < n; ++i) {
         edges[i]->idx = i;
       }
@@ -729,19 +751,19 @@ namespace carve {
 #if defined(CARVE_DEBUG)
       double initial_score = 0;
       for (size_t i = 0; i < edges.size(); ++i) {
-        initial_score += edges[i]->edgeLen(project, poly);
+        initial_score += edges[i]->edgeLen(project, poly, dist);
       }
       std::cerr << "initial score: " << initial_score << std::endl;
 #endif
 
       while (n) {
-        tri_pairs.flip(project, poly, edges, n);
+        tri_pairs.flip(project, poly, dist, edges, n);
       }
 
 #if defined(CARVE_DEBUG)
       double final_score = 0;
       for (size_t i = 0; i < edges.size(); ++i) {
-        final_score += edges[i]->edgeLen(project, poly);
+        final_score += edges[i]->edgeLen(project, poly, dist);
       }
       std::cerr << "final score: " << final_score << std::endl;
 #endif
@@ -755,6 +777,17 @@ namespace carve {
       }
 #endif
     }
+
+
+
+    template<typename project_t, typename vert_t>
+    void improve(const project_t &project,
+                 const std::vector<vert_t> &poly,
+                 std::vector<tri_idx> &result) {
+      improve(project, poly, carve::geom::distance_functor(), result);
+    }
+
+
 
   }
 }

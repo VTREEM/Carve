@@ -27,8 +27,8 @@
 
 #include "rgb.hpp"
 
-void drawPolyhedronWireframe(carve::mesh::MeshSet<3> *poly, bool normal = true, int group = -1);
-void drawPolyhedron(carve::mesh::MeshSet<3> *poly, float r, float g, float b, float a, int group = -1);
+void drawMeshSetWireframe(carve::mesh::MeshSet<3> *poly, bool normal = true, int group = -1);
+void drawMeshSet(carve::mesh::MeshSet<3> *poly, float r, float g, float b, float a, int group = -1);
 
 void drawColourPoly(const carve::geom3d::Vector &normal, std::vector<std::pair<carve::geom3d::Vector, cRGBA> > &v);
 void drawColourFace(carve::mesh::Face<3> *face, const std::vector<cRGBA> &vc);

@@ -485,7 +485,7 @@ namespace carve {
         int n_ints = 0;
         face_rtree_t *tree = face_rtree_t::construct_STR(meshset->faceBegin(), meshset->faceEnd(), 4, 4);
 
-        for (meshset_t::FaceIter f = meshset->faceBegin(); f != meshset->faceEnd(); ++f) {
+        for (meshset_t::face_iter f = meshset->faceBegin(); f != meshset->faceEnd(); ++f) {
           face_t *fa = *f;
           if (fa->nVertices() != 3) continue;
 

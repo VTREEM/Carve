@@ -80,24 +80,24 @@ struct TestScene : public Scene {
 #define POINTS 60
 
 int main(int argc, char **argv) {
-  carve::poly::Polyhedron *a = makeCube(carve::math::Matrix::ROT(1.0, 1.0, 1.0, 1.0));
+  carve::mesh::MeshSet<3> *a = makeCube(carve::math::Matrix::ROT(1.0, 1.0, 1.0, 1.0));
   
-  std::vector<carve::poly::Vertex<3> > shape;
+  std::vector<carve::mesh::MeshSet<3>::vertex_t> shape;
 
   for (int i = 0; i < POINTS; ++i) {
     double r = 2.0 + .4 * sin(i * 3 * M_TWOPI / POINTS) + .8 * sin(i * 5 * M_TWOPI / POINTS);
-    shape.push_back(carve::poly::Vertex<3>(carve::geom::VECTOR(r * cos(i * M_TWOPI / POINTS), r * sin(i * M_TWOPI / POINTS), 0.0)));
+    shape.push_back(carve::mesh::MeshSet<3>::vertex_t(carve::geom::VECTOR(r * cos(i * M_TWOPI / POINTS), r * sin(i * M_TWOPI / POINTS), 0.0)));
   }
-  std::vector<const carve::poly::Vertex<3> *> face_verts;
+  std::vector<carve::mesh::MeshSet<3>::vertex_t *> face_verts;
   for (int i = 0; i < POINTS; ++i) {
     face_verts.push_back(&shape[i]);
   }
-  std::vector<carve::poly::Face<3> > faces;
-  faces.push_back(carve::poly::Face<3>(face_verts));
+  std::vector<carve::mesh::MeshSet<3>::face_t *> faces;
+  faces.push_back(new carve::mesh::MeshSet<3>::face_t(face_verts.begin(), face_verts.end()));
 
-  carve::poly::Polyhedron *b = new carve::poly::Polyhedron(faces);
+  carve::mesh::MeshSet<3> *b = new carve::mesh::MeshSet<3>(faces);
 
-  std::list<std::pair<carve::csg::FaceClass, carve::poly::Polyhedron *> > b_sliced;
+  std::list<std::pair<carve::csg::FaceClass, carve::mesh::MeshSet<3> *> > b_sliced;
 
   carve::csg::CSG csg;
 
@@ -108,21 +108,17 @@ int main(int argc, char **argv) {
 
   glNewList(scene->draw_list_base + 0, GL_COMPILE);
 
-  carve::mesh::MeshSet<3> *a_mesh = carve::meshFromPolyhedron(a, -1);
-  drawPolyhedron(a_mesh, .4, .6, .8, 1.0);
-  delete a_mesh;
+  drawMeshSet(a, .4, .6, .8, 1.0);
   glEndList();
 
   glNewList(scene->draw_list_base + 1, GL_COMPILE);
-  carve::mesh::MeshSet<3> *b_mesh = carve::meshFromPolyhedron(b, -1);
-  drawPolyhedron(b_mesh, .8, .6, .4, 1.0);
-  delete b_mesh;
+  drawMeshSet(b, .8, .6, .4, 1.0);
   glEndList();
 
   glNewList(scene->draw_list_base + 2, GL_COMPILE);
   {
     int n = 0;
-    for (std::list<std::pair<carve::csg::FaceClass, carve::poly::Polyhedron *> >::iterator i = b_sliced.begin(); i != b_sliced.end(); ++i) {
+    for (std::list<std::pair<carve::csg::FaceClass, carve::mesh::MeshSet<3> *> >::iterator i = b_sliced.begin(); i != b_sliced.end(); ++i) {
       float r, g, b;
       switch ((*i).first) {
       case carve::csg::FACE_IN:             r = 0.0; g = 0.0; b = 1.0; break;
@@ -130,9 +126,7 @@ int main(int argc, char **argv) {
       case carve::csg::FACE_ON_ORIENT_OUT:  r = 1.0; g = 1.0; b = 0.0; break;
       case carve::csg::FACE_ON_ORIENT_IN:   r = 0.0; g = 1.0; b = 1.0; break;
       }
-      carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron((*i).second, -1);
-      drawPolyhedron(mesh, r, g, b, 1.0);
-      delete mesh;
+      drawMeshSet((*i).second, r, g, b, 1.0);
       ++n;
     }
   }
@@ -141,7 +135,7 @@ int main(int argc, char **argv) {
   glNewList(scene->draw_list_base + 3, GL_COMPILE);
   {
     int n = 0;
-    for (std::list<std::pair<carve::csg::FaceClass, carve::poly::Polyhedron *> >::iterator i = b_sliced.begin(); i != b_sliced.end(); ++i) {
+    for (std::list<std::pair<carve::csg::FaceClass, carve::mesh::MeshSet<3> *> >::iterator i = b_sliced.begin(); i != b_sliced.end(); ++i) {
       float r, g, b;
       switch ((*i).first) {
       case carve::csg::FACE_IN:             r = 0.3; g = 0.3; b = 0.7; break;
@@ -149,9 +143,7 @@ int main(int argc, char **argv) {
       case carve::csg::FACE_ON_ORIENT_OUT:  r = 0.7; g = 0.7; b = 0.3; break;
       case carve::csg::FACE_ON_ORIENT_IN:   r = 0.3; g = 0.7; b = 0.7; break;
       }
-      carve::mesh::MeshSet<3> *mesh = carve::meshFromPolyhedron((*i).second, -1);
-      drawPolyhedronWireframe(mesh);
-      delete mesh;
+      drawMeshSetWireframe((*i).second);
       ++n;
     }
   }

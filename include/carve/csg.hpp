@@ -25,25 +25,28 @@
 
 #include <carve/geom3d.hpp>
 
-#include <carve/poly.hpp>
+#include <carve/mesh.hpp>
 
 #include <carve/collection_types.hpp>
 #include <carve/classification.hpp>
 #include <carve/iobj.hpp>
 #include <carve/faceloop.hpp>
 #include <carve/intersection.hpp>
+#include <carve/rtree.hpp>
 
 namespace carve {
   namespace csg {
 
     class VertexPool {
+      typedef carve::mesh::MeshSet<3>::vertex_t vertex_t;
+
       const static unsigned blocksize = 1024;
-      typedef std::list<std::vector<carve::poly::Polyhedron::vertex_t> > pool_t;
+      typedef std::list<std::vector<vertex_t> > pool_t;
       pool_t pool;
     public:
       void reset();
-      carve::poly::Polyhedron::vertex_t *get(const carve::geom3d::Vector &v = carve::geom3d::Vector::ZERO());
-      bool inPool(const carve::poly::Polyhedron::vertex_t *v) const;
+      vertex_t *get(const vertex_t::vector_t &v = vertex_t::vector_t::ZERO());
+      bool inPool(vertex_t *v) const;
 
       VertexPool();
       ~VertexPool();
@@ -65,21 +68,23 @@ namespace carve {
     private:
 
     public:
+      typedef carve::mesh::MeshSet<3> meshset_t;
+
       struct Hook {
         /** 
          * \class Hook
          * \brief Provides API access to intermediate steps in CSG calculation.
          * 
          */
-        virtual void intersectionVertex(const carve::poly::Polyhedron::vertex_t * /* vertex */,
+        virtual void intersectionVertex(const meshset_t::vertex_t * /* vertex */,
                                         const IObjPairSet & /* intersections */) {
         }
-        virtual void processOutputFace(std::vector<carve::poly::Polyhedron::face_t *> & /* faces */,
-                                       const carve::poly::Polyhedron::face_t * /* orig_face */,
+        virtual void processOutputFace(std::vector<meshset_t::face_t *> & /* faces */,
+                                       const meshset_t::face_t * /* orig_face */,
                                        bool /* flipped */) {
         }
-        virtual void resultFace(const carve::poly::Polyhedron::face_t * /* new_face */,
-                                const carve::poly::Polyhedron::face_t * /* orig_face */,
+        virtual void resultFace(const meshset_t::face_t * /* new_face */,
+                                const meshset_t::face_t * /* orig_face */,
                                 bool /* flipped */) {
         }
 
@@ -109,15 +114,15 @@ namespace carve {
 
         bool hasHook(unsigned hook_num);
 
-        void intersectionVertex(const carve::poly::Polyhedron::vertex_t *vertex,
+        void intersectionVertex(const meshset_t::vertex_t *vertex,
                                 const IObjPairSet &intersections);
 
-        void processOutputFace(std::vector<carve::poly::Polyhedron::face_t *> &faces,
-                               const carve::poly::Polyhedron::face_t *orig_face,
+        void processOutputFace(std::vector<meshset_t::face_t *> &faces,
+                               const meshset_t::face_t *orig_face,
                                bool flipped);
 
-        void resultFace(const carve::poly::Polyhedron::face_t *new_face,
-                        const carve::poly::Polyhedron::face_t *orig_face,
+        void resultFace(const meshset_t::face_t *new_face,
+                        const meshset_t::face_t *orig_face,
                         bool flipped);
 
         void registerHook(Hook *hook, unsigned hook_bits);
@@ -142,13 +147,16 @@ namespace carve {
 
       public:
         virtual void collect(FaceLoopGroup *group, CSG::Hooks &) =0;
-        virtual carve::poly::Polyhedron *done(CSG::Hooks &) =0;
+        virtual meshset_t *done(CSG::Hooks &) =0;
 
         Collector() {}
         virtual ~Collector() {}
       };
 
     private:
+      typedef carve::geom::RTreeNode<3, carve::mesh::Face<3> *> face_rtree_t;
+      typedef std::unordered_map<carve::mesh::Face<3> *, std::vector<carve::mesh::Face<3> *> > face_pairs_t;
+
       /// The computed intersection data.
       Intersections intersections;
 
@@ -166,43 +174,48 @@ namespace carve {
 
       void groupIntersections();
 
-      void determinePotentiallyInteractingOctreeNodes(
-        const carve::poly::Polyhedron *a,
-        const carve::poly::Polyhedron *b);
+      void _generateVertexVertexIntersections(carve::mesh::MeshSet<3>::vertex_t *va,
+                                              carve::mesh::MeshSet<3>::edge_t *eb);
+      void generateVertexVertexIntersections(carve::mesh::MeshSet<3>::face_t *a,
+                                             const std::vector<carve::mesh::MeshSet<3>::face_t *> &b);
 
-      void generateVertexEdgeIntersections(
-        const carve::poly::Polyhedron *a,
-        const carve::poly::Polyhedron *b);
+      void _generateVertexEdgeIntersections(carve::mesh::MeshSet<3>::vertex_t *va,
+                                            carve::mesh::MeshSet<3>::edge_t *eb);
+      void generateVertexEdgeIntersections(carve::mesh::MeshSet<3>::face_t *a,
+                                           const std::vector<carve::mesh::MeshSet<3>::face_t *> &b);
 
-      /** 
-       * \brief Generate vertex-vertex, vertex-edge and edge-edge intersections between poly \a a and poly \a b.
-       * 
-       * @param a Polyhedron a.
-       * @param b Polyhedron b.
-       */
-      void generateEdgeEdgeIntersections(
-        const carve::poly::Polyhedron  *a,
-        const carve::poly::Polyhedron  *b);
+      void _generateEdgeEdgeIntersections(carve::mesh::MeshSet<3>::edge_t *ea,
+                                          carve::mesh::MeshSet<3>::edge_t *eb);
+      void generateEdgeEdgeIntersections(carve::mesh::MeshSet<3>::face_t *a,
+                                         const std::vector<carve::mesh::MeshSet<3>::face_t *> &b);
 
-      /** 
-       * \brief Generate vertex-face and edge-face intersections between poly \a a and poly \a b.
-       * 
-       * @param a Polyhedron a.
-       * @param b Polyhedron b.
-       */
-      void generateEdgeFaceIntersections(
-        const carve::poly::Polyhedron  *a,
-        const carve::poly::Polyhedron  *b);
+      void _generateVertexFaceIntersections(carve::mesh::MeshSet<3>::face_t *fa,
+                                            carve::mesh::MeshSet<3>::edge_t *eb);
+      void generateVertexFaceIntersections(carve::mesh::MeshSet<3>::face_t *a,
+                                           const std::vector<carve::mesh::MeshSet<3>::face_t *> &b);
 
+      void _generateEdgeFaceIntersections(carve::mesh::MeshSet<3>::face_t *fa,
+                                          carve::mesh::MeshSet<3>::edge_t *eb);
+      void generateEdgeFaceIntersections(carve::mesh::MeshSet<3>::face_t *a,
+                                         const std::vector<carve::mesh::MeshSet<3>::face_t *> &b);
+
+      void generateIntersectionCandidates(carve::mesh::MeshSet<3> *a,
+                                          const face_rtree_t *a_node,
+                                          carve::mesh::MeshSet<3> *b,
+                                          const face_rtree_t *b_node,
+                                          face_pairs_t &face_pairs,
+                                          bool descend_a = true);
       /** 
        * \brief Compute all points of intersection between poly \a a and poly \a b
        * 
        * @param a Polyhedron a.
        * @param b Polyhedron b.
        */
-      void generateIntersections(
-        const carve::poly::Polyhedron  *a,
-        const carve::poly::Polyhedron  *b);
+      void generateIntersections(meshset_t *a,
+                                 const face_rtree_t *a_node,
+                                 meshset_t *b,
+                                 const face_rtree_t *b_node,
+                                 detail::Data &data);
 
       /** 
        * \brief Generate tables of intersecting pairs of faces.
@@ -219,8 +232,8 @@ namespace carve {
        * @param[in,out] data Intersection information.
        */
       void divideEdges(
-        const std::vector<carve::poly::Polyhedron::edge_t> &edges,
-        const carve::poly::Polyhedron  *poly,
+        const std::vector<meshset_t::edge_t> &edges,
+        meshset_t *poly,
         detail::Data &data);
 
       void divideIntersectedEdges(detail::Data &data);
@@ -238,13 +251,13 @@ namespace carve {
       friend void classifyEasyFaces(
         FaceLoopList &face_loops,
         VertexClassification &vclass,
-        const  carve::poly::Polyhedron  *other_poly,
+        meshset_t *other_poly,
         int other_poly_num,
         CSG &csg,
         CSG::Collector &collector);
 
       size_t generateFaceLoops(
-        const carve::poly::Polyhedron  *poly,
+        meshset_t *poly,
         const detail::Data &data,
         FaceLoopList &face_loops_out);
 
@@ -267,12 +280,14 @@ namespace carve {
       /** 
        * \brief Divide a list of face loops into groups that are connected by at least one edge not present in \a no_cross.
        * 
+       * @param[in] src The source mesh from which these loops derive.
        * @param[in,out] face_loops The list of loops (will be emptied as a side effect)
        * @param[in] loop_edges A loop edge map used for traversing connected loops.
        * @param[in] no_cross A set of edges not to cross.
        * @param[out] out_loops A list of grouped face loops.
        */
       void groupFaceLoops(
+        carve::mesh::MeshSet<3> *src,
         FaceLoopList &face_loops,
         const detail::LoopEdges &loop_edges,
         const V2Set &no_cross,
@@ -309,10 +324,12 @@ namespace carve {
       void classifyFaceGroupsEdge(
         const V2Set &shared_edges,
         VertexClassification &vclass,
-        const carve::poly::Polyhedron *poly_a,
+        meshset_t *poly_a,
+        const face_rtree_t *poly_a_rtree,
         FLGroupList &a_loops_grouped,
         const detail::LoopEdges &a_edge_map,
-        const carve::poly::Polyhedron *poly_b,
+        meshset_t *poly_b,
+        const face_rtree_t *poly_b_rtree,
         FLGroupList &b_loops_grouped,
         const detail::LoopEdges &b_edge_map,
         CSG::Collector &collector);
@@ -335,10 +352,12 @@ namespace carve {
       void classifyFaceGroups(
         const V2Set &shared_edges,
         VertexClassification &vclass,
-        const carve::poly::Polyhedron  *poly_a, 
+        meshset_t *poly_a, 
+        const face_rtree_t *poly_a_rtree,
         FLGroupList &a_loops_grouped,
         const detail::LoopEdges &a_edge_map,
-        const carve::poly::Polyhedron  *poly_b,
+        meshset_t *poly_b,
+        const face_rtree_t *poly_b_rtree,
         FLGroupList &b_loops_grouped,
         const detail::LoopEdges &b_edge_map,
         CSG::Collector &collector);
@@ -362,13 +381,15 @@ namespace carve {
       void halfClassifyFaceGroups(
         const V2Set &shared_edges,
         VertexClassification &vclass,
-        const carve::poly::Polyhedron  *poly_a, 
+        meshset_t *poly_a, 
+        const face_rtree_t *poly_a_rtree,
         FLGroupList &a_loops_grouped,
         const detail::LoopEdges &a_edge_map,
-        const carve::poly::Polyhedron  *poly_b,
+        meshset_t *poly_b,
+        const face_rtree_t *poly_b_rtree,
         FLGroupList &b_loops_grouped,
         const detail::LoopEdges &b_edge_map,
-        std::list<std::pair<FaceClass, carve::poly::Polyhedron  *> > &b_out);
+        std::list<std::pair<FaceClass, meshset_t  *> > &b_out);
 
       // intersect.cpp
 
@@ -385,8 +406,10 @@ namespace carve {
        * @param[out] b_edge_count 
        */
       void calc(
-        const carve::poly::Polyhedron  *a,
-        const carve::poly::Polyhedron  *b,
+        meshset_t  *a,
+        const face_rtree_t *a_rtree,
+        meshset_t  *b,
+        const face_rtree_t *b_rtree,
         VertexClassification &vclass,
         EdgeClassification &eclass,
         FaceLoopList &a_face_loops,
@@ -433,9 +456,9 @@ namespace carve {
        * 
        * @return 
        */
-      carve::poly::Polyhedron *compute(
-        const carve::poly::Polyhedron  *a,
-        const carve::poly::Polyhedron  *b,
+      meshset_t *compute(
+        meshset_t *a,
+        meshset_t *b,
         CSG::Collector &collector,
         V2Set *shared_edges = NULL,
         CLASSIFY_TYPE classify_type = CLASSIFY_NORMAL);
@@ -451,24 +474,24 @@ namespace carve {
        * 
        * @return 
        */
-      carve::poly::Polyhedron *compute(
-        const carve::poly::Polyhedron  *a,
-        const carve::poly::Polyhedron  *b,
+      meshset_t *compute(
+        meshset_t *a,
+        meshset_t *b,
         OP op,
         V2Set *shared_edges = NULL,
         CLASSIFY_TYPE classify_type = CLASSIFY_NORMAL);
 
       void slice(
-        const carve::poly::Polyhedron  *a,
-        const carve::poly::Polyhedron  *b,
-        std::list<carve::poly::Polyhedron  *> &a_sliced,
-        std::list<carve::poly::Polyhedron  *> &b_sliced,
+        meshset_t *a,
+        meshset_t *b,
+        std::list<meshset_t  *> &a_sliced,
+        std::list<meshset_t  *> &b_sliced,
         V2Set *shared_edges = NULL);
 
       bool sliceAndClassify(
-        const carve::poly::Polyhedron  *closed,
-        const carve::poly::Polyhedron  *open,
-        std::list<std::pair<FaceClass, carve::poly::Polyhedron  *> > &result,
+        meshset_t *closed,
+        meshset_t *open,
+        std::list<std::pair<FaceClass, meshset_t *> > &result,
         V2Set *shared_edges = NULL);
     };
   }

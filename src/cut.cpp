@@ -99,13 +99,13 @@ static bool endswith(const std::string &a, const std::string &b) {
 
 
 
-carve::poly::Polyhedron *read(const std::string &s) {
+carve::mesh::MeshSet<3> *read(const std::string &s) {
   if (endswith(s, ".vtk")) {
-    return readVTK(s);
+    return readVTKasMesh(s);
   } else if (endswith(s, ".obj")) {
-    return readOBJ(s);
+    return readOBJasMesh(s);
   } else {
-    return readPLY(s);
+    return readPLYasMesh(s);
   }
 }
 
@@ -119,13 +119,13 @@ int main(int argc, char **argv) {
   }
 
   
-  carve::poly::Polyhedron *a, *b;
+  carve::mesh::MeshSet<3> *a, *b;
   a = read(options.args[0]);
   if (!a) { std::cerr << "failed to read [" << options.args[0] << "]" << std::endl; exit(1); }
   b = read(options.args[1]);
   if (!b) { std::cerr << "failed to read [" << options.args[1] << "]" << std::endl; exit(1); }
 
-  std::list<carve::poly::Polyhedron  *> a_sliced, b_sliced;
+  std::list<carve::mesh::MeshSet<3> *> a_sliced, b_sliced;
   carve::csg::V2Set shared_edges;
   carve::csg::CSG csg;
   
@@ -135,9 +135,8 @@ int main(int argc, char **argv) {
   std::cerr << "      : " << shared_edges.size() << " edges in the line of intersection" << std::endl;
 
   typedef std::unordered_map<
-  const carve::poly::Geometry<3>::vertex_t *,
-    std::set<const carve::poly::Geometry<3>::vertex_t *>,
-    carve::poly::hash_vertex_ptr> VVSMap;
+  const carve::mesh::MeshSet<3>::vertex_t *,
+    std::set<const carve::mesh::MeshSet<3>::vertex_t *> > VVSMap;
 
   VVSMap edge_graph;
 
@@ -159,7 +158,7 @@ int main(int argc, char **argv) {
   {
     carve::line::PolylineSet intersection_graph;
     intersection_graph.vertices.resize(edge_graph.size());
-    std::map<const carve::poly::Vertex<3> *, size_t> vmap;
+    std::map<const carve::mesh::MeshSet<3>::vertex_t *, size_t> vmap;
 
     size_t j = 0;
     for (VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
@@ -169,18 +168,18 @@ int main(int argc, char **argv) {
 
     while (edge_graph.size()) {
       VVSMap::iterator prior_i = edge_graph.begin();
-      const carve::poly::Vertex<3> *prior = (*prior_i).first;
+      const carve::mesh::MeshSet<3>::vertex_t *prior = (*prior_i).first;
       std::vector<size_t> connected;
       connected.push_back(vmap[prior]);
       while (prior_i != edge_graph.end() && (*prior_i).second.size()) {
-        const carve::poly::Vertex<3> *next = *(*prior_i).second.begin();
+        const carve::mesh::MeshSet<3>::vertex_t *next = *(*prior_i).second.begin();
         VVSMap::iterator next_i = edge_graph.find(next);
         assert(next_i != edge_graph.end());
         connected.push_back(vmap[next]);
         (*prior_i).second.erase(next);
         (*next_i).second.erase(prior);
-        if (!(*prior_i).second.size()) { edge_graph.erase(prior_i); prior_i = edge_graph.end(); }
-        if (!(*next_i).second.size()) { edge_graph.erase(next_i); next_i = edge_graph.end(); }
+        if (!(*prior_i).second.size()) { edge_graph.erase(prior); prior = NULL; prior_i = edge_graph.end(); }
+        if (!(*next_i).second.size()) { edge_graph.erase(next); next = NULL; next_i = edge_graph.end(); }
         prior_i = next_i;
         prior = next;
       }

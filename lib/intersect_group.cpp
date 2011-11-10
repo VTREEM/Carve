@@ -41,7 +41,7 @@ void carve::csg::CSG::makeEdgeMap(const carve::csg::FaceLoopList &loops,
 #include <carve/polyline.hpp>
 
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-void writePLY(std::string &out_file, const carve::poly::Polyhedron *poly, bool ascii);
+void writePLY(std::string &out_file, const carve::mesh::MeshSet<3> *poly, bool ascii);
 void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
 #endif
 
@@ -80,7 +80,7 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
   {
     carve::line::PolylineSet intersection_graph;
     intersection_graph.vertices.resize(edge_graph.size());
-    std::map<const carve::poly::Polyhedron::vertex_t *, size_t> vmap;
+    std::map<const carve::mesh::MeshSet<3>::vertex_t *, size_t> vmap;
 
     size_t j = 0;
     for (detail::VVSMap::const_iterator i = edge_graph.begin(); i != edge_graph.end(); ++i) {
@@ -90,11 +90,11 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
 
     while (edge_graph.size()) {
       detail::VVSMap::iterator prior_i = edge_graph.begin();
-      const carve::poly::Polyhedron::vertex_t *prior = (*prior_i).first;
+      carve::mesh::MeshSet<3>::vertex_t *prior = (*prior_i).first;
       std::vector<size_t> connected;
       connected.push_back(vmap[prior]);
       while (prior_i != edge_graph.end() && (*prior_i).second.size()) {
-        const carve::poly::Polyhedron::vertex_t *next = *(*prior_i).second.begin();
+        carve::mesh::MeshSet<3>::vertex_t *next = *(*prior_i).second.begin();
         detail::VVSMap::iterator next_i = edge_graph.find(next);
         assert(next_i != edge_graph.end());
         connected.push_back(vmap[next]);
@@ -126,15 +126,15 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
 
 
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-static carve::poly::Polyhedron *groupToPolyhedron(const carve::csg::FaceLoopGroup &grp) {
+static carve::mesh::MeshSet<3> *groupToPolyhedron(const carve::csg::FaceLoopGroup &grp) {
   const carve::csg::FaceLoopList &fl = grp.face_loops;
-  std::vector<carve::poly::Polyhedron::face_t > faces;
+  std::vector<carve::mesh::MeshSet<3>::face_t > faces;
   faces.reserve(fl.size());
   for (carve::csg::FaceLoop *f = fl.head; f; f = f->next) {
-    faces.push_back(carve::poly::Polyhedron::face_t());
+    faces.push_back(carve::mesh::MeshSet<3>::face_t());
     faces.back().init(f->orig_face, f->vertices, false);
   }
-  carve::poly::Polyhedron *poly = new carve::poly::Polyhedron(faces);
+  carve::mesh::MeshSet<3> *poly = new carve::mesh::MeshSet<3>(faces);
 
   poly->canonicalize();
   return poly;
@@ -143,7 +143,8 @@ static carve::poly::Polyhedron *groupToPolyhedron(const carve::csg::FaceLoopGrou
 
 
 
-void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
+void carve::csg::CSG::groupFaceLoops(carve::mesh::MeshSet<3> *src,
+                                     carve::csg::FaceLoopList &face_loops,
                                      const carve::csg::detail::LoopEdges &loop_edges,
                                      const carve::csg::V2Set &no_cross,
                                      carve::csg::FLGroupList &out_loops) {
@@ -161,7 +162,7 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
 
   int tag_num = 0;
   while (face_loops.size()) {
-    out_loops.push_back(FaceLoopGroup());
+    out_loops.push_back(FaceLoopGroup(src));
     carve::csg::FaceLoopGroup &group = (out_loops.back());
     carve::csg::FaceLoopList &curr = (group.face_loops);
     carve::csg::V2Set &perim = (group.perimeter);
@@ -173,8 +174,8 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
     curr.append(expand);
 
     while (expand) {
-      std::vector<const carve::poly::Polyhedron::vertex_t *> &loop = (expand->vertices);
-      const carve::poly::Polyhedron::vertex_t *v1, *v2;
+      std::vector<carve::mesh::MeshSet<3>::vertex_t *> &loop = (expand->vertices);
+      carve::mesh::MeshSet<3>::vertex_t *v1, *v2;
 
       v1 = loop.back();
       for (size_t i = 0; i < loop.size(); ++i) {
@@ -190,7 +191,7 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
                    k = (*j).second.begin(), ke = (*j).second.end();
                  k != ke; ++k) {
               if ((*k)->group != NULL ||
-                  (*k)->orig_face->manifold_id != expand->orig_face->manifold_id) continue;
+                  (*k)->orig_face->mesh != expand->orig_face->mesh) continue;
               face_loops.remove((*k));
               curr.append((*k));
               (*k)->group = &group;
@@ -203,7 +204,7 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
                    k = (*j).second.begin(), ke = (*j).second.end();
                  k != ke; ++k) {
               if ((*k)->group != NULL ||
-                  (*k)->orig_face->manifold_id != expand->orig_face->manifold_id) continue;
+                  (*k)->orig_face->mesh != expand->orig_face->mesh) continue;
               face_loops.remove((*k));
               curr.append((*k));
               (*k)->group = &group;
@@ -220,7 +221,7 @@ void carve::csg::CSG::groupFaceLoops(carve::csg::FaceLoopList &face_loops,
 
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
     {
-      carve::poly::Polyhedron *poly = groupToPolyhedron(group);
+      carve::mesh::MeshSet<3> *poly = groupToPolyhedron(group);
       char buf[128];
       sprintf(buf, "/tmp/group-%d-%p.ply", call_num, &curr);
       std::string out(buf);

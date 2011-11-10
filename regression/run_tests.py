@@ -22,6 +22,7 @@ assignments = {}
 SHARK = os.path.exists('/usr/bin/shark') and '/usr/bin/shark' or None
 SHARK = None
 TIME = None
+USRBINTIME = '/usr/bin/time' # a version of time that doesn't understand -v and -o 
 
 def runcmd(CMD):
   cmd = subprocess.Popen(CMD, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
@@ -82,6 +83,8 @@ def run(cmd):
 
   if SHARK:
     CMD = (SHARK, '-o', os.path.join(TGT_DIR, 'prof_%s' % (test_name,)), '-G', '-i', '-1', '-c', '13') + (INTERSECT,) + tuple(args) + (op,)
+  elif USRBINTIME:
+    CMD = (USRBINTIME, '-l') + (INTERSECT,) + tuple(args) + (op,)
   elif TIME:
     CMD = (TIME, '-v', '-o', os.path.join(TGT_DIR, 'time_%s' % (test_name,))) + (INTERSECT,) + tuple(args) + (op,)
   else:

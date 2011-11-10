@@ -162,7 +162,6 @@ namespace {
       sr.addReader("pointset.vertex.z", vertex_component_inserter<2>(vi));
     }
     virtual void end() {
-      std::cerr << "pointset complete" << std::endl;
       inputs.addDataBlock(data);
     }
     virtual void fail() {
@@ -240,11 +239,15 @@ namespace {
 
 
 template<typename filetype_t>
-bool readFile(std::istream &in, carve::input::Input &inputs, const carve::math::Matrix &transform) {
+bool readFile(
+    std::istream &in,
+    carve::input::Input &inputs,
+    const carve::math::Matrix &transform) {
   filetype_t f;
 
   modelSetup(inputs, f);
   if (!f.read(in)) return false;
+
   inputs.transform(transform);
   return true;
 }
@@ -252,30 +255,17 @@ bool readFile(std::istream &in, carve::input::Input &inputs, const carve::math::
 
 
 template<typename filetype_t>
-carve::poly::Polyhedron *readFile(std::istream &in, const carve::math::Matrix &transform) {
-  carve::input::Input inputs;
-  if (!readFile<filetype_t>(in, inputs, transform)) {
-    return false;
-  }
-  for (std::list<carve::input::Data *>::const_iterator i = inputs.input.begin(); i != inputs.input.end(); ++i) {
-    carve::poly::Polyhedron *poly = inputs.create<carve::poly::Polyhedron>(*i);
-    if (poly) return poly;
-  }
-  return NULL;
-}
-
-
-
-template<typename filetype_t>
-bool readFile(const std::string &in_file,
-              carve::input::Input &inputs,
-              const carve::math::Matrix &transform = carve::math::Matrix::IDENT()) {
+bool readFile(
+    const std::string &in_file,
+    carve::input::Input &inputs,
+    const carve::math::Matrix &transform = carve::math::Matrix::IDENT()) {
   std::ifstream in(in_file.c_str(),std::ios_base::binary | std::ios_base::in);
 
   if (!in.is_open()) {
     std::cerr << "File '" <<  in_file << "' could not be opened." << std::endl;
     return false;
   }
+
   std::cerr << "Loading " << in_file << "'" << std::endl;
   return readFile<filetype_t>(in, inputs, transform);
 }
@@ -283,73 +273,253 @@ bool readFile(const std::string &in_file,
 
 
 template<typename filetype_t>
-carve::poly::Polyhedron* readFile(const std::string &in_file,
-                                 const carve::math::Matrix &transform = carve::math::Matrix::IDENT()) {
+bool readFile(
+    std::istream &in,
+    carve::poly::Polyhedron *&result,
+    const carve::math::Matrix &transform) {
+  carve::input::Input inputs;
+
+  if (!readFile<filetype_t>(in, inputs, transform)) {
+    return false;
+  }
+
+  for (std::list<carve::input::Data *>::const_iterator i = inputs.input.begin(); i != inputs.input.end(); ++i) {
+    carve::poly::Polyhedron *poly = inputs.create<carve::poly::Polyhedron>(*i);
+    if (poly) {
+      result = poly;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+
+template<typename filetype_t>
+bool readFile(
+    const std::string &in_file,
+    carve::poly::Polyhedron *&result,
+    const carve::math::Matrix &transform = carve::math::Matrix::IDENT()) {
   std::ifstream in(in_file.c_str(),std::ios_base::binary | std::ios_base::in);
 
   if (!in.is_open()) {
     std::cerr << "File '" <<  in_file << "' could not be opened." << std::endl;
-    return NULL;
+    return false;
   }
 
   std::cerr << "Loading '" << in_file << "'" << std::endl;
-  return readFile<filetype_t>(in, transform);
+  return readFile<filetype_t>(in, result, transform);
 }
 
 
 
+template<typename filetype_t>
+bool readFile(
+    std::istream &in,
+    carve::mesh::MeshSet<3> *&result,
+    const carve::math::Matrix &transform) {
+  carve::input::Input inputs;
+  result = NULL;
+  if (!readFile<filetype_t>(in, inputs, transform)) {
+    return false;
+  }
 
-bool readPLY(std::istream &in, carve::input::Input &inputs, const carve::math::Matrix &transform) {
-  return readFile<gloop::ply::PlyReader>(in, inputs, transform);
-}
+  for (std::list<carve::input::Data *>::const_iterator i = inputs.input.begin(); i != inputs.input.end(); ++i) {
+    carve::mesh::MeshSet<3> *poly = inputs.create<carve::mesh::MeshSet<3> >(*i);
+    if (poly) {
+      result = poly;
+      return true;
+    }
+  }
 
-carve::poly::Polyhedron *readPLY(std::istream &in, const carve::math::Matrix &transform) {
-  return readFile<gloop::ply::PlyReader>(in, transform);
-}
-
-bool readPLY(const std::string &in_file, carve::input::Input &inputs, const carve::math::Matrix &transform) {
-  return readFile<gloop::ply::PlyReader>(in_file, inputs, transform);
-}
-
-carve::poly::Polyhedron *readPLY(const std::string &in_file, const carve::math::Matrix &transform) {
-  return readFile<gloop::ply::PlyReader>(in_file, transform);
-}
-
-
-
-bool readOBJ(std::istream &in, carve::input::Input &inputs, const carve::math::Matrix &transform) {
-  return readFile<gloop::obj::ObjReader>(in, inputs, transform);
-}
-
-carve::poly::Polyhedron *readOBJ(std::istream &in, const carve::math::Matrix &transform) {
-  return readFile<gloop::obj::ObjReader>(in, transform);
-}
-
-bool readOBJ(const std::string &in_file, carve::input::Input &inputs, const carve::math::Matrix &transform) {
-  return readFile<gloop::obj::ObjReader>(in_file, inputs, transform);
-}
-
-carve::poly::Polyhedron *readOBJ(const std::string &in_file, const carve::math::Matrix &transform) {
-  return readFile<gloop::obj::ObjReader>(in_file, transform);
+  return false;
 }
 
 
 
-bool readVTK(std::istream &in, carve::input::Input &inputs, const carve::math::Matrix &transform) {
-  return readFile<gloop::vtk::VtkReader>(in, inputs, transform);
+template<typename filetype_t>
+bool readFile(
+    const std::string &in_file,
+    carve::mesh::MeshSet<3> *&result,
+    const carve::math::Matrix &transform = carve::math::Matrix::IDENT()) {
+  std::ifstream in(in_file.c_str(),std::ios_base::binary | std::ios_base::in);
+
+  if (!in.is_open()) {
+    std::cerr << "File '" <<  in_file << "' could not be opened." << std::endl;
+    return false;
+  }
+
+  std::cerr << "Loading '" << in_file << "'" << std::endl;
+  return readFile<filetype_t>(in, result, transform);
 }
 
-carve::poly::Polyhedron *readVTK(std::istream &in, const carve::math::Matrix &transform) {
-  return readFile<gloop::vtk::VtkReader>(in, transform);
+
+
+bool readPLY(
+    std::istream &in,
+    carve::input::Input &result,
+    const carve::math::Matrix &transform) {
+  return readFile<gloop::ply::PlyReader>(in, result, transform);
 }
 
-bool readVTK(const std::string &in_file, carve::input::Input &inputs, const carve::math::Matrix &transform) {
-  return readFile<gloop::vtk::VtkReader>(in_file, inputs, transform);
+bool readPLY(
+    const std::string &in_file,
+    carve::input::Input &result,
+    const carve::math::Matrix &transform) {
+  return readFile<gloop::ply::PlyReader>(in_file, result, transform);
 }
 
-carve::poly::Polyhedron *readVTK(const std::string &in_file, const carve::math::Matrix &transform) {
-  return readFile<gloop::vtk::VtkReader>(in_file, transform);
+carve::poly::Polyhedron *readPLY(
+    std::istream &in,
+    const carve::math::Matrix &transform) {
+  carve::poly::Polyhedron *result;
+  if (!readFile<gloop::ply::PlyReader>(in, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::poly::Polyhedron *readPLY(
+    const std::string &in_file,
+    const carve::math::Matrix &transform) {
+  carve::poly::Polyhedron *result;
+  if (!readFile<gloop::ply::PlyReader>(in_file, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::mesh::MeshSet<3> *readPLYasMesh(
+    std::istream &in,
+    const carve::math::Matrix &transform) {
+  carve::mesh::MeshSet<3> *result;
+
+  if (!readFile<gloop::ply::PlyReader>(in, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::mesh::MeshSet<3> *readPLYasMesh(
+    const std::string &in_file,
+    const carve::math::Matrix &transform) {
+  carve::mesh::MeshSet<3> *result;
+
+  if (!readFile<gloop::ply::PlyReader>(in_file, result, transform)) {
+    return NULL;
+  }
+  return result;
 }
 
 
 
+bool readOBJ(
+    std::istream &in,
+    carve::input::Input &result,
+    const carve::math::Matrix &transform) {
+  return readFile<gloop::obj::ObjReader>(in, result, transform);
+}
+
+bool readOBJ(
+    const std::string &in_file,
+    carve::input::Input &result,
+    const carve::math::Matrix &transform) {
+  return readFile<gloop::obj::ObjReader>(in_file, result, transform);
+}
+
+carve::poly::Polyhedron *readOBJ(
+    std::istream &in,
+    const carve::math::Matrix &transform) {
+  carve::poly::Polyhedron *result;
+  if (!readFile<gloop::obj::ObjReader>(in, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::poly::Polyhedron *readOBJ(
+    const std::string &in_file,
+    const carve::math::Matrix &transform) {
+  carve::poly::Polyhedron *result;
+  if (!readFile<gloop::obj::ObjReader>(in_file, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::mesh::MeshSet<3> *readOBJasMesh(
+    std::istream &in,
+    const carve::math::Matrix &transform) {
+  carve::mesh::MeshSet<3> *result;
+  if (!readFile<gloop::obj::ObjReader>(in, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::mesh::MeshSet<3> *readOBJasMesh(
+    const std::string &in_file,
+    const carve::math::Matrix &transform) {
+  carve::mesh::MeshSet<3> *result;
+  if (!readFile<gloop::obj::ObjReader>(in_file, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+
+
+bool readVTK(
+    std::istream &in,
+    carve::input::Input &result,
+    const carve::math::Matrix &transform) {
+  return readFile<gloop::vtk::VtkReader>(in, result, transform);
+}
+
+bool readVTK(
+    const std::string &in_file,
+    carve::input::Input &result,
+    const carve::math::Matrix &transform) {
+  return readFile<gloop::vtk::VtkReader>(in_file, result, transform);
+}
+
+carve::poly::Polyhedron *readVTK(
+    std::istream &in,
+    const carve::math::Matrix &transform) {
+  carve::poly::Polyhedron *result;
+  if (!readFile<gloop::vtk::VtkReader>(in, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::poly::Polyhedron *readVTK(
+    const std::string &in_file,
+    const carve::math::Matrix &transform) {
+  carve::poly::Polyhedron *result;
+  if (!readFile<gloop::vtk::VtkReader>(in_file, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::mesh::MeshSet<3> *readVTKasMesh(
+    std::istream &in,
+    const carve::math::Matrix &transform) {
+  carve::mesh::MeshSet<3> *result;
+  if (!readFile<gloop::vtk::VtkReader>(in, result, transform)) {
+    return NULL;
+  }
+  return result;
+}
+
+carve::mesh::MeshSet<3> *readVTKasMesh(
+    const std::string &in_file,
+    const carve::math::Matrix &transform) {
+  carve::mesh::MeshSet<3> *result;
+  if (!readFile<gloop::vtk::VtkReader>(in_file, result, transform)) {
+    return NULL;
+  }
+  return result;
+}

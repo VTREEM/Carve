@@ -32,7 +32,7 @@ namespace carve {
 
     template<unsigned ndim,
              typename data_t,
-             typename aabb_calc_t = get_aabb<ndim, data_t> >
+             typename aabb_calc_t = carve::geom::get_aabb<ndim, data_t> >
     struct RTreeNode {
       typedef aabb<ndim> aabb_t;
       typedef vector<ndim> vector_t;
@@ -99,7 +99,7 @@ namespace carve {
       // Search the rtree for objects that intersect obj (generally an aabb).
       // The aabb class must provide a method intersects(obj_t).
       template<typename obj_t, typename out_iter_t>
-      void search(const obj_t &obj, out_iter_t out) {
+      void search(const obj_t &obj, out_iter_t out) const {
         if (!bbox.intersects(obj)) return;
         if (child) {
           for (node_t *node = child; node; node = node->sibling) {
@@ -249,18 +249,22 @@ namespace carve {
 
         CARVE_ASSERT(dim < ndim);
 
-        dim = dim_num;
+        // dim = dim_num;
 
         const size_t P = (N + child_size - 1) / child_size;
         const size_t n_parts = (size_t)std::ceil(std::pow((double)P, 1.0 / (ndim - dim_num)));
 
         std::sort(begin, end, aabb_cmp_mid(dim));
 
-        for (size_t i = 0, s = 0, e = 0; i < n_parts; ++i, s = e) {
-          e = N * (i+1) / n_parts;
-          if (dim_num == ndim - 1 || n_parts == 1) {
+        if (dim_num == ndim - 1 || n_parts == 1) {
+          for (size_t i = 0, s = 0, e = 0; i < P; ++i, s = e) {
+            e = N * (i+1) / P;
+            CARVE_ASSERT(e - s <= child_size);
             out.push_back(new node_t(begin + s, begin + e));
-          } else {
+          }
+        } else {
+          for (size_t i = 0, s = 0, e = 0; i < n_parts; ++i, s = e) {
+            e = N * (i+1) / n_parts;
             makeNodes(begin + s, begin + e, dim_num + 1, dim_mask | (1U << dim), child_size, out);
           }
         }

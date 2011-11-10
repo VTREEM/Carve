@@ -27,20 +27,34 @@
 #undef rad2
 #endif
 
-carve::poly::Polyhedron *makeCube(const carve::math::Matrix &transform = carve::math::Matrix());
-carve::poly::Polyhedron *makeSubdividedCube(int sub_x = 3, int sub_y = 3, int sub_z = 3,
-                                            bool (*inc)(int, int, int) = NULL, const carve::math::Matrix &transform = carve::math::Matrix());
-carve::poly::Polyhedron *makeDoubleCube(const carve::math::Matrix &transform = carve::math::Matrix());
-carve::poly::Polyhedron *makeTorus(int slices, 
-                                   int rings, 
-                                   double rad1, 
-                                   double rad2, 
-                                   const carve::math::Matrix &transform = carve::math::Matrix());
-carve::poly::Polyhedron *makeCylinder(int slices, 
-                                      double rad, 
-                                      double height, 
-                                      const carve::math::Matrix &transform = carve::math::Matrix());
-carve::poly::Polyhedron *makeCone(int slices, 
-                                  double rad, 
-                                  double height, 
-                                  const carve::math::Matrix &transform = carve::math::Matrix());
+carve::mesh::MeshSet<3> *makeCube(
+    const carve::math::Matrix &transform = carve::math::Matrix());
+
+carve::mesh::MeshSet<3> *makeSubdividedCube(
+    int sub_x = 3,
+    int sub_y = 3,
+    int sub_z = 3,
+    bool (*inc)(int, int, int) = NULL,
+    const carve::math::Matrix &transform = carve::math::Matrix());
+
+carve::mesh::MeshSet<3> *makeDoubleCube(
+    const carve::math::Matrix &transform = carve::math::Matrix());
+
+carve::mesh::MeshSet<3> *makeTorus(
+    int slices, 
+    int rings, 
+    double rad1, 
+    double rad2, 
+    const carve::math::Matrix &transform = carve::math::Matrix());
+
+carve::mesh::MeshSet<3> *makeCylinder(
+    int slices, 
+    double rad, 
+    double height, 
+    const carve::math::Matrix &transform = carve::math::Matrix());
+
+carve::mesh::MeshSet<3> *makeCone(
+    int slices, 
+    double rad, 
+    double height, 
+    const carve::math::Matrix &transform = carve::math::Matrix());

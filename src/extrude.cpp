@@ -32,6 +32,7 @@
 
 #include <iostream>
 #include <cctype>
+#include <stdexcept>
 
 template<unsigned ndim>
 carve::geom::vector<ndim> lerp(

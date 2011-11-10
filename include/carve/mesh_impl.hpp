@@ -31,94 +31,32 @@ namespace carve {
 
     namespace detail {
       template<typename list_t>
-      struct circlist_iter_t {
+      struct list_iter_t {
         typedef std::bidirectional_iterator_tag iterator_category;
         typedef list_t                          value_type;
-        typedef void                            difference_type;
+        typedef ptrdiff_t                       difference_type;
         typedef value_type &                    reference;
         typedef value_type *                    pointer;
 
         list_t *curr;
+        int pos;
 
-        circlist_iter_t(list_t *pos) : curr(pos) { }
-        circlist_iter_t operator++(int) { circlist_iter_t result(*this); curr = curr->next; return result; }
-        circlist_iter_t operator--(int) { circlist_iter_t result(*this); curr = curr->prev; return result; }
-        circlist_iter_t operator++() { curr = curr->next; return *this; }
-        circlist_iter_t operator--() { curr = curr->prev; return *this; }
-        bool operator==(const circlist_iter_t &other) const { return curr == other.curr; }
-        bool operator!=(const circlist_iter_t &other) const { return curr != other.curr; }
+        list_iter_t() { }
+        list_iter_t(list_t *_curr, int _pos) : curr(_curr), pos(_pos) { }
 
-        reference operator*() { return *curr; }
-        pointer operator->() { return curr; }
-      };
+        list_iter_t operator++(int) { list_iter_t result(*this); ++pos; curr = curr->next; return result; }
+        list_iter_t operator--(int) { list_iter_t result(*this); --pos; curr = curr->prev; return result; }
 
+        list_iter_t operator++() { ++pos; curr = curr->next; return *this; }
+        list_iter_t operator--() { --pos; curr = curr->prev; return *this; }
 
-
-      template<typename list_t>
-      struct fwd_circlist_iter_t {
-        typedef std::forward_iterator_tag       iterator_category;
-        typedef list_t                          value_type;
-        typedef void                            difference_type;
-        typedef value_type &                    reference;
-        typedef value_type *                    pointer;
-
-        list_t *curr, *start;
-
-        void advance() {
-          if (!start) start = curr;
-          if (curr) curr = curr->next;
-          if (curr == start) curr = start = NULL;
-        }
-
-        fwd_circlist_iter_t(list_t *pos) : curr(pos), start(NULL) { }
-        fwd_circlist_iter_t() : curr(NULL), start(NULL) { } // end iterator
-        fwd_circlist_iter_t operator++(int) { fwd_circlist_iter_t result(*this); advance(); return result; }
-        fwd_circlist_iter_t operator++() { advance(); return *this; }
-        bool operator==(const fwd_circlist_iter_t &other) const { return curr == other.curr; }
-        bool operator!=(const fwd_circlist_iter_t &other) const { return curr != other.curr; }
+        bool operator==(const list_iter_t &other) const { return curr == other.curr && pos == other.pos; }
+        bool operator!=(const list_iter_t &other) const { return curr != other.curr || pos != other.pos; }
 
         reference operator*() { return *curr; }
         pointer operator->() { return curr; }
-      };
 
-
-
-      template<typename iter_t, typename mapping_t>
-      struct mapped_iter_t {
-        typedef typename std::iterator_traits<iter_t>::iterator_category iterator_category;
-        typedef typename std::iterator_traits<iter_t>::difference_type   difference_type;
-        typedef typename mapping_t::output_type                          value_type;
-        typedef value_type &                                             reference;
-        typedef value_type *                                             pointer;
-
-        iter_t base;
-
-        mapped_iter_t(iter_t _base) : base(_base) { }
-
-        bool operator==(const mapped_iter_t &other) const { return base == other.base; }
-        bool operator!=(const mapped_iter_t &other) const { return base != other.base; }
-
-        mapped_iter_t operator++(int) { mapped_iter_t result(*this); ++base; return result; }
-        mapped_iter_t operator--(int) { mapped_iter_t result(*this); --base; return result; }
-        mapped_iter_t operator++() { ++base; return *this; }
-        mapped_iter_t operator--() { --base; return *this; }
-
-        value_type operator*() { return mapping_t()(*base); }
-      };
-
-
-      template<unsigned ndim>
-      struct edge_vertex_mapping {
-        typedef typename Edge<ndim>::vertex_t output_type;
-        output_type &operator()(Edge<ndim> &edge) { return *(edge.vert); }
-      };
-
-
-
-      template<unsigned ndim>
-      struct const_edge_vertex_mapping {
-        typedef const typename Edge<ndim>::vertex_t output_type;
-        output_type &operator()(const Edge<ndim> &edge) { return *(edge.vert); }
+        int idx() const { return pos; }
       };
     }
 
@@ -264,26 +202,6 @@ namespace carve {
 
 
 
-    template<unsigned ndim> typename Edge<ndim>::iter_t Edge<ndim>::iter() { return iter_t(this); }
-    template<unsigned ndim> typename Edge<ndim>::const_iter_t Edge<ndim>::iter() const { return const_iter_t(this); }
-
-    template<unsigned ndim> typename Edge<ndim>::fwd_iter_t Edge<ndim>::begin() { return fwd_iter_t(this); }
-    template<unsigned ndim> typename Edge<ndim>::const_fwd_iter_t Edge<ndim>::begin() const { return const_fwd_iter_t(this); }
-
-    template<unsigned ndim> typename Edge<ndim>::fwd_iter_t Edge<ndim>::end() { return fwd_iter_t(NULL); }
-    template<unsigned ndim> typename Edge<ndim>::const_fwd_iter_t Edge<ndim>::end() const { return const_fwd_iter_t(NULL); }
-
-    template<unsigned ndim> typename Edge<ndim>::vert_iter_t Edge<ndim>::viter() { return vert_iter_t(this); }
-    template<unsigned ndim> typename Edge<ndim>::const_vert_iter_t Edge<ndim>::viter() const { return const_vert_iter_t(this); }
-
-    template<unsigned ndim> typename Edge<ndim>::fwd_vert_iter_t Edge<ndim>::vbegin() { return fwd_vert_iter_t(this); }
-    template<unsigned ndim> typename Edge<ndim>::const_fwd_vert_iter_t Edge<ndim>::vbegin() const { return const_fwd_vert_iter_t(this); }
-
-    template<unsigned ndim> typename Edge<ndim>::fwd_vert_iter_t Edge<ndim>::vend() { return fwd_vert_iter_t(NULL); }
-    template<unsigned ndim> typename Edge<ndim>::const_fwd_vert_iter_t Edge<ndim>::vend() const { return const_fwd_vert_iter_t(NULL); }
-
-
-
     template<unsigned ndim>
     void Edge<ndim>::insertAfter(Edge<ndim> *other) {
       if (prev != this) unlink();
@@ -348,7 +266,7 @@ namespace carve {
     template<unsigned ndim>
     typename Face<ndim>::aabb_t Face<ndim>::getAABB() const {
       aabb_t aabb;
-      aabb.fit(edge->begin(), edge->end(), vector_mapping());
+      aabb.fit(begin(), end(), vector_mapping());
       return aabb;
     }
 
@@ -356,12 +274,12 @@ namespace carve {
 
     template<unsigned ndim>
     bool Face<ndim>::recalc() {
-      if (!carve::geom3d::fitPlane(edge->begin(), edge->end(), vector_mapping(), plane)) {
+      if (!carve::geom3d::fitPlane(begin(), end(), vector_mapping(), plane)) {
         return false;
       }
 
       int da = carve::geom::largestAxis(plane.N);
-      double A = carve::geom2d::signedArea(edge->begin(), edge->end(), projection_mapping(getProjector(false, da)));
+      double A = carve::geom2d::signedArea(begin(), end(), projection_mapping(getProjector(false, da)));
 
       if ((A < 0.0) ^ (plane.N.v[da] < 0.0)) {
         plane.negate();
@@ -464,7 +382,7 @@ namespace carve {
 
 
     template<unsigned ndim>
-    void Face<ndim>::getVertices(std::vector<const vertex_t *> &verts) const {
+    void Face<ndim>::getVertices(std::vector<vertex_t *> &verts) const {
       verts.clear();
       verts.reserve(n_edges);
       const edge_t *e = edge;
@@ -498,6 +416,44 @@ namespace carve {
 
 
     template<unsigned ndim>
+    void Face<ndim>::canonicalize() {
+      edge_t *min = edge;
+      edge_t *e = edge;
+
+      do {
+        if (e->vert < min->vert) min = e;
+        e = e->next;
+      } while (e != edge);
+
+      edge = min;
+    }
+
+
+
+    template<unsigned ndim>
+    template<typename iter_t>
+    Face<ndim> *Face<ndim>::create(iter_t beg, iter_t end, bool reversed) const {
+      Face *r = new Face();
+
+      if (reversed) {
+        r->loopRev(beg, end);
+        r->plane = -plane;
+      } else {
+        r->loopFwd(beg, end);
+        r->plane = plane;
+      }
+
+      int da = carve::geom::largestAxis(r->plane.N);
+
+      r->project = r->getProjector(r->plane.N.v[da] > 0, da);
+      r->unproject = r->getUnprojector(r->plane.N.v[da] > 0, da);
+
+      return r;
+    }
+
+
+
+    template<unsigned ndim>
     Face<ndim> *Face<ndim>::clone(const vertex_t *old_base,
                                   vertex_t *new_base,
                                   std::unordered_map<const edge_t *, edge_t *> &edge_map) const {
@@ -516,6 +472,15 @@ namespace carve {
           r->edge = r_e;
         }
         r_p = r_e;
+
+        if (e->rev) {
+          typename std::unordered_map<const edge_t *, edge_t *>::iterator rev_i = edge_map.find(e->rev);
+          if (rev_i != edge_map.end()) {
+            r_e->rev = (*rev_i).second;
+            (*rev_i).second->rev = r_e;
+          }
+        }
+
         e = e->next;
       } while (e != edge);
       r_e->next = r->edge;
@@ -535,7 +500,7 @@ namespace carve {
       std::swap(closed_edges, _closed_edges);
       is_negative = _is_negative;
       meshset = NULL;
-      
+
       for (size_t i = 0; i < faces.size(); ++i) {
         faces[i]->mesh = this;
       }
@@ -725,6 +690,48 @@ namespace carve {
 
 
     template<unsigned ndim>
+    template<typename iter_t>
+    void MeshSet<ndim>::_init_from_faces(iter_t begin, iter_t end) {
+      typedef std::unordered_map<const vertex_t *, size_t> map_t;
+      map_t vmap;
+
+      for (iter_t i = begin; i != end; ++i) {
+        face_t *f = *i;
+        edge_t *e = f->edge;
+        do {
+          typename map_t::const_iterator j = vmap.find(e->vert);
+          if (j == vmap.end()) {
+            size_t idx = vmap.size();
+            vmap[e->vert] = idx;
+          }
+          e = e->next;
+        } while (e != f->edge);
+      }
+
+      vertex_storage.resize(vmap.size());
+      for (typename map_t::const_iterator i = vmap.begin(); i != vmap.end(); ++i) {
+        vertex_storage[(*i).second].v = (*i).first->v;
+      }
+
+      for (iter_t i = begin; i != end; ++i) {
+        face_t *f = *i;
+        edge_t *e = f->edge;
+        do {
+          e->vert = &vertex_storage[vmap[e->vert]];
+          e = e->next;
+        } while (e != f->edge);
+      }
+
+      mesh_t::create(begin, end, meshes);
+
+      for (size_t i = 0; i < meshes.size(); ++i) {
+        meshes[i]->meshset = this;
+      }
+    }
+
+
+
+    template<unsigned ndim>
     MeshSet<ndim>::MeshSet(const std::vector<typename MeshSet<ndim>::vertex_t::vector_t> &points,
                            size_t n_faces,
                            const std::vector<int> &face_indices) {
@@ -748,6 +755,24 @@ namespace carve {
       }
       CARVE_ASSERT(p == face_indices.size());
       mesh_t::create(faces.begin(), faces.end(), meshes);
+
+      for (size_t i = 0; i < meshes.size(); ++i) {
+        meshes[i]->meshset = this;
+      }
+    }
+
+
+
+    template<unsigned ndim>
+    MeshSet<ndim>::MeshSet(std::vector<face_t *> &faces) {
+      _init_from_faces(faces.begin(), faces.end());
+    }
+
+
+
+    template<unsigned ndim>
+    MeshSet<ndim>::MeshSet(std::list<face_t *> &faces) {
+      _init_from_faces(faces.begin(), faces.end());
     }
 
 
@@ -813,6 +838,7 @@ namespace carve {
       for (size_t i = 0; i < meshes.size(); ++i) {
         r_meshes.push_back(meshes[i]->clone(&vertex_storage[0], &r_vertex_storage[0]));
       }
+
       return new MeshSet(r_vertex_storage, r_meshes);
     }
 
@@ -828,13 +854,15 @@ namespace carve {
 
 
     template<unsigned ndim>
-    MeshSet<ndim>::FaceIter::FaceIter(const MeshSet<ndim> *_obj, size_t _mesh, size_t _face) : obj(_obj), mesh(_mesh), face(_face) {
+    template<typename face_type>
+    MeshSet<ndim>::FaceIter<face_type>::FaceIter(const MeshSet<ndim> *_obj, size_t _mesh, size_t _face) : obj(_obj), mesh(_mesh), face(_face) {
     }
 
 
 
     template<unsigned ndim>
-    void MeshSet<ndim>::FaceIter::fwd(size_t n) {
+    template<typename face_type>
+    void MeshSet<ndim>::FaceIter<face_type>::fwd(size_t n) {
       if (mesh < obj->meshes.size()) {
         face += n;
         while (face >= obj->meshes[mesh]->faces.size()) {
@@ -847,7 +875,8 @@ namespace carve {
 
 
     template<unsigned ndim>
-    void MeshSet<ndim>::FaceIter::rev(size_t n) {
+    template<typename face_type>
+    void MeshSet<ndim>::FaceIter<face_type>::rev(size_t n) {
       while (n > face) {
         n -= face;
         if (mesh == 0) { face = 0; return; }
@@ -859,7 +888,8 @@ namespace carve {
 
 
     template<unsigned ndim>
-    void MeshSet<ndim>::FaceIter::adv(int n) {
+    template<typename face_type>
+    void MeshSet<ndim>::FaceIter<face_type>::adv(int n) {
       if (n > 0) {
         fwd((size_t)n);
       } else if (n < 0) {
@@ -870,7 +900,9 @@ namespace carve {
 
 
     template<unsigned ndim>
-    typename MeshSet<ndim>::FaceIter::difference_type MeshSet<ndim>::FaceIter::operator-(const FaceIter &other) const {
+    template<typename face_type>
+    typename MeshSet<ndim>::template FaceIter<face_type>::difference_type
+    MeshSet<ndim>::FaceIter<face_type>::operator-(const FaceIter &other) const {
       CARVE_ASSERT(obj == other.obj);
       if (mesh == other.mesh) return face - other.face;
 
@@ -885,5 +917,97 @@ namespace carve {
         return +(difference_type)((obj->meshes[other.mesh]->faces.size() - other.face) + m + face);
       }
     }
+
+
+
+    template<typename order_t>
+    struct VPtrSort {
+      order_t order;
+
+      VPtrSort(const order_t &_order = order_t()) : order(_order) {}
+
+      template<unsigned ndim>
+      bool operator()(carve::mesh::Vertex<ndim> *a,
+                      carve::mesh::Vertex<ndim> *b) const {
+        return order(a->v, b->v);
+      }
+    };
+
+
+
+    template<unsigned ndim>
+    void MeshSet<ndim>::collectVertices() {
+      std::unordered_map<vertex_t *, size_t> vert_idx;
+
+      for (size_t m = 0; m < meshes.size(); ++m) {
+        mesh_t *mesh = meshes[m];
+
+        for (size_t f = 0; f < mesh->faces.size(); ++f) {
+          face_t *face = mesh->faces[f];
+          edge_t *edge = face->edge;
+          do {
+            vert_idx[edge->vert] = 0;
+            edge = edge->next;
+          } while (edge != face->edge);
+        }
+      }
+
+      std::vector<vertex_t> new_vertex_storage;
+      new_vertex_storage.reserve(vert_idx.size());
+      for (typename std::unordered_map<vertex_t *, size_t>::iterator
+             i = vert_idx.begin(); i != vert_idx.end(); ++i) {
+        (*i).second = new_vertex_storage.size();
+        new_vertex_storage.push_back(*(*i).first);
+      }
+
+      for (size_t m = 0; m < meshes.size(); ++m) {
+        mesh_t *mesh = meshes[m];
+        for (size_t f = 0; f < mesh->faces.size(); ++f) {
+          face_t *face = mesh->faces[f];
+          edge_t *edge = face->edge;
+          do {
+            size_t i = vert_idx[edge->vert];
+            edge->vert = &new_vertex_storage[i];
+            edge = edge->next;
+          } while (edge != face->edge);
+        }
+      }
+
+      std::swap(vertex_storage, new_vertex_storage);
+    }
+
+
+
+    template<unsigned ndim>
+    void MeshSet<ndim>::canonicalize() {
+      std::vector<vertex_t *> vptr;
+      std::vector<vertex_t *> vmap;
+      std::vector<vertex_t> vout;
+      const size_t N = vertex_storage.size();
+
+      vptr.reserve(N);
+      vout.reserve(N);
+      vmap.resize(N);
+
+      for (size_t i = 0; i != N; ++i) {
+        vptr.push_back(&vertex_storage[i]);
+      }
+      std::sort(vptr.begin(), vptr.end(), VPtrSort<std::less<typename vertex_t::vector_t> >());
+
+      for (size_t i = 0; i != N; ++i) {
+        vout.push_back(*vptr[i]);
+        vmap[vptr[i] - &vertex_storage[0]] = &vout[i];
+      }
+
+      for (face_iter i = faceBegin(); i != faceEnd(); ++i) {
+        for (typename face_t::edge_iter_t j = (*i)->begin(); j != (*i)->end(); ++j) {
+          (*j).vert = vmap[(*j).vert - &vertex_storage[0]];
+        }
+        (*i)->canonicalize();
+      }
+
+      vertex_storage.swap(vout);
+    }
+
   }
 }

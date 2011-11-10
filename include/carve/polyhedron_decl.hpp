@@ -68,11 +68,9 @@ namespace carve {
       void commonFaceInit(bool _recalc);
 
     public:
-      typedef std::unordered_map<const vertex_t *, const vertex_t *, hash_vertex_ptr> VVMap;
-
       static void collectFaceVertices(std::vector<face_t > &faces,
                                       std::vector<vertex_t > &vertices,
-                                      carve::csg::VVMap &vmap);
+                                      std::unordered_map<const vertex_t *, const vertex_t *> &vmap);
 
       static void collectFaceVertices(std::vector<face_t > &faces,
                                       std::vector<vertex_t > &vertices);

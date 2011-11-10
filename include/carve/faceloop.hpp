@@ -28,11 +28,11 @@ namespace carve {
 
     struct FaceLoop {
       FaceLoop *next, *prev;
-      const carve::poly::Polyhedron::face_t *orig_face;
-      std::vector<const carve::poly::Polyhedron::vertex_t *> vertices;
+      const carve::mesh::MeshSet<3>::face_t *orig_face;
+      std::vector<carve::mesh::MeshSet<3>::vertex_t *> vertices;
       FaceLoopGroup *group;
 
-      FaceLoop(const carve::poly::Polyhedron::face_t *f, const std::vector<const carve::poly::Polyhedron::vertex_t *> &v) : next(NULL), prev(NULL), orig_face(f), vertices(v), group(NULL) {}
+      FaceLoop(const carve::mesh::MeshSet<3>::face_t *f, const std::vector<carve::mesh::MeshSet<3>::vertex_t *> &v) : next(NULL), prev(NULL), orig_face(f), vertices(v), group(NULL) {}
     };
 
 
@@ -50,6 +50,7 @@ namespace carve {
         if (!head) head = f;
         count++;
       }
+
       void prepend(FaceLoop *f) {
         f->next = head;
         f->prev = NULL;
@@ -58,9 +59,11 @@ namespace carve {
         if (!tail) tail = f;
         count++;
       }
+
       unsigned size() const {
         return count;
       }
+
       FaceLoop *remove(FaceLoop *f) {
         FaceLoop *r = f->next;
         if (f->prev) { f->prev->next = f->next; } else { head = f->next; }
@@ -69,6 +72,7 @@ namespace carve {
         count--;
         return r;
       }
+
       ~FaceLoopList() {
         FaceLoop *a = head, *b;
         while (a) {
@@ -80,11 +84,15 @@ namespace carve {
     };
 
     struct FaceLoopGroup {
+      const carve::mesh::MeshSet<3> *src;
       FaceLoopList face_loops;
       V2Set perimeter;
       std::list<ClassificationInfo> classification;
 
-      FaceClass classificationAgainst(const carve::poly::Polyhedron *poly, int m_id) const;
+      FaceLoopGroup(const carve::mesh::MeshSet<3> *_src) : src(_src) {
+      }
+
+      FaceClass classificationAgainst(const carve::mesh::MeshSet<3>::mesh_t *mesh) const;
     };
 
 

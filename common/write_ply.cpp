@@ -39,6 +39,7 @@ namespace {
   };
 
 
+
   template<typename container_t>
   struct vertex : public vertex_base {
     const container_t &cnt;
@@ -48,9 +49,14 @@ namespace {
     virtual int length() { return cnt.size(); }
     virtual const carve::geom3d::Vector &curr() const {  return cnt[i].v; }
   };
+
+
+
   typedef vertex<std::vector<carve::point::Vertex> > pointset_vertex;
   typedef vertex<std::vector<carve::poly::Vertex<3> > > poly_vertex;
+  typedef vertex<std::vector<carve::mesh::Vertex<3> > > mesh_vertex;
   typedef vertex<std::vector<carve::line::Vertex> > line_vertex;
+
 
 
   template<int idx>
@@ -59,7 +65,50 @@ namespace {
     vertex_component(vertex_base &_r) : r(_r) { }
     virtual double value() { return r.curr().v[idx]; }
   };
+
+
   
+  struct mesh_face : public gloop::stream::null_writer {
+    std::vector<const carve::mesh::MeshSet<3>::face_t *> faces;
+    int i;
+    mesh_face(const carve::mesh::MeshSet<3> *poly) : faces(), i(-1) {
+      std::copy(poly->faceBegin(), poly->faceEnd(), std::back_inserter(faces));
+    }
+    virtual void next() { ++i; }
+    virtual int length() { return faces.size(); }
+    const carve::mesh::MeshSet<3>::face_t *curr() const { return faces[i]; }
+  };
+
+
+
+  struct mesh_face_idx : public gloop::stream::writer<size_t> {
+    mesh_face &r;
+    const carve::mesh::MeshSet<3>::face_t *f;
+    carve::mesh::MeshSet<3>::face_t::const_edge_iter_t i;
+    gloop::stream::Type data_type;
+    int max_length;
+
+    mesh_face_idx(mesh_face &_r, gloop::stream::Type _data_type, int _max_length) :
+        r(_r), f(NULL), data_type(_data_type), max_length(_max_length) {
+    }
+    virtual void begin() {
+      f = r.curr();
+      i = f->begin();
+    }
+    virtual int length() { return f->nVertices(); }
+
+    virtual bool isList() { return true; }
+    virtual gloop::stream::Type dataType() { return data_type; }
+    virtual int maxLength() { return max_length; }
+
+    virtual size_t value() {
+      const carve::mesh::MeshSet<3>::vertex_t *v = (*i++).vert;
+      return v - &f->mesh->meshset->vertex_storage[0];
+    }
+  };
+
+
+
   struct face : public gloop::stream::null_writer {
     const carve::poly::Polyhedron *poly;
     int i;
@@ -68,6 +117,7 @@ namespace {
     virtual int length() { return poly->faces.size(); }
     const carve::poly::Face<3> *curr() const { return &poly->faces[i]; }
   };
+
 
 
   struct face_idx : public gloop::stream::writer<size_t> {
@@ -91,6 +141,7 @@ namespace {
   };
 
 
+
   struct lineset : public gloop::stream::null_writer {
     const carve::line::PolylineSet *polyline;
     carve::line::PolylineSet::const_line_iter c;
@@ -102,12 +153,14 @@ namespace {
   };
 
 
+
   struct line_closed : public gloop::stream::writer<bool> {
     lineset &ls;
     line_closed(lineset &_ls) : ls(_ls) { }
     virtual gloop::stream::Type dataType() { return gloop::stream::U8; }
     virtual bool value() { return ls.curr()->isClosed(); }
   };
+
 
 
   struct line_vi : public gloop::stream::writer<size_t> {
@@ -129,6 +182,31 @@ namespace {
   };
 
 
+
+  void setup(gloop::stream::model_writer &file, const carve::mesh::MeshSet<3> *poly) {
+    size_t face_max = 0;
+    for (carve::mesh::MeshSet<3>::const_face_iter i = poly->faceBegin(); i != poly->faceEnd(); ++i) {
+      face_max = std::max(face_max, (*i)->nVertices());
+    }
+
+    file.newBlock("polyhedron");
+    mesh_vertex *vi = new mesh_vertex(poly->vertex_storage);
+    file.addWriter("polyhedron.vertex", vi);
+    file.addWriter("polyhedron.vertex.x", new vertex_component<0>(*vi));
+    file.addWriter("polyhedron.vertex.y", new vertex_component<1>(*vi));
+    file.addWriter("polyhedron.vertex.z", new vertex_component<2>(*vi));
+
+    mesh_face *fi = new mesh_face(poly);
+    file.addWriter("polyhedron.face", fi);
+    file.addWriter("polyhedron.face.vertex_indices",
+                   new mesh_face_idx(*fi,
+                                     gloop::stream::smallest_type(poly->vertex_storage.size()),
+                                     face_max));
+
+  }
+
+
+
   void setup(gloop::stream::model_writer &file, const carve::poly::Polyhedron *poly) {
     size_t face_max = 0;
     for (size_t i = 0; i < poly->faces.size(); ++i) face_max = std::max(face_max, poly->faces[i].nVertices());
@@ -148,6 +226,8 @@ namespace {
                                 face_max));
 
   }
+
+
 
   void setup(gloop::stream::model_writer &file, const carve::line::PolylineSet *lines) {
     size_t line_max = 0;
@@ -183,7 +263,22 @@ namespace {
     file.addWriter("pointset.vertex.y", new vertex_component<1>(*vi));
     file.addWriter("pointset.vertex.z", new vertex_component<2>(*vi));
   }
+}
 
+
+
+
+void writePLY(std::ostream &out, const carve::mesh::MeshSet<3> *poly, bool ascii) {
+  gloop::ply::PlyWriter file(!ascii, false);
+  if (ascii) out << std::setprecision(30);
+  setup(file, poly);
+  file.write(out);
+}
+
+void writePLY(const std::string &out_file, const carve::mesh::MeshSet<3> *poly, bool ascii) {
+  std::ofstream out(out_file.c_str(), std::ios_base::binary);
+  if (!out.is_open()) { std::cerr << "File '" <<  out_file << "' could not be opened." << std::endl; return; }
+  writePLY(out, poly, ascii);
 }
 
 void writePLY(std::ostream &out, const carve::poly::Polyhedron *poly, bool ascii) {
@@ -229,6 +324,18 @@ void writePLY(const std::string &out_file, const carve::point::PointSet *points,
 
 
 
+void writeOBJ(std::ostream &out, const carve::mesh::MeshSet<3> *poly) {
+  gloop::obj::ObjWriter file;
+  setup(file, poly);
+  file.write(out);
+}
+
+void writeOBJ(const std::string &out_file, const carve::mesh::MeshSet<3> *poly) {
+  std::ofstream out(out_file.c_str(), std::ios_base::binary);
+  if (!out.is_open()) { std::cerr << "File '" <<  out_file << "' could not be opened." << std::endl; return; }
+  writeOBJ(out, poly);
+}
+
 void writeOBJ(std::ostream &out, const carve::poly::Polyhedron *poly) {
   gloop::obj::ObjWriter file;
   setup(file, poly);
@@ -254,6 +361,18 @@ void writeOBJ(const std::string &out_file, const carve::line::PolylineSet *lines
 }
 
 
+
+void writeVTK(std::ostream &out, const carve::mesh::MeshSet<3> *poly) {
+  gloop::vtk::VtkWriter file(gloop::vtk::VtkWriter::ASCII);
+  setup(file, poly);
+  file.write(out);
+}
+
+void writeVTK(const std::string &out_file, const carve::mesh::MeshSet<3> *poly) {
+  std::ofstream out(out_file.c_str(), std::ios_base::binary);
+  if (!out.is_open()) { std::cerr << "File '" <<  out_file << "' could not be opened." << std::endl; return; }
+  writeVTK(out, poly);
+}
 
 void writeVTK(std::ostream &out, const carve::poly::Polyhedron *poly) {
   gloop::vtk::VtkWriter file(gloop::vtk::VtkWriter::ASCII);

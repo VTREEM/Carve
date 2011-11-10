@@ -21,6 +21,7 @@
 #include "geom_draw.hpp"
 
 #include <carve/debug_hooks.hpp>
+#include <carve/poly.hpp>
 
 #include <gloop/gloopgl.hpp>
 #include <gloop/gloopglu.hpp>
@@ -60,6 +61,14 @@ static inline void glVertex(const carve::geom3d::Vector &v) {
   glVertex3f(g_scale * (v.x + g_translation.x),
              g_scale * (v.y + g_translation.y),
              g_scale * (v.z + g_translation.z));
+}
+
+static inline void glVertex(const carve::mesh::Vertex<3> *v) {
+  glVertex(v->v);
+}
+
+static inline void glVertex(const carve::mesh::Vertex<3> &v) {
+  glVertex(v.v);
 }
 
 static inline void glVertex(const carve::poly::Vertex<3> *v) {
@@ -393,7 +402,7 @@ void drawFaceWireframe(carve::poly::Face<3> *face, bool normal, float r, float g
   glColor4f(1.0, 0.0, 0.0, 1.0);
   glBegin(GL_LINES);
   for (size_t i = 0, l = face->nEdges(); i != l; ++i) {
-    if (static_cast<const carve::poly::Polyhedron *>(face->owner)->connectedFace(face, face->edge(i)) == NULL) {
+    if (static_cast<carve::poly::Polyhedron *>(face->owner)->connectedFace(face, face->edge(i)) == NULL) {
       glVertex(face->edge(i)->v1);
       glVertex(face->edge(i)->v2);
     }
@@ -567,7 +576,7 @@ void drawMesh(carve::mesh::Mesh<3> *mesh, float r, float g, float b, float a) {
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glBegin(GL_TRIANGLES);
 
-  std::vector<const carve::mesh::Vertex<3> *> v;
+  std::vector<carve::mesh::Vertex<3> *> v;
 
   for (size_t i = 0, l = mesh->faces.size(); i != l; ++i) {
     carve::mesh::Face<3> *f = mesh->faces[i];
@@ -589,7 +598,7 @@ void drawMesh(carve::mesh::Mesh<3> *mesh, float r, float g, float b, float a) {
   }
 }
 
-void drawPolyhedron(carve::mesh::MeshSet<3> *poly, float r, float g, float b, float a, int group) {
+void drawMeshSet(carve::mesh::MeshSet<3> *poly, float r, float g, float b, float a, int group) {
   if (group >= 0) {
     if ((size_t)group < poly->meshes.size()) {
       drawMesh(poly->meshes[group], r, g, b, a);
@@ -703,7 +712,7 @@ void drawMeshWireframe(carve::mesh::Mesh<3> *mesh, bool normal) {
   glEnable(GL_LIGHTING);
 }
 
-void drawPolyhedronWireframe(carve::mesh::MeshSet<3> *poly, bool normal, int group) {
+void drawMeshSetWireframe(carve::mesh::MeshSet<3> *poly, bool normal, int group) {
   if (group >= 0) {
     if ((size_t)group < poly->meshes.size()) {
       drawMeshWireframe(poly->meshes[group], normal);

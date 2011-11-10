@@ -29,9 +29,9 @@
 
 
 void carve::csg::Intersections::collect(const IObj &obj,
-                                        std::vector<const carve::poly::Polyhedron::vertex_t *> *collect_v,
-                                        std::vector<const carve::poly::Polyhedron::edge_t *> *collect_e,
-                                        std::vector<const carve::poly::Polyhedron::face_t *> *collect_f) const {
+                                        std::vector<carve::mesh::MeshSet<3>::vertex_t *> *collect_v,
+                                        std::vector<carve::mesh::MeshSet<3>::edge_t *> *collect_e,
+                                        std::vector<carve::mesh::MeshSet<3>::face_t *> *collect_f) const {
   carve::csg::Intersections::const_iterator i = find(obj);
   if (i != end()) {
     Intersections::mapped_type::const_iterator a, b;
@@ -55,7 +55,8 @@ void carve::csg::Intersections::collect(const IObj &obj,
 
 
 
-bool carve::csg::Intersections::intersectsFace(const carve::poly::Polyhedron::vertex_t *v, const carve::poly::Polyhedron::face_t *f) const {
+bool carve::csg::Intersections::intersectsFace(carve::mesh::MeshSet<3>::vertex_t *v,
+                                               carve::mesh::MeshSet<3>::face_t *f) const {
   const_iterator i = find(v);
   if (i != end()) {
     mapped_type::const_iterator a, b;
@@ -63,11 +64,19 @@ bool carve::csg::Intersections::intersectsFace(const carve::poly::Polyhedron::ve
     for (a = (*i).second.begin(), b = (*i).second.end(); a != b; ++a) {
       switch ((*a).first.obtype) {
       case IObj::OBTYPE_VERTEX: {
-        for (size_t j = 0; j < f->nVertices(); ++j) if (f->vertex(j) == (*a).first.vertex) return true;
+        const carve::mesh::MeshSet<3>::edge_t *edge = f->edge;
+        do {
+          if (edge->vert == (*a).first.vertex) return true;
+          edge = edge->next;
+        } while (edge != f->edge);
         break;
       }
       case carve::csg::IObj::OBTYPE_EDGE: {
-        for (size_t j = 0; j < f->nEdges(); ++j) if (f->edge(j) == (*a).first.edge) return true;
+        const carve::mesh::MeshSet<3>::edge_t *edge = f->edge;
+        do {
+          if (edge == (*a).first.edge) return true;
+          edge = edge->next;
+        } while (edge != f->edge);
         break;
       }
       case carve::csg::IObj::OBTYPE_FACE: {

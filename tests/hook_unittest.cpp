@@ -26,7 +26,7 @@
 
 #include <map>
 
-static carve::poly::Polyhedron *makeCube(const carve::math::Matrix &transform) {
+static carve::mesh::MeshSet<3> *makeCube(const carve::math::Matrix &transform) {
   carve::input::PolyhedronData data;
 
   data.addVertex(transform * carve::geom::VECTOR(+1.0, +1.0, +1.0));
@@ -45,29 +45,29 @@ static carve::poly::Polyhedron *makeCube(const carve::math::Matrix &transform) {
   data.addFace(2, 6, 7, 3);
   data.addFace(3, 7, 4, 0);
 
-  return new carve::poly::Polyhedron(data.points, data.getFaceCount(), data.faceIndices);
+  return new carve::mesh::MeshSet<3>(data.points, data.getFaceCount(), data.faceIndices);
 }
 
 struct ResultFaceHook : public carve::csg::CSG::Hook {
-  std::map<const carve::poly::Polyhedron *, int> &counter;
+  std::map<const carve::mesh::MeshSet<3> *, int> &counter;
 
-  ResultFaceHook(std::map<const carve::poly::Polyhedron *, int> &_counter) : counter(_counter) {
+  ResultFaceHook(std::map<const carve::mesh::MeshSet<3> *, int> &_counter) : counter(_counter) {
   }
 
-  virtual void resultFace(const carve::poly::Polyhedron::face_t *output_face,
-      const carve::poly::Polyhedron::face_t *source_face,
+  virtual void resultFace(const carve::mesh::MeshSet<3>::face_t *output_face,
+      const carve::mesh::MeshSet<3>::face_t *source_face,
       bool flipped) {
-    const carve::poly::Polyhedron *source_poly = static_cast<const carve::poly::Polyhedron *>(source_face->owner);
+    const carve::mesh::MeshSet<3> *source_poly = static_cast<const carve::mesh::MeshSet<3> *>(source_face->mesh->meshset);
     counter[source_poly]++;
   }
 };
 
 TEST(HookTest, ResultFace) {
-  std::map<const carve::poly::Polyhedron *, int> counter;
+  std::map<const carve::mesh::MeshSet<3> *, int> counter;
   carve::csg::CSG csg;
 
-  const carve::poly::Polyhedron *a = makeCube(carve::math::Matrix::SCALE(+5, +5, .5));
-  const carve::poly::Polyhedron *b = makeCube(carve::math::Matrix::ROT(.5, +1, +1, +1));
+  carve::mesh::MeshSet<3> *a = makeCube(carve::math::Matrix::SCALE(+5, +5, .5));
+  carve::mesh::MeshSet<3> *b = makeCube(carve::math::Matrix::ROT(.5, +1, +1, +1));
 
   csg.hooks.registerHook(new ResultFaceHook(counter), carve::csg::CSG::Hooks::RESULT_FACE_BIT);
   csg.compute(a, b, carve::csg::CSG::UNION, NULL, carve::csg::CSG::CLASSIFY_EDGE);

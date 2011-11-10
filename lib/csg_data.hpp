@@ -44,4 +44,9 @@ struct carve::csg::detail::Data {
 
   // created by faceSplitEdges.
   FV2SMap face_split_edges;
+
+  // mapping from vertex to edge for potentially intersected
+  // faces. Saves building the vertex to edge map for all faces of
+  // both meshes.
+  VEVecMap vert_to_edges;
 };

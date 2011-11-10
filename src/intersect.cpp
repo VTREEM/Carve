@@ -308,7 +308,7 @@ carve::csg::CSG_TreeNode *parseAtom(TOK &tok) {
   if (*tok == "(") {
     return parseBracketExpr(tok);
   } else {
-    carve::poly::Polyhedron *poly = NULL;
+    carve::mesh::MeshSet<3> *poly = NULL;
 
     if (*tok == "CUBE") {
       poly = makeCube();
@@ -351,19 +351,32 @@ carve::csg::CSG_TreeNode *parseAtom(TOK &tok) {
       if (*tok != ")") { return NULL; }
       poly = makeTorus(slices, rings, rad1, rad2);
     } else if (endswith(*tok, ".ply")) {
-      poly = readPLY(*tok);
+      poly = readPLYasMesh(*tok);
     } else if (endswith(*tok, ".vtk")) {
-      poly = readVTK(*tok);
+      poly = readVTKasMesh(*tok);
     } else if (endswith(*tok, ".obj")) {
-      poly = readOBJ(*tok);
+      poly = readOBJasMesh(*tok);
     }
     if (poly == NULL) return NULL;
 
-    std::cerr << "loaded polyhedron " << poly << " has "
-              << poly->vertices.size() << " vertices "
-              << poly->faces.size() << " faces "
-              << poly->manifold_is_closed.size() << " manifolds (" << std::count(poly->manifold_is_closed.begin(), poly->manifold_is_closed.end(), true) << " closed)" << std::endl;
-
+    std::cerr << "loaded polyhedron "
+              << poly << " has " << poly->meshes.size()
+              << " manifolds (" << std::count_if(poly->meshes.begin(),
+                                                 poly->meshes.end(),
+                                                 carve::mesh::Mesh<3>::IsClosed()) << " closed)" << std::endl; 
+    
+    std::cerr << "closed:    ";
+    for (size_t i = 0; i < poly->meshes.size(); ++i) {
+      std::cerr << (poly->meshes[i]->isClosed() ? '+' : '-');
+    }
+    std::cerr << std::endl;
+    
+    std::cerr << "negative:  ";
+    for (size_t i = 0; i < poly->meshes.size(); ++i) {
+      std::cerr << (poly->meshes[i]->isNegative() ? '+' : '-');
+    }
+    std::cerr << std::endl;
+    
     ++tok;
     return new carve::csg::CSG_PolyNode(poly, true);
   }
@@ -512,9 +525,11 @@ int main(int argc, char **argv) {
 
   if (p != NULL) {
     carve::Timing::start(EVAL_BLOCK);
-    carve::poly::Polyhedron *result = NULL;
+    carve::mesh::MeshSet<3> *result;
+
     try {
       carve::csg::CSG csg;
+
       if (options.triangulate) {
 #if !defined(DISABLE_GLU_TRIANGULATOR)
         if (options.glu_triangulate) {
@@ -535,6 +550,7 @@ int main(int argc, char **argv) {
       } else if (options.no_holes) {
         csg.hooks.registerHook(new carve::csg::CarveHoleResolver, carve::csg::CSG::Hooks::PROCESS_OUTPUT_FACE_BIT);
       }
+
       result = p->eval(csg);
     } catch (carve::exception e) {
       std::cerr << "CSG failed, exception: " << e.str() << std::endl;

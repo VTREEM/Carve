@@ -20,9 +20,8 @@
 namespace carve {
   namespace csg {
     typedef std::unordered_map<
-      const carve::poly::Polyhedron::vertex_t *,
-      std::list<FLGroupList::iterator>,
-      carve::poly::hash_vertex_ptr> GroupLookup;
+      carve::mesh::MeshSet<3>::vertex_t *,
+      std::list<FLGroupList::iterator> > GroupLookup;
 
 
     inline bool isSameFwd(const V2Set &a, const V2Set &b) {
@@ -44,8 +43,8 @@ namespace carve {
 
     static void performClassifySimpleOnFaceGroups(FLGroupList &a_groups,
                                                   FLGroupList &b_groups,
-                                                  const carve::poly::Polyhedron *poly_a,
-                                                  const carve::poly::Polyhedron *poly_b,
+                                                  carve::mesh::MeshSet<3> *poly_a,
+                                                  carve::mesh::MeshSet<3> *poly_b,
                                                   CSG::Collector &collector,
                                                   CSG::Hooks &hooks) {
       // Simple ON faces groups are face groups that consist of a single
@@ -60,14 +59,14 @@ namespace carve {
       for (FLGroupList::iterator i = a_groups.begin(); i != a_groups.end(); ++i) {
         if ((*i).face_loops.size() != 1) continue;
         FaceLoop *f = (*i).face_loops.head;
-        const carve::poly::Polyhedron::vertex_t *v = *std::min_element(f->vertices.begin(), f->vertices.end());
+        carve::mesh::MeshSet<3>::vertex_t *v = *std::min_element(f->vertices.begin(), f->vertices.end());
         a_map[v].push_back(i);
       }
 
       for (FLGroupList::iterator i = b_groups.begin(); i != b_groups.end(); ++i) {
         if ((*i).face_loops.size() != 1) continue;
         FaceLoop *f = (*i).face_loops.head;
-        const carve::poly::Polyhedron::vertex_t *v = *std::min_element(f->vertices.begin(), f->vertices.end());
+        carve::mesh::MeshSet<3>::vertex_t *v = *std::min_element(f->vertices.begin(), f->vertices.end());
         if (a_map.find(v) != a_map.end()) {
           b_map[v].push_back(i);
         }
@@ -76,7 +75,7 @@ namespace carve {
       // Then, iterate through the FaceLoops hashed in the first map, and
       // find candidate matches in the second map.
       for (GroupLookup::iterator j = b_map.begin(), je = b_map.end(); j != je; ++j) {
-        const carve::poly::Polyhedron::vertex_t *v = (*j).first;
+        carve::mesh::MeshSet<3>::vertex_t *v = (*j).first;
         GroupLookup::iterator i = a_map.find(v);
 
         for (std::list<FLGroupList::iterator>::iterator bi = (*j).second.begin(), be = (*j).second.end(); bi != be;) {
@@ -96,8 +95,8 @@ namespace carve {
             // oriented out, otherwise oriented in.
             FaceClass fc = s == +1 ? FACE_ON_ORIENT_OUT : FACE_ON_ORIENT_IN;
 
-            (*a).classification.push_back(ClassificationInfo(poly_b, -1, fc));
-            (*b).classification.push_back(ClassificationInfo(poly_a, -1, fc));
+            (*a).classification.push_back(ClassificationInfo(NULL, fc));
+            (*b).classification.push_back(ClassificationInfo(NULL, fc));
 
             collector.collect(&*a, hooks);
             collector.collect(&*b, hooks);
@@ -118,7 +117,8 @@ namespace carve {
 
     template <typename CLASSIFIER>
     static void performClassifyEasyFaceGroups(FLGroupList &group,
-                                              const carve::poly::Polyhedron *poly_a,
+                                              carve::mesh::MeshSet<3> *poly_a,
+                                              const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_a_rtree,
                                               VertexClassification &vclass,
                                               const CLASSIFIER &classifier,
                                               CSG::Collector &collector,
@@ -135,7 +135,7 @@ namespace carve {
         for (FaceLoop *f = curr.head; f; f = f->next) {
           for (size_t j = 0; j < f->vertices.size(); ++j) {
             if (!classifier.pointOn(vclass, f, j)) {
-              PointClass pc = poly_a->containsVertex(f->vertices[j]->v);
+              PointClass pc = carve::mesh::classifyPoint(poly_a, poly_a_rtree, f->vertices[j]->v);
               if (pc == POINT_IN || pc == POINT_OUT) {
                 classifier.explain(f, j, pc);
               }
@@ -147,7 +147,7 @@ namespace carve {
         ++i;
         continue;
       accept: {
-          grp.classification.push_back(ClassificationInfo(poly_a, -1, fc));
+          grp.classification.push_back(ClassificationInfo(NULL, fc));
           collector.collect(&grp, hooks);
           i = group.erase(i);
         }
@@ -157,7 +157,8 @@ namespace carve {
 
     template <typename CLASSIFIER> 
     static void performClassifyHardFaceGroups(FLGroupList &group,
-                                              const carve::poly::Polyhedron *poly_a,
+                                              carve::mesh::MeshSet<3> *poly_a,
+                                              const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_a_rtree,
                                               const CLASSIFIER & /* classifier */,
                                               CSG::Collector &collector,
                                               CSG::Hooks &hooks) {
@@ -170,14 +171,14 @@ namespace carve {
         FaceClass fc =FACE_UNCLASSIFIED;
 
         for (FaceLoop *f = curr.head; f; f = f->next) {
-          const carve::poly::Polyhedron::vertex_t *v1, *v2;
+          carve::mesh::MeshSet<3>::vertex_t *v1, *v2;
           v1 = f->vertices.back();
           for (size_t j = 0; j < f->vertices.size(); ++j) {
             v2 = f->vertices[j];
             if (v1 < v2 && perim.find(std::make_pair(v1, v2)) == perim.end()) {
               carve::geom3d::Vector c = (v1->v + v2->v) / 2.0;
 
-              PointClass pc = poly_a->containsVertex(c);
+              PointClass pc = carve::mesh::classifyPoint(poly_a, poly_a_rtree, c);
 
               switch (pc) {
               case POINT_IN: n_in++; break;
@@ -202,14 +203,15 @@ namespace carve {
         if (n_in) fc = FACE_IN;
         if (n_out) fc = FACE_OUT;
 
-        grp.classification.push_back(ClassificationInfo(poly_a, -1, fc));
+        grp.classification.push_back(ClassificationInfo(NULL, fc));
         collector.collect(&grp, hooks);
         i = group.erase(i);
       }
     }
 
     template <typename CLASSIFIER>
-    void performFaceLoopWork(const carve::poly::Polyhedron *poly_a,
+    void performFaceLoopWork(carve::mesh::MeshSet<3> *poly_a,
+                             const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_a_rtree,
                              FLGroupList &b_loops_grouped,
                              const CLASSIFIER &classifier,
                              CSG::Collector &collector,
@@ -222,30 +224,30 @@ namespace carve {
           ++i;
           continue;
         }
-        assert((*i).face_loops.size() == 1);
+        CARVE_ASSERT((*i).face_loops.size() == 1);
 
         FaceLoop *fla = (*i).face_loops.head;
 
-        const carve::poly::Polyhedron::face_t *f = (fla->orig_face);
-        std::vector<const carve::poly::Polyhedron::vertex_t *> &loop = (fla->vertices);
+        const carve::mesh::MeshSet<3>::face_t *f = (fla->orig_face);
+        std::vector<carve::mesh::MeshSet<3>::vertex_t *> &loop = (fla->vertices);
         std::vector<carve::geom2d::P2> proj;
         proj.reserve(loop.size());
         for (unsigned j = 0; j < loop.size(); ++j) {
-          proj.push_back(carve::poly::face::project(f, loop[j]->v));
+          proj.push_back(f->project(loop[j]->v));
         }
         carve::geom2d::P2 pv;
         if (!carve::geom2d::pickContainedPoint(proj, pv)) {
           CARVE_FAIL("Failed");
         }
-        carve::geom3d::Vector v = carve::poly::face::unproject(f, pv);
+        carve::geom3d::Vector v = f->unproject(pv, f->plane);
 
-        const carve::poly::Polyhedron::face_t *hit_face;
-        PointClass pc = poly_a->containsVertex(v, &hit_face);
+        const carve::mesh::MeshSet<3>::face_t *hit_face;
+        PointClass pc = carve::mesh::classifyPoint(poly_a, poly_a_rtree, v, false, NULL, &hit_face);
         switch (pc) {
         case POINT_IN: fc = FACE_IN; break;
         case POINT_OUT: fc = FACE_OUT; break;
         case POINT_ON: {
-          double d = carve::geom::distance(hit_face->plane_eqn, v);
+          double d = carve::geom::distance(hit_face->plane, v);
 #if defined(CARVE_DEBUG)
           std::cerr << "d = " << d << std::endl;
 #endif
@@ -259,7 +261,7 @@ namespace carve {
         std::cerr << "CLASS: " << (fc == FACE_IN ? "FACE_IN" : "FACE_OUT" ) << std::endl;
 #endif
 
-        (*i).classification.push_back(ClassificationInfo(poly_a, -1, fc));
+        (*i).classification.push_back(ClassificationInfo(NULL, fc));
         collector.collect(&*i, hooks);
         i = b_loops_grouped.erase(i);
       }
@@ -270,15 +272,17 @@ namespace carve {
     void performClassifyFaceGroups(FLGroupList &a_loops_grouped,
                                    FLGroupList &b_loops_grouped,
                                    VertexClassification &vclass,
-                                   const carve::poly::Polyhedron *poly_a,
-                                   const carve::poly::Polyhedron *poly_b,
+                                   carve::mesh::MeshSet<3> *poly_a,
+                                   const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_a_rtree,
+                                   carve::mesh::MeshSet<3> *poly_b,
+                                   const carve::geom::RTreeNode<3, carve::mesh::Face<3> *> *poly_b_rtree,
                                    const CLASSIFIER &classifier,
                                    CSG::Collector &collector,
                                    CSG::Hooks &hooks) {
 
       classifier.classifySimple(a_loops_grouped, b_loops_grouped, vclass, poly_a, poly_b);
-      classifier.classifyEasy(a_loops_grouped, b_loops_grouped, vclass, poly_a, poly_b);
-      classifier.classifyHard(a_loops_grouped, b_loops_grouped, vclass, poly_a, poly_b);
+      classifier.classifyEasy(a_loops_grouped, b_loops_grouped, vclass, poly_a, poly_a_rtree, poly_b, poly_b_rtree);
+      classifier.classifyHard(a_loops_grouped, b_loops_grouped, vclass, poly_a, poly_a_rtree, poly_b, poly_b_rtree);
 
       {
         GroupLookup a_map;
@@ -333,8 +337,8 @@ namespace carve {
               a_map[std::min_element(it_begin, it_end)->first].remove(j);
             }
 
-            (*i).classification.push_back(ClassificationInfo(poly_b, -1, fc));
-            (*j).classification.push_back(ClassificationInfo(poly_a, -1, fc));
+            (*i).classification.push_back(ClassificationInfo(NULL, fc));
+            (*j).classification.push_back(ClassificationInfo(NULL, fc));
 
             collector.collect(&*i, hooks);
             collector.collect(&*j, hooks);
@@ -349,7 +353,7 @@ namespace carve {
       // consist of a single face loop.
       classifier.postRemovalCheck(a_loops_grouped, b_loops_grouped);
 
-      classifier.faceLoopWork(a_loops_grouped, b_loops_grouped, vclass, poly_a, poly_b);
+      classifier.faceLoopWork(a_loops_grouped, b_loops_grouped, vclass, poly_a, poly_a_rtree, poly_b, poly_b_rtree);
 
       classifier.finish(a_loops_grouped, b_loops_grouped);
     }

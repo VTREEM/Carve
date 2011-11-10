@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
   options.parse(argc, argv);
 
   carve::input::Input inputs;
-  std::vector<carve::poly::Polyhedron *> polys;
+  std::vector<carve::mesh::MeshSet<3> *> polys;
   std::vector<carve::line::PolylineSet *> lines;
   std::vector<carve::point::PointSet *> points;
 
@@ -126,11 +126,11 @@ int main(int argc, char **argv) {
   }
 
   for (std::list<carve::input::Data *>::const_iterator i = inputs.input.begin(); i != inputs.input.end(); ++i) {
-    carve::poly::Polyhedron *p;
+    carve::mesh::MeshSet<3> *p;
     carve::point::PointSet *ps;
     carve::line::PolylineSet *l;
 
-    if ((p = carve::input::Input::create<carve::poly::Polyhedron>(*i)) != NULL)  {
+    if ((p = carve::input::Input::create<carve::mesh::MeshSet<3> >(*i)) != NULL)  {
       if (options.canonicalize) p->canonicalize();
       if (options.obj) {
         writeOBJ(std::cout, p);

@@ -614,7 +614,7 @@ namespace carve {
 
     void Polyhedron::collectFaceVertices(std::vector<face_t> &faces,
                                          std::vector<vertex_t> &vertices,
-                                         carve::csg::VVMap &vmap) {
+                                         std::unordered_map<const vertex_t *, const vertex_t *> &vmap) {
       // Given a set of faces, copy all referenced vertices into a
       // single vertex array and update the faces to point into that
       // array. On exit, vmap contains a mapping from old pointer to
@@ -633,7 +633,7 @@ namespace carve {
 
       vertices.reserve(vmap.size());
 
-      for (carve::csg::VVMap::iterator i = vmap.begin(),
+      for (std::unordered_map<const vertex_t *, const vertex_t *>::iterator i = vmap.begin(),
              e = vmap.end();
            i != e;
            ++i) {
@@ -654,7 +654,7 @@ namespace carve {
 
     void Polyhedron::collectFaceVertices(std::vector<face_t> &faces,
                                          std::vector<vertex_t> &vertices) {
-      VVMap vmap;
+      std::unordered_map<const vertex_t *, const vertex_t *> vmap;
       collectFaceVertices(faces, vertices, vmap);
     }
 

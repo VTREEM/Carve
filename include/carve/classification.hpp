@@ -78,20 +78,17 @@ namespace carve {
 
 
     struct ClassificationInfo {
-      const carve::poly::Polyhedron *intersected_poly;
-      int intersected_manifold;
+      const carve::mesh::Mesh<3> *intersected_mesh;
       FaceClass classification;
 
-      ClassificationInfo() : intersected_poly(NULL), intersected_manifold(-1), classification(FACE_UNCLASSIFIED) { }
-      ClassificationInfo(const carve::poly::Polyhedron *_intersected_poly,
-                         int _intersected_manifold,
+      ClassificationInfo() : intersected_mesh(NULL), classification(FACE_UNCLASSIFIED) { }
+      ClassificationInfo(const carve::mesh::Mesh<3> *_intersected_mesh,
                          FaceClass _classification) :
-          intersected_poly(_intersected_poly),
-          intersected_manifold(_intersected_manifold),
+          intersected_mesh(_intersected_mesh),
           classification(_classification) {
       }
-      bool intersectedManifoldIsClosed() const {
-        return intersected_poly->manifold_is_closed[intersected_manifold];
+      bool intersectedMeshIsClosed() const {
+        return intersected_mesh->isClosed();
       }
     };
 
@@ -109,9 +106,10 @@ namespace carve {
       PC2(PointClass a, PointClass b) { cls[0] = a; cls[1] = b; }
     };
 
-    typedef std::unordered_map<V2, EC2, carve::poly::hash_vertex_ptr> EdgeClassification;
+    typedef std::unordered_map<std::pair<const carve::mesh::MeshSet<3>::vertex_t *, const carve::mesh::MeshSet<3>::vertex_t *>,
+                               EC2> EdgeClassification;
 
-    typedef std::unordered_map<const carve::poly::Polyhedron::vertex_t *, PC2, carve::poly::hash_vertex_ptr> VertexClassification;
+    typedef std::unordered_map<const carve::mesh::Vertex<3> *, PC2> VertexClassification;
 
   }
 }

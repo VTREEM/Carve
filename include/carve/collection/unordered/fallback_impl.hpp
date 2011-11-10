@@ -22,19 +22,17 @@
 
 namespace std {
 
-  template<typename K, typename V, typename H = int>
-  class unordered_map : public std::map<K, V> {
-    typedef std::map<K, V> super;
+  template<typename K, typename T, typename H = int>
+  class unordered_map : public std::map<K, T> {
+    typedef std::map<K, T> super;
   public:
-    typedef typename super::data_type mapped_type;
-    unordered_map() : super() {}
+    typedef T data_type;
   };
 
   template<typename K, typename H = int>
   class unordered_set : public std::set<K> {
     typedef std::set<K> super;
   public:
-    unordered_set() : super() {}
   };
 
 }

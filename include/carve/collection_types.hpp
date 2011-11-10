@@ -20,22 +20,22 @@
 
 #include <carve/carve.hpp>
 
-#include <carve/polyhedron_base.hpp>
+#include <carve/mesh.hpp>
 
 namespace carve {
   namespace csg {
 
     typedef std::pair<
-      const carve::poly::Geometry<3>::vertex_t *,
-      const carve::poly::Geometry<3>::vertex_t *> V2;
+      carve::mesh::MeshSet<3>::vertex_t *,
+      carve::mesh::MeshSet<3>::vertex_t *> V2;
 
     typedef std::pair<
-      const carve::poly::Geometry<3>::face_t *,
-      const carve::poly::Geometry<3>::face_t *> F2;
+      carve::mesh::MeshSet<3>::face_t *,
+      carve::mesh::MeshSet<3>::face_t *> F2;
 
     static inline V2 ordered_edge(
-      const carve::poly::Geometry<3>::vertex_t *a,
-      const carve::poly::Geometry<3>::vertex_t *b) {
+      carve::mesh::MeshSet<3>::vertex_t *a,
+      carve::mesh::MeshSet<3>::vertex_t *b) {
       return V2(std::min(a, b), std::max(a, b));
     }
 
@@ -50,17 +50,14 @@ namespace carve {
     // lib/intersect_classify_simple.cpp
     // lib/intersect_face_division.cpp lib/intersect_group.cpp
     // lib/intersect_half_classify_group.cpp
-    typedef std::unordered_set<
-      V2,
-      carve::poly::hash_vertex_ptr> V2Set;
+    typedef std::unordered_set<V2> V2Set;
 
     // include/carve/csg.hpp include/carve/polyhedron_decl.hpp
     // lib/csg_collector.cpp lib/intersect.cpp
     // lib/intersect_common.hpp lib/intersect_face_division.cpp
     // lib/polyhedron.cpp
     typedef std::unordered_map<
-      const carve::poly::Geometry<3>::vertex_t *,
-      const carve::poly::Geometry<3>::vertex_t *,
-      carve::poly::hash_vertex_ptr> VVMap;
+      carve::mesh::MeshSet<3>::vertex_t *,
+      carve::mesh::MeshSet<3>::vertex_t *> VVMap;
   }
 }

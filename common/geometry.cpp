@@ -22,9 +22,10 @@
 #include "geometry.hpp"
 #include <carve/input.hpp>
 
-carve::poly::Polyhedron *makeCube(const carve::math::Matrix &transform) {
+carve::mesh::MeshSet<3> *makeCube(
+    const carve::math::Matrix &transform) {
   carve::input::PolyhedronData data;
-  
+
   data.addVertex(transform * carve::geom::VECTOR(+1.0, +1.0, +1.0));
   data.addVertex(transform * carve::geom::VECTOR(-1.0, +1.0, +1.0));
   data.addVertex(transform * carve::geom::VECTOR(-1.0, -1.0, +1.0));
@@ -41,15 +42,19 @@ carve::poly::Polyhedron *makeCube(const carve::math::Matrix &transform) {
   data.addFace(2, 6, 7, 3);
   data.addFace(3, 7, 4, 0);
 
-  return new carve::poly::Polyhedron(data.points, data.getFaceCount(), data.faceIndices);
+  return new carve::mesh::MeshSet<3>(data.points, data.getFaceCount(), data.faceIndices);
 }
 
 static bool _all(int x, int y, int z) {
   return true;
 }
 
-carve::poly::Polyhedron *makeSubdividedCube(int sub_x, int sub_y, int sub_z,
-                               bool (*inc)(int, int, int), const carve::math::Matrix &transform) {
+carve::mesh::MeshSet<3> *makeSubdividedCube(
+    int sub_x,
+    int sub_y,
+    int sub_z,
+    bool (*inc)(int, int, int),
+    const carve::math::Matrix &transform) {
   carve::input::PolyhedronData data;
 
   if (inc == NULL) inc = _all;
@@ -88,15 +93,16 @@ carve::poly::Polyhedron *makeSubdividedCube(int sub_x, int sub_y, int sub_z,
         if (!OK(_x, _y + 1, _z) || !inc(_x, _y + 1, _z)) FACE(2, 6, 7, 3);
         if (!OK(_x, _y, _z - 1) || !inc(_x, _y, _z - 1)) FACE(0, 1, 2, 3);
         if (!OK(_x, _y, _z + 1) || !inc(_x, _y, _z + 1)) FACE(7, 6, 5, 4);
-        
+
       }
     }
   }
 
-  return data.create();
+  return data.createMesh();
 }
 
-carve::poly::Polyhedron *makeDoubleCube(const carve::math::Matrix &transform) {
+carve::mesh::MeshSet<3> *makeDoubleCube(
+    const carve::math::Matrix &transform) {
   carve::input::PolyhedronData data;
   data.addVertex(transform * carve::geom::VECTOR(-1.0, -1.0, -0.5));
   data.addVertex(transform * carve::geom::VECTOR(-1.0, -1.0, +0.5));
@@ -133,15 +139,16 @@ carve::poly::Polyhedron *makeDoubleCube(const carve::math::Matrix &transform) {
   data.addFace(13, 11, 10, 12);
   data.addFace(9, 13, 12, 8);
   data.addFace(7, 9, 8, 6);
- 
-  return data.create();
+
+  return data.createMesh();
 }
 
-carve::poly::Polyhedron *makeTorus(int slices,
-                                   int rings,
-                                   double rad1,
-                                   double rad2,
-                                   const carve::math::Matrix &transform) {
+carve::mesh::MeshSet<3> *makeTorus(
+    int slices,
+    int rings,
+    double rad1,
+    double rad2,
+    const carve::math::Matrix &transform) {
   carve::input::PolyhedronData data;
   data.reserveVertices(slices * rings);
 
@@ -170,13 +177,14 @@ carve::poly::Polyhedron *makeTorus(int slices,
   }
 #undef V
 
-  return data.create();
+  return data.createMesh();
 }
 
-carve::poly::Polyhedron *makeCylinder(int slices, 
-                                      double rad, 
-                                      double height, 
-                                      const carve::math::Matrix &transform) {
+carve::mesh::MeshSet<3> *makeCylinder(
+    int slices,
+    double rad,
+    double height,
+    const carve::math::Matrix &transform) {
   carve::input::PolyhedronData data;
   data.reserveVertices(slices * 2 + 2);
 
@@ -209,13 +217,14 @@ carve::poly::Polyhedron *makeCylinder(int slices,
                  3 + ((i+1) % slices) * 2);
   }
 
-  return data.create();
+  return data.createMesh();
 }
 
-carve::poly::Polyhedron *makeCone(int slices, 
-                                  double rad, 
-                                  double height, 
-                                  const carve::math::Matrix &transform) {
+carve::mesh::MeshSet<3> *makeCone(
+    int slices,
+    double rad,
+    double height,
+    const carve::math::Matrix &transform) {
   carve::input::PolyhedronData data;
   data.reserveVertices(slices + 2);
 
@@ -240,5 +249,5 @@ carve::poly::Polyhedron *makeCone(int slices,
                  2 + ((i+1) % slices));
   }
 
-  return data.create();
+  return data.createMesh();
 }
