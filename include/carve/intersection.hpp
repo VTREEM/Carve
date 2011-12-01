@@ -48,7 +48,6 @@ namespace carve {
        */
       void record(IObj a, IObj b, vertex_t *p) {
         if (a > b) std::swap(a, b);
-        std::cerr << "INTERSECT(" << a.typeChar() << b.typeChar() << ") -> " << p->v << std::endl;
         (*this)[a][b] = p;
         (*this)[b][a] = p;
       }
