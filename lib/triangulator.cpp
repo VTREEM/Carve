@@ -741,6 +741,10 @@ bool testCandidateAttachment(const std::vector<std::vector<carve::geom2d::P2> > 
     return false;
   }
 
+  if (hole_min == pvert(poly, current_f_loop[curr])) {
+    return true;
+  }
+
   carve::geom2d::LineSegment2 test(hole_min, pvert(poly, current_f_loop[curr]));
 
   size_t v1 = current_f_loop.size() - 1;
@@ -757,8 +761,7 @@ bool testCandidateAttachment(const std::vector<std::vector<carve::geom2d::P2> > 
       if (pvert(poly, current_f_loop[v1]) != pvert(poly, current_f_loop[curr]) &&
           pvert(poly, current_f_loop[v2]) != pvert(poly, current_f_loop[curr])) {
         carve::geom2d::LineSegment2 test2(pvert(poly, current_f_loop[v1]), pvert(poly, current_f_loop[v2]));
-        carve::LineIntersectionClass ic = carve::geom2d::lineSegmentIntersection(test, test2).iclass;
-        if (ic > 0) {
+        if (carve::geom2d::lineSegmentIntersection_simple(test, test2)) {
           // intersection; failed.
           return false;
         }
@@ -873,7 +876,7 @@ carve::triangulate::incorporateHolesIntoPolygon(
       // boundary. also, because we merge holes in ascending
       // order, it is also true that this join can never cross
       // another hole (and that doesn't need to be tested for).
-      if (pvert(poly, result[j]).v[axis] < hole_min.v[axis]) {
+      if (pvert(poly, result[j]).v[axis] <= hole_min.v[axis]) {
         f_loop_heap.push_back(j);
         std::push_heap(f_loop_heap.begin(), f_loop_heap.end(), _heap_ordering);
       }
@@ -1023,7 +1026,7 @@ carve::triangulate::incorporateHolesIntoPolygon(const std::vector<std::vector<ca
       // boundary. also, because we merge holes in ascending
       // order, it is also true that this join can never cross
       // another hole (and that doesn't need to be tested for).
-      if (pvert(poly, current_f_loop[j]).v[axis] < hole_min.v[axis]) {
+      if (pvert(poly, current_f_loop[j]).v[axis] <= hole_min.v[axis]) {
         f_loop_heap.push_back(j);
         std::push_heap(f_loop_heap.begin(), f_loop_heap.end(), _heap_ordering);
       }

@@ -513,6 +513,70 @@ namespace carve {
           return fwd;
         }
       };
+
+
+
+      template<typename project_t, typename vert_t>
+      static bool
+      testCandidateAttachment(const project_t &project,
+                              std::vector<vert_t> &current_f_loop,
+                              size_t curr,
+                              carve::geom2d::P2 hole_min) {
+        const size_t SZ = current_f_loop.size();
+
+        size_t prev, next;
+
+        if (curr == 0) {
+          prev = SZ - 1; next = 1;
+        } else if (curr == SZ - 1) {
+          prev = curr - 1; next = 0;
+        } else {
+          prev = curr - 1; next = curr + 1;
+        }
+
+        if (!carve::geom2d::internalToAngle(project(current_f_loop[next]),
+                                            project(current_f_loop[curr]),
+                                            project(current_f_loop[prev]),
+                                            hole_min)) {
+          return false;
+        }
+
+        if (hole_min == project(current_f_loop[curr])) {
+          return true;
+        }
+
+        carve::geom2d::LineSegment2 test(hole_min, project(current_f_loop[curr]));
+
+        size_t v1 = current_f_loop.size() - 1;
+        size_t v2 = 0;
+        double v1_side = carve::geom2d::orient2d(test.v1, test.v2, project(current_f_loop[v1]));
+        double v2_side = 0;
+
+        while (v2 != current_f_loop.size()) {
+          v2_side = carve::geom2d::orient2d(test.v1, test.v2, project(current_f_loop[v2]));
+
+          if (v1_side != v2_side) {
+            // XXX: need to test vertices, not indices, because they may
+            // be duplicated.
+            if (project(current_f_loop[v1]) != project(current_f_loop[curr]) &&
+                project(current_f_loop[v2]) != project(current_f_loop[curr])) {
+              carve::geom2d::LineSegment2 test2(project(current_f_loop[v1]), project(current_f_loop[v2]));
+              if (carve::geom2d::lineSegmentIntersection_simple(test, test2)) {
+                // intersection; failed.
+                return false;
+              }
+            }
+          }
+
+          v1 = v2;
+          v1_side = v2_side;
+          ++v2;
+        }
+        return true;
+      }
+
+
+
     }
 
 
@@ -596,8 +660,11 @@ namespace carve {
 
       // now, for each hole, find a vertex in the current polygon loop that it can be joined to.
       for (unsigned i = 0; i < h_loop_min_vertex.size(); ++i) {
+        const size_t N_f_loop = current_f_loop.size();
+
         // the index of the vertex in the hole to connect.
-        vert_iter  h_loop_connect = h_loop_min_vertex[i].second;
+        vert_iter h_loop_connect = h_loop_min_vertex[i].second;
+
         carve::geom2d::P2 hole_min = project(*h_loop_connect);
 
         f_loop_heap.clear();
@@ -605,14 +672,14 @@ namespace carve {
         // to the hole vertex by their distance to the hole vertex
         detail::heap_ordering<project_t, vert_t> _heap_ordering(project, current_f_loop, *h_loop_connect, axis);
 
-        for (size_t j = 0; j < current_f_loop.size(); ++j) {
+        for (size_t j = 0; j < N_f_loop; ++j) {
           // it is guaranteed that there exists a polygon vertex with
           // coord < the min hole coord chosen, which can be joined to
           // the min hole coord without crossing the polygon
           // boundary. also, because we merge holes in ascending
           // order, it is also true that this join can never cross
           // another hole (and that doesn't need to be tested for).
-          if (project(current_f_loop[j]).v[axis] < hole_min.v[axis]) {
+          if (project(current_f_loop[j]).v[axis] <= hole_min.v[axis]) {
             f_loop_heap.push_back(j);
             std::push_heap(f_loop_heap.begin(), f_loop_heap.end(), _heap_ordering);
           }
@@ -625,36 +692,27 @@ namespace carve {
         // joining line segment does not cross any other line segment
         // in the current polygon loop (excluding those that have the
         // vertex that we are attempting to join with as an endpoint).
+        size_t attachment_point = current_f_loop.size();
+
         while (f_loop_heap.size()) {
           std::pop_heap(f_loop_heap.begin(), f_loop_heap.end(), _heap_ordering);
           size_t curr = f_loop_heap.back();
           f_loop_heap.pop_back();
           // test the candidate join from current_f_loop[curr] to hole_min
 
-          carve::geom2d::LineSegment2 test(hole_min, project(current_f_loop[curr]));
-
-          size_t v1, v2;
-          for (v1 = current_f_loop.size() - 1, v2 = 0; v2 != current_f_loop.size(); v1 = v2++) {
-            // XXX: need to test vertices, not indices, because they may
-            // be duplicated.
-            if (current_f_loop[v1] == current_f_loop[curr] ||
-                current_f_loop[v2] == current_f_loop[curr]) continue;
-            carve::geom2d::LineSegment2 test2(project(current_f_loop[v1]), project(current_f_loop[v2]));
-            carve::LineIntersectionClass ic = carve::geom2d::lineSegmentIntersection(test, test2).iclass;
-            if (ic > 0) {
-              // intersection; failed.
-              goto intersection;
-            }
+          if (!detail::testCandidateAttachment(project, current_f_loop, curr, hole_min)) {
+            continue;
           }
 
-          detail::patchHoleIntoPolygon(current_f_loop, curr, h_loop_min_vertex[i]);
-          goto merged;
-
-        intersection:;
+          attachment_point = curr;
+          break;
         }
-        CARVE_FAIL("didn't manage to link up hole!");
 
-      merged:;
+        if (attachment_point == current_f_loop.size()) {
+          CARVE_FAIL("didn't manage to link up hole!");
+        }
+
+        detail::patchHoleIntoPolygon(current_f_loop, attachment_point, h_loop_min_vertex[i]);
       }
 
       return current_f_loop;

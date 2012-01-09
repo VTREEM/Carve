@@ -655,7 +655,10 @@ namespace {
       }
       if (face_hole_loops.size()) {
 
-        f_loops.push_back(carve::triangulate::incorporateHolesIntoPolygon(face->project, face_loops[i], face_hole_loops));
+        f_loops.push_back(carve::triangulate::incorporateHolesIntoPolygon(
+          carve::mesh::MeshSet<3>::face_t::projection_mapping(face->project),
+          face_loops[i],
+          face_hole_loops));
       } else {
         f_loops.push_back(face_loops[i]);
       }
@@ -683,6 +686,7 @@ namespace {
       }
 
       std::vector<std::pair<size_t, size_t> > result = carve::triangulate::incorporateHolesIntoPolygon(projected_poly);
+
       f_loops.push_back(std::vector<carve::mesh::MeshSet<3>::vertex_t *>());
       std::vector<carve::mesh::MeshSet<3>::vertex_t *> &out = f_loops.back();
       out.reserve(result.size());
