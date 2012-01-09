@@ -161,7 +161,7 @@ namespace carve {
     template<unsigned ndim>
     bool aabb<ndim>::completelyContains(const aabb<ndim> &other) const {
       for (unsigned i = 0; i < ndim; ++i) {
-        if (fabs(other.pos.v[i] - pos.v[i] + other.extent.v[i]) > extent.v[i]) return false;
+        if (fabs(other.pos.v[i] - pos.v[i]) + other.extent.v[i] > extent.v[i]) return false;
       }
       return true;
     }
