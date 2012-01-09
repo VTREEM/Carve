@@ -1,12 +1,7 @@
 #pragma once
 
-#include <GL/glew.h>
-
 #include <vector>
 #include <string>
-
-#include <gloop/exceptions.hpp>
-#include <gloop/surface.hpp>
 
 namespace gloop {
   class FrameBuffer {

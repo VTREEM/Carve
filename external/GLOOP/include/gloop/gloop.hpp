@@ -33,27 +33,7 @@
 #  pragma warning(disable:4201)
 #endif
 
-#include <gloop/gloopgl.hpp>
-
 #include <gloop/ref.hpp>
+#include <gloop/stringfuncs.hpp>
 #include <gloop/exceptions.hpp>
 
-#include <gloop/vector.hpp>
-#include <gloop/matrix.hpp>
-#include <gloop/quaternion.hpp>
-
-#include <gloop/texparam.hpp>
-#include <gloop/surface.hpp>
-#include <gloop/fbo.hpp>
-
-#include <gloop/shader.hpp>
-
-#include <gloop/vertexformat.hpp>
-#include <gloop/vbo.hpp>
-
-#include <gloop/radiance.hpp>
-
-#include <gloop/stringfuncs.hpp>
-
-#include <gloop/model/stream.hpp>
-#include <gloop/model/ply_format.hpp>

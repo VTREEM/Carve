@@ -75,9 +75,15 @@ namespace gloop {
       float v[3];
     };
     
-    V3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
-    V3() : x(0.0f), y(0.0f), z(0.0f) { }
-    V3(const float *_v) { memcpy(v, _v, sizeof(v)); }
+    static V3 mk(float _x, float _y, float _z) {
+      V3 v; v.x = _x; v.y = _y; v.z = _z; return v;
+    }
+    static V3 mk(const float *_v) {
+      V3 v; std::copy(_v, _v + 3, v.v); return v;
+    }
+    static V3 zero() {
+      V3 v; v.x = v.y = v.z = 0.0; return v;
+    }
   };
 
   static inline V3 &operator+=(V3 &a, const V3 &b) { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
@@ -94,7 +100,7 @@ namespace gloop {
 
   static inline float dot(const V3 &a, const V3 &b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
   static inline V3 cross(const V3 &a, const V3 &b) {
-    return V3(+(a.y * b.z - a.z * b.y), -(a.x * b.z - a.z * b.x), +(a.x * b.y - a.y * b.x));
+    return V3::mk(+(a.y * b.z - a.z * b.y), -(a.x * b.z - a.z * b.x), +(a.x * b.y - a.y * b.x));
   }
 
 
@@ -107,9 +113,15 @@ namespace gloop {
       float v[4];
     };
 
-    V4(float _x, float _y, float _z, float _w = 1.0f) : x(_x), y(_y), z(_z), w(_w) { }
-    V4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) { }
-    V4(const float *_v) { memcpy(v, _v, sizeof(v)); }
+    static V4 mk(float _x, float _y, float _z, float _w = 1.0f) {
+      V4 v; v.x = _x; v.y = _y; v.z = _z; v.w = _w; return v;
+    }
+    static V4 mk(const float *_v) {
+      V4 v; std::copy(_v, _v + 4, v.v); return v;
+    }
+    static V4 zero() {
+      V4 v; v.x = v.y = v.z = v.w = 0.0f; return v;
+    }
   };
 
   static inline V4 &operator+=(V4 &a, const V4 &b) { a.x += b.x; a.y += b.y; a.z += b.z; a.w += b.w; return a; }

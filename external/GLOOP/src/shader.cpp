@@ -27,7 +27,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <gloop/shader.hpp>
+#include <gloop/gloop.hpp>
+#include <gloop/gloop-math.hpp>
+#include <gloop/gloop-gl.hpp>
 
 namespace gloop {
 

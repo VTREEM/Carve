@@ -27,8 +27,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <gloop/quaternion.hpp>
-#include <gloop/matrix.hpp>
+#include <gloop/gloop.hpp>
+#include <gloop/gloop-math.hpp>
 
 #include <math.h>
 #include <float.h>
@@ -36,16 +36,16 @@
 namespace gloop {
 
   QUAT::operator M3() {
-    return M3(1 - 2*y*y - 2*z*z,     2*x*y - 2*z*w,     2*x*z + 2*y*w,  
-                  2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z,     2*y*z - 2*x*w,  
-                  2*x*z - 2*y*w,     2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y);  
+    return M3::mk(1 - 2*y*y - 2*z*z,     2*x*y - 2*z*w,     2*x*z + 2*y*w,  
+                      2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z,     2*y*z - 2*x*w,  
+                      2*x*z - 2*y*w,     2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y);  
   }
 
   QUAT::operator M4() {
-    return M4(1 - 2*y*y - 2*z*z,     2*x*y - 2*z*w,     2*x*z + 2*y*w, 0.0,
-                  2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z,     2*y*z - 2*x*w, 0.0,
-                  2*x*z - 2*y*w,     2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y, 0.0,
-              0.0,               0.0,               0.0,               1.0);
+    return M4::mk(1 - 2*y*y - 2*z*z,     2*x*y - 2*z*w,     2*x*z + 2*y*w, 0.0,
+                      2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z,     2*y*z - 2*x*w, 0.0,
+                      2*x*z - 2*y*w,     2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y, 0.0,
+                  0.0,               0.0,               0.0,               1.0);
   }
 
   QUAT QUAT::slerp(const QUAT &a, const QUAT &b, float t) {

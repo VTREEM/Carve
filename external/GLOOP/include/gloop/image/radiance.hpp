@@ -47,27 +47,24 @@
 #include <vector>
 #include <string>
 
-#include "vector.hpp"
-#include "matrix.hpp"
-
 #ifdef  NTSC
-#  define  CIE_x_r                0.670 // standard NTSC primaries
-#  define  CIE_y_r                0.330
-#  define  CIE_x_g                0.210
-#  define  CIE_y_g                0.710
-#  define  CIE_x_b                0.140
-#  define  CIE_y_b                0.080
-#  define  CIE_x_w                0.3333 // use true white
-#  define  CIE_y_w                0.3333
+#  define  CIE_x_r                0.670f // standard NTSC primaries
+#  define  CIE_y_r                0.330f
+#  define  CIE_x_g                0.210f
+#  define  CIE_y_g                0.710f
+#  define  CIE_x_b                0.140f
+#  define  CIE_y_b                0.080f
+#  define  CIE_x_w                0.3333f // use true white
+#  define  CIE_y_w                0.3333f
 #else
-#  define  CIE_x_r                0.640 // nominal CRT primaries
-#  define  CIE_y_r                0.330
-#  define  CIE_x_g                0.290
-#  define  CIE_y_g                0.600
-#  define  CIE_x_b                0.150
-#  define  CIE_y_b                0.060
-#  define  CIE_x_w                0.3333 // use true white
-#  define  CIE_y_w                0.3333
+#  define  CIE_x_r                0.640f // nominal CRT primaries
+#  define  CIE_y_r                0.330f
+#  define  CIE_x_g                0.290f
+#  define  CIE_y_g                0.600f
+#  define  CIE_x_b                0.150f
+#  define  CIE_y_b                0.060f
+#  define  CIE_x_w                0.3333f // use true white
+#  define  CIE_y_w                0.3333f
 #endif
 
 
@@ -96,7 +93,7 @@ namespace gloop {
   struct chromacity {
     static const chromacity stdprims;
     V2 r, g, b, w;
-    
+
     M3 xyz_to_rgb() const;
     M3 rgb_to_xyz() const;
 
@@ -104,11 +101,11 @@ namespace gloop {
 
 
 
-  static inline double bright(const V3 &col) {
+  static inline float bright(const V3 &col) {
     return CIE_rf * col.r + CIE_gf * col.g + CIE_bf * col.b;
   }
 
-  static inline double luminance(const V3 &col) {
+  static inline float luminance(const V3 &col) {
     return WHTEFFICACY * bright(col);
   }
 
@@ -151,11 +148,11 @@ namespace gloop {
     
     V3 unpack() const {
       if (e) {
-        return V3(ldexp(r + 0.5f, (int)e - (excess + 8)),
-                  ldexp(g + 0.5f, (int)e - (excess + 8)),
-                  ldexp(b + 0.5f, (int)e - (excess + 8)));
+        return V3::mk(ldexp(r + 0.5f, (int)e - (excess + 8)),
+                      ldexp(g + 0.5f, (int)e - (excess + 8)),
+                      ldexp(b + 0.5f, (int)e - (excess + 8)));
       } else {
-        return V3(0.0f, 0.0f, 0.0f);
+        return V3::zero();
       }
     }
 

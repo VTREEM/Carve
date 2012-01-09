@@ -27,10 +27,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <gloop/model/stream.hpp>
-#include <gloop/stringfuncs.hpp>
+#include <gloop/gloop.hpp>
+#include <gloop/gloop-model.hpp>
 
 #ifdef WIN32
+
+#include <iterator>
 
 #include <stdarg.h>
 

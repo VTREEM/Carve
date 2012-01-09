@@ -28,11 +28,7 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <gloop/gloop.hpp>
-#include <gloop/model/stream.hpp>
-#include <gloop/model/vtk_format.hpp>
-#include <gloop/stringfuncs.hpp>
-#include <gloop/exceptions.hpp>
-#include <gloop/vector.hpp>
+#include <gloop/gloop-model.hpp>
 
 #include <iterator>
 #include <iostream>
@@ -308,21 +304,20 @@ namespace gloop {
     }
 
     bool VtkReader::readXML(std::istream & /* in */) {
-	  return false;
+      // not implemented.
+      return false;
     }
 
     bool VtkReader::read(std::istream &in) {
       std::string s;
       std::getline(in, s);
-      int ver_maj, ver_min;
-      if (sscanf(s.c_str(), "# vtk DataFile Version %d.%d", &ver_maj, &ver_min) == 2) {
+      if (str::startswith(s, "# vtk DataFile")) {
         return readPlain(in);
-      } else if (s.substr(0, 5) == "<?xml") {
+      } else if (str::startswith(s, "<?xml")) {
         return readXML(in);
-        // try xml format.
       } else {
-        return false;
         // not a vtk file
+        return false;
       }
     }
 
@@ -339,9 +334,9 @@ namespace gloop {
       out << "Carve output" << std::endl;
       out << "ASCII" << std::endl;
 
-      for (std::list<std::pair<std::string, stream::block_t> >::iterator i = blocks.begin(); i != blocks.end(); ++i) {
-        // std::string &blockname = (*i).first;
-        stream::block_t &block = (*i).second;
+      for (std::list<std::pair<std::string, stream::block_t> >::iterator blk = blocks.begin(); blk != blocks.end(); ++blk) {
+        // std::string &blockname = (*blk).first;
+        stream::block_t &block = (*blk).second;
         if (block.name == "polyhedron") {
           if (block.wt != NULL) block.wt->begin();
 

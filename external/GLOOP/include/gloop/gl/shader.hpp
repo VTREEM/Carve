@@ -29,17 +29,11 @@
 
 #pragma once
 
-#include <gloop/gloopgl.hpp>
-
 #include <string>
 #include <list>
 #include <sstream>
 #include <istream>
 #include <iterator>
-
-#include "ref.hpp"
-#include "exceptions.hpp"
-#include "surface.hpp"
 
 namespace gloop {
 

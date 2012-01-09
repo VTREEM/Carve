@@ -27,8 +27,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <gloop/radiance.hpp>
-#include <gloop/exceptions.hpp>
+#include <gloop/gloop.hpp>
+#include <gloop/gloop-math.hpp>
+#include <gloop/gloop-image.hpp>
+
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
@@ -42,33 +44,38 @@ namespace gloop {
     V2(CIE_x_w,CIE_y_w)
   };
 
-  static inline bool eq(float a, float b, float epsilon) { return fabs(a - b) < epsilon; }
-  static inline bool zero(float a, float epsilon) { return fabs(a) < epsilon; }
+  static inline bool eq(float a, float b, float epsilon) {
+    return fabsf(a - b) < epsilon;
+  }
+
+  static inline bool zero(float a, float epsilon) {
+    return fabsf(a) < epsilon;
+  }
 
   M3 chromacity::xyz_to_rgb() const {
-    double  C_rD, C_gD, C_bD;
+    float C_rD, C_gD, C_bD;
 
-    if (zero(w.x, 1e-4) | zero(w.y, 1e-4))
+    if (zero(w.x, 1e-4f) || zero(w.y, 1e-4f))
       throw std::runtime_error("bad chromacity primaries");
 
     C_rD = (1.0f / w.y) * (w.x * (g.y - b.y) - w.y * (g.x - b.x) + g.x * b.y - b.x * g.y);
     C_gD = (1.0f / w.y) * (w.x * (b.y - r.y) - w.y * (b.x - r.x) - r.x * b.y + b.x * r.y);
     C_bD = (1.0f / w.y) * (w.x * (r.y - g.y) - w.y *(r.x - g.x) + r.x * g.y - g.x * r.y);
 
-    if (zero(C_rD, 1e-4) || zero(C_gD, 1e-4) || zero(C_bD, 1e-4))
+    if (zero(C_rD, 1e-4f) || zero(C_gD, 1e-4f) || zero(C_bD, 1e-4f))
       throw std::runtime_error("bad chromacity primaries");
 
-    return M3((g.y - b.y - b.x * g.y + b.y * g.x) / C_rD, (b.x - g.x - b.x * g.y + g.x * b.y) / C_rD, (g.x * b.y - b.x * g.y) / C_rD,
-              (b.y - r.y - b.y * r.x + r.y * b.x) / C_gD, (r.x - b.x - r.x * b.y + b.x * r.y) / C_gD, (b.x * r.y - r.x * b.y) / C_gD,
-              (r.y - g.y - r.y * g.x + g.y * r.x) / C_bD, (g.x - r.x - g.x * r.y + r.x * g.y) / C_bD, (r.x * g.y - g.x * r.y) / C_bD);
+    return M3::mk((g.y - b.y - b.x * g.y + b.y * g.x) / C_rD, (b.x - g.x - b.x * g.y + g.x * b.y) / C_rD, (g.x * b.y - b.x * g.y) / C_rD,
+                  (b.y - r.y - b.y * r.x + r.y * b.x) / C_gD, (r.x - b.x - r.x * b.y + b.x * r.y) / C_gD, (b.x * r.y - r.x * b.y) / C_gD,
+                  (r.y - g.y - r.y * g.x + g.y * r.x) / C_bD, (g.x - r.x - g.x * r.y + r.x * g.y) / C_bD, (r.x * g.y - g.x * r.y) / C_bD);
   }
 
 
 
   M3 chromacity::rgb_to_xyz() const {
-    double  C_rD, C_gD, C_bD, D;
+    float C_rD, C_gD, C_bD, D;
 
-    if (zero(w.x, 1e-4) | zero(w.y, 1e-4))
+    if (zero(w.x, 1e-4f) | zero(w.y, 1e-4f))
       throw std::runtime_error("bad chromacity primaries");
 
     C_rD = (1.0f / w.y) * (w.x * (g.y - b.y) - w.y * (g.x - b.x) + g.x * b.y - b.x * g.y);
@@ -76,18 +83,18 @@ namespace gloop {
     C_bD = (1.0f / w.y) * (w.x * (r.y - g.y) - w.y * (r.x - g.x) + r.x * g.y - g.x * r.y);
     D = r.x * (g.y - b.y) + g.x * (b.y - r.y) + b.x * (r.y - g.y);
 
-    if (zero(D, 1e-4))
+    if (zero(D, 1e-4f))
       throw std::runtime_error("bad chromacity primaries");
     
-    return M3(               r.x * C_rD / D,                g.x * C_gD / D,                b.x * C_bD / D,
-                            r.y * C_rD / D,                g.y * C_gD / D,                b.y * C_bD / D,
-              (1.0f - r.x - r.y) * C_rD / D, (1.0f - g.x - g.y) * C_gD / D, (1.0f - b.x - b.y) * C_bD / D);
+    return M3::mk(               r.x * C_rD / D,                g.x * C_gD / D,                b.x * C_bD / D,
+                                 r.y * C_rD / D,                g.y * C_gD / D,                b.y * C_bD / D,
+                  (1.0f - r.x - r.y) * C_rD / D, (1.0f - g.x - g.y) * C_gD / D, (1.0f - b.x - b.y) * C_bD / D);
   }
 
 
 
-  const V3 WHITE(1.0, 1.0, 1.0);
-  const V3 BLACK(0.0, 0.0, 0.0);
+  const V3 WHITE(V3::mk(1.0f, 1.0f, 1.0f));
+  const V3 BLACK(V3::mk(0.0f, 0.0f, 0.0f));
 
   const M3 RGB_to_XYZ(chromacity::stdprims.rgb_to_xyz());
   const M3 XYZ_to_RGB(chromacity::stdprims.xyz_to_rgb());
@@ -108,7 +115,7 @@ namespace gloop {
       if (col.g > 0.0) g = (uint8_t)(col.g * d + 0.5f);
       if (col.b > 0.0) b = (uint8_t)(col.b * d + 0.5f);
       
-      e = exp + excess;
+      e = (uint8_t)exp + excess;
     }
   }
 
@@ -157,7 +164,7 @@ namespace gloop {
     if (scanline[0].r != 2 || scanline[0].g != 2 || (scanline[0].b & 0x80))
       return read_scanline_old(in, scanline, 1);
 
-    if ((scanline[0].b << 8 | scanline[0].e) != scanline.size())
+    if ((((size_t)scanline[0].b << 8) | (size_t)scanline[0].e) != scanline.size())
       throw std::runtime_error("length mismatch");
 
     for (size_t component = 0; component < 4; component++) {
@@ -190,15 +197,14 @@ namespace gloop {
 
   void read_radiance(std::istream &in, radiance_reader &reader, bool invert_X, bool invert_Y, bool invert_Z) {
     std::string str;
-    const char *c;
     
     std::getline(in, str);
     if (str != "#?RADIANCE") throw std::runtime_error("not radiance format");
     
-    float exposure = 1.0;
-    float pixaspect = 1.0;
+    float exposure = 1.0f;
+    float pixaspect = 1.0f;
     chromacity prim = chromacity::stdprims;
-    V3 colour_correction(1.0, 1.0, 1.0);
+    V3 colour_correction(V3::mk(1.0f, 1.0f, 1.0f));
     radiance_colour_format fmt = RADIANCE_FMT_UNKNOWN;
     
     while (in.good()) {
@@ -206,37 +212,39 @@ namespace gloop {
       if (str == "") break;
       if (str[0] == '#') continue;
 
-      if (sscanf(str.c_str(), "EXPOSURE= %e",
-                &exposure) == 1) continue;
+      std::string tag;
+      std::istringstream inl(str);
 
-      if (sscanf(str.c_str(), "PIXASPECT= %f",
-                &pixaspect) == 1) continue;
-
-      if (sscanf(str.c_str(), "PRIMARIES= %f %f %f %f %f %f %f %f",
-                &prim.r.x, &prim.r.y,
-                &prim.g.x, &prim.g.y,
-                &prim.b.x, &prim.b.y,
-                &prim.w.x, &prim.w.y) == 8) continue;
-
-      if (sscanf(str.c_str(), "COLORCORR= %f %f %f",
-                &colour_correction.r,
-                &colour_correction.g,
-                &colour_correction.b) == 3) continue;
-
-      if (!str.compare(0, 7, "FORMAT=", 7)) {
-        c = str.c_str() + 7;
-        while (*c && isspace(*c)) c++;
-        if (!std::strcmp(c, "32-bit_rle_rgbe")) {
+      inl >> tag;
+      if (tag == "EXPOSURE=") {
+        inl >> exposure;
+      } else if (tag == "PIXASPECT=") {
+        inl >> pixaspect;
+      } else if (tag == "PRIMARIES=") {
+        inl >>
+          prim.r.x >> prim.r.y >>
+          prim.g.x >> prim.g.y >>
+          prim.b.x >> prim.b.y >>
+          prim.w.x >> prim.w.y;
+      } else if (tag == "COLORCORR=") {
+        inl >>
+          colour_correction.r >>
+          colour_correction.g >>
+          colour_correction.b;
+      } else if (tag == "FORMAT=") {
+        std::string fmt_str;
+        inl >> fmt_str;
+        if (fmt_str == "32-bit_rle_rgbe") {
           fmt = RADIANCE_FMT_RGB;
-        } else if (!std::strcmp(c, "32-bit_rle_xyze")) {
+        } else if (fmt_str == "32-bit_rle_xyze") {
           fmt = RADIANCE_FMT_CIE;
         } else {
-          throw std::runtime_error("bad image format: " + std::string(c));
+          throw std::runtime_error("bad image format: " + fmt_str);
         }
-        continue;
       }
-
-      throw std::runtime_error("strange header line: " + str);
+      if (!in.good()) {
+        throw std::runtime_error("strange header line: " + str);
+      }
     }
     reader.header(fmt,
                   exposure,
@@ -245,33 +253,49 @@ namespace gloop {
                   colour_correction);
 
     int dim = 0;
-    char dir[3];
-    char axis[3];
+    int dir[3];
+    int axis[3];
     int size[3], curr[3];
     
     std::getline(in, str);
-    c = str.c_str();
-    for (dim = 0; *c && dim < 3; dim++) {
-      switch (c[0]) {
-        case '-': dir[dim] = -1; break;
-        case '+': dir[dim] = +1; break;
-        default: throw std::runtime_error("strange image dimensions: " + str);
-      }
-      switch (c[1]) {
-        case 'X':axis[dim] = 0; if (invert_X) dir[dim] = -dir[dim]; break;
-        case 'Y':axis[dim] = 1; if (invert_Y) dir[dim] = -dir[dim]; break;
-        case 'Z':axis[dim] = 2; if (invert_Z) dir[dim] = -dir[dim]; break;
-        default: throw std::runtime_error("strange image dimensions: " + str);
+    std::istringstream line(str);
+
+    for (dim = 0; dim < 3; dim++) {
+      int c0, c1;
+
+      do { c0 = line.get(); } while(line.good() && isspace(c0));
+
+      if (!line.good()) {
+        if (line.eof()) break;
+        throw std::runtime_error("strange image dimensions: " + str);
       }
 
-      c += 2;
-      while (*c && isspace(*c)) c++;
-    
-      if (sscanf(c, "%u", &size[dim]) != 1)
+      switch (c0) {
+        case '-': dir[dim] = -1; break;
+        case '+': dir[dim] = +1; break;
+        default:  throw std::runtime_error("strange image dimensions: " + str);
+      }
+
+      c1 = line.get();
+      if (!line.good()) {
         throw std::runtime_error("strange image dimensions: " + str);
-    
-      while (*c && !isspace(*c)) c++;
-      while (*c &&  isspace(*c)) c++;
+      }
+
+      switch (c1) {
+        case 'X': axis[dim] = 0; if (invert_X) dir[dim] = -dir[dim]; break;
+        case 'Y': axis[dim] = 1; if (invert_Y) dir[dim] = -dir[dim]; break;
+        case 'Z': axis[dim] = 2; if (invert_Z) dir[dim] = -dir[dim]; break;
+        default:  throw std::runtime_error("strange image dimensions: " + str);
+      }
+
+      line >> size[dim];
+      if (!line.good()) {
+        throw std::runtime_error("strange image dimensions: " + str);
+      }
+    }
+
+    if (dim == 0) {
+      throw std::runtime_error("0-dimensional image");
     }
 
     int s[3];
@@ -306,7 +330,7 @@ namespace gloop {
 
 
 
-  struct floatbuf_iter {
+  struct floatbuf_iter : public std::iterator<std::forward_iterator_tag, V3> {
     float *p;
     unsigned s;
     
@@ -322,10 +346,10 @@ namespace gloop {
 
 
 
-  struct floatbuf_iter_cvt {
+  struct floatbuf_iter_cvt : public std::iterator<std::forward_iterator_tag, V3> {
     float *p;
     unsigned s;
-    M3 &cvt;
+    M3 cvt;
     
     floatbuf_iter_cvt(int scan_axis, int X, int Y, int Z, floatbuf_radiance_reader *tgt) : cvt(tgt->cvt) {
       p = tgt->pixel(X, Y, Z);
@@ -344,10 +368,10 @@ namespace gloop {
   }
 
   void floatbuf_radiance_reader::header(radiance_colour_format fmt,
-                                        float exposure,
-                                        float pixaspect,
+                                        float /* exposure */,
+                                        float /* pixaspect */,
                                         chromacity prim,
-                                        V3 colour_correction) {
+                                        V3 /* colour_correction */) {
     if (fmt == RADIANCE_FMT_CIE) {
       cvt = prim.xyz_to_rgb();
     }

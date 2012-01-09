@@ -27,7 +27,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <gloop/surface.hpp>
+#include <gloop/gloop.hpp>
+#include <gloop/gloop-math.hpp>
+#include <gloop/gloop-gl.hpp>
 
 namespace gloop {
 
@@ -157,18 +159,20 @@ namespace gloop {
     if (gl_id > 0) {
       throw std::runtime_error("Already initialized");
     }
-    
+
     switch (desc.surface_type) {
-      case SURF_NONE:
-        throw std::invalid_argument("SURF_NONE");
-      case SURF_COLOUR:
-        if (!desc.is_texture) return throw std::invalid_argument("Colour buffers must be textures");
-        break;
-      case SURF_STENCIL:
-        if (desc.is_texture) return throw std::invalid_argument("Stencil buffers must not be textures");
-        break;
+    case SURF_NONE:
+      throw std::invalid_argument("SURF_NONE");
+    case SURF_COLOUR:
+      if (!desc.is_texture) return throw std::invalid_argument("Colour buffers must be textures");
+      break;
+    case SURF_DEPTH:
+    case SURF_STENCIL:
+    case SURF_DEPTH_STENCIL:
+      if (desc.is_texture) return throw std::invalid_argument("Stencil and depth buffers must not be textures");
+      break;
     }
-    
+
     if (desc.is_texture) {
       if (desc.gl_tgt != GL_TEXTURE_RECTANGLE_ARB) {
         P2(w); P2(h); P2(d);

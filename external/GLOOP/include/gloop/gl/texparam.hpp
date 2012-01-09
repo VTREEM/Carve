@@ -29,10 +29,6 @@
 
 #pragma once
 
-#include <gloop/gloopgl.hpp>
-
-#include "exceptions.hpp"
-
 namespace gloop {
 
   struct TextureParam {

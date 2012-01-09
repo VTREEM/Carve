@@ -29,34 +29,13 @@
 
 #pragma once
 
-#include <gloop/gloopgl.hpp>
+#include <gloop/gl.hpp>
 
-#include <gloop/vector.hpp>
+#include <gloop/gl/texparam.hpp>
+#include <gloop/gl/surface.hpp>
+#include <gloop/gl/fbo.hpp>
 
-#include <stddef.h>
+#include <gloop/gl/shader.hpp>
 
-namespace gloop {
-
-  namespace vf {
-    struct V3F_N3F {
-      typedef V3F_N3F self;
-      
-      V3 v, n;
-      
-      static inline void install() {
-        const static void *_off_v = (const void *)offsetof(self, v);
-        const static void *_off_n = (const void *)offsetof(self, n);
-        glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT, sizeof(self), _off_n);
-        
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, sizeof(self), _off_v);
-      }
-      static inline void uninstall() {
-        glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_NORMAL_ARRAY);
-      }
-    };
-  };
-
-}
+#include <gloop/gl/vertexformat.hpp>
+#include <gloop/gl/vbo.hpp>

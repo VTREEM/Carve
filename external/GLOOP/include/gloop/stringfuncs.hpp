@@ -5,6 +5,9 @@
 
 #include <string>
 #include <sstream>
+#include <vector>
+#include <locale>
+
 namespace gloop {
   namespace str {
 
@@ -68,7 +71,8 @@ namespace gloop {
         const std::basic_string<_CharT, _Traits, _Alloc> &a) {
       typedef std::basic_string<_CharT, _Traits, _Alloc> str_t;
       typename str_t::size_type p = a.size();
-      while (p && isspace(a[p-1])) p--;
+      std::locale loc;
+      while (p && std::isspace(a[p-1], loc)) p--;
       if (!p) return "";
       return a.substr(0, p);
     }
@@ -88,7 +92,8 @@ namespace gloop {
         const std::basic_string<_CharT, _Traits, _Alloc> &a) {
       typedef std::basic_string<_CharT, _Traits, _Alloc> str_t;
       typename str_t::size_type p = 0;
-      while (p < a.size() && isspace(a[p])) p++;
+      std::locale loc;
+      while (p < a.size() && std::isspace(a[p], loc)) p++;
       if (p == a.size()) return "";
       return a.substr(p);
     }
@@ -109,10 +114,11 @@ namespace gloop {
         const std::basic_string<_CharT, _Traits, _Alloc> &a) {
       typedef std::basic_string<_CharT, _Traits, _Alloc> str_t;
       typename str_t::size_type p = 0;
-      while (p < a.size() && isspace(a[p])) p++;
+      std::locale loc;
+      while (p < a.size() && std::isspace(a[p], loc)) p++;
       if (p == a.size()) return "";
       typename str_t::size_type q = a.size();
-      while (q>p && isspace(a[q-1])) q--;
+      while (q>p && std::isspace(a[q-1], loc)) q--;
       return a.substr(p, q-p);
     }
     
@@ -146,20 +152,21 @@ namespace gloop {
         _OutputIter iter,
         const std::basic_string<_CharT, _Traits, _Alloc> &s,
         int nsplits = -1) {
+      std::locale loc;
       typedef std::basic_string<_CharT, _Traits, _Alloc> str_t;
 
       int x = 0, rx = 0;
 
       int y = (int)s.size() - 1;
-      while (isspace(s[x])) x++;
+      while (std::isspace(s[x], loc)) x++;
       rx = x;
-      while (y >= 0 && isspace(s[y])) y--;
+      while (y >= 0 && std::isspace(s[y], loc)) y--;
       y++;
 
       while (x < y) {
-        if (isspace(s[x])) {
+        if (std::isspace(s[x], loc)) {
           *iter++ = str_t(s, rx, x - rx);
-          while (x < y && isspace(s[x])) x++;
+          while (x < y && std::isspace(s[x], loc)) x++;
           rx = x;
           if (!--nsplits) {
             *iter++ = str_t(s, rx);

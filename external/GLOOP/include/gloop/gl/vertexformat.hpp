@@ -27,10 +27,32 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <gloop/gloop.hpp>
-#include <gloop/gloop-math.hpp>
-#include <gloop/gloop-gl.hpp>
+#pragma once
+
+#include <stddef.h>
 
 namespace gloop {
+
+  namespace vf {
+    struct V3F_N3F {
+      typedef V3F_N3F self;
+      
+      V3 v, n;
+      
+      static inline void install() {
+        const static void *_off_v = (const void *)offsetof(self, v);
+        const static void *_off_n = (const void *)offsetof(self, n);
+        glEnableClientState(GL_NORMAL_ARRAY);
+        glNormalPointer(GL_FLOAT, sizeof(self), _off_n);
+        
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(3, GL_FLOAT, sizeof(self), _off_v);
+      }
+      static inline void uninstall() {
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_NORMAL_ARRAY);
+      }
+    };
+  };
 
 }

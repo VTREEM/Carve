@@ -32,12 +32,6 @@
 #include <vector>
 #include <map>
 
-#include <gloop/gloopgl.hpp>
-
-#include <gloop/exceptions.hpp>
-#include <gloop/texparam.hpp>
-#include <gloop/ref.hpp>
-
 namespace gloop {
 
   static inline void P2(unsigned &x) {

@@ -27,10 +27,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <gloop/model/stream.hpp>
-#include <gloop/model/ply_format.hpp>
-#include <gloop/stringfuncs.hpp>
-#include <gloop/exceptions.hpp>
+#include <gloop/gloop.hpp>
+#include <gloop/gloop-model.hpp>
 
 #include <iostream>
 #include <stdarg.h>
@@ -60,21 +58,18 @@ namespace {
     return _typestr[t];
   }
 
-  int strtype(const char *s) {
-    if (s[0] == 'u') {
-      if (!std::strcmp(s, "uchar"  ) || !std::strcmp(s, "uint8"  )) return gloop::stream::U8;
-      if (!std::strcmp(s, "ushort" ) || !std::strcmp(s, "uint16" )) return gloop::stream::U16;
-      if (!std::strcmp(s, "uint"   ) || !std::strcmp(s, "uint32" )) return gloop::stream::U32;
-    } else if (s[0] == 'i') {
-      if (!std::strcmp(s, "int8"   )                              ) return gloop::stream::I8;
-      if (!std::strcmp(s, "int16"  )                              ) return gloop::stream::I16;
-      if (!std::strcmp(s, "int"    ) || !std::strcmp(s, "int32"  )) return gloop::stream::I32;
-    } else {
-      if (!std::strcmp(s, "char"   )                              ) return gloop::stream::I8;
-      if (!std::strcmp(s, "short"  )                              ) return gloop::stream::I16;
-      if (!std::strcmp(s, "float"  ) || !std::strcmp(s, "float32")) return gloop::stream::F32;
-      if (!std::strcmp(s, "double" ) || !std::strcmp(s, "float64")) return gloop::stream::F64;
-    }
+  int strtype(const std::string &s) {
+    if (s == "uchar"  || s == "uint8"  ) return gloop::stream::U8;
+    if (s == "ushort" || s == "uint16" ) return gloop::stream::U16;
+    if (s == "uint"   || s == "uint32" ) return gloop::stream::U32;
+    if (s == "int8"                    ) return gloop::stream::I8;
+    if (s == "int16"                   ) return gloop::stream::I16;
+    if (s == "int"    || s == "int32"  ) return gloop::stream::I32;
+    if (s == "char"                    ) return gloop::stream::I8;
+    if (s == "short"                   ) return gloop::stream::I16;
+    if (s == "float"  || s == "float32") return gloop::stream::F32;
+    if (s == "double" || s == "float64") return gloop::stream::F64;
+
     return -1;
   }
 
@@ -149,95 +144,151 @@ namespace {
     }
   }
 
+  template<typename U, typename T>
+  inline void _read(const char *mem, bool byteswap, T &out) {
+    U c;
+    _copy((char *)&c, mem, sizeof(U), byteswap);
+    out = T(c);
+  }
+
   template<typename T>
   inline void _read(const char *mem, bool byteswap, int type, T &out) {
     switch (type) {
-    case gloop::stream::I8:  { int8_t   c; _copy((char *)&c, mem, sizeof(c), byteswap); out = (T)c; return; }
-    case gloop::stream::U8:  { uint8_t  c; _copy((char *)&c, mem, sizeof(c), byteswap); out = (T)c; return; }
-    case gloop::stream::I16: { int16_t  c; _copy((char *)&c, mem, sizeof(c), byteswap); out = (T)c; return; }
-    case gloop::stream::U16: { uint16_t c; _copy((char *)&c, mem, sizeof(c), byteswap); out = (T)c; return; }
-    case gloop::stream::I32: { int32_t  c; _copy((char *)&c, mem, sizeof(c), byteswap); out = (T)c; return; }
-    case gloop::stream::U32: { uint32_t c; _copy((char *)&c, mem, sizeof(c), byteswap); out = (T)c; return; }
-    case gloop::stream::F32: { float    c; _copy((char *)&c, mem, sizeof(c), byteswap); out = (T)c; return; }
-    case gloop::stream::F64: { double   c; _copy((char *)&c, mem, sizeof(c), byteswap); out = (T)c; return; }
+    case gloop::stream::I8:  _read<  int8_t>(mem, byteswap, out); return;
+    case gloop::stream::U8:  _read< uint8_t>(mem, byteswap, out); return;
+    case gloop::stream::I16: _read< int16_t>(mem, byteswap, out); return;
+    case gloop::stream::U16: _read<uint16_t>(mem, byteswap, out); return;
+    case gloop::stream::I32: _read< int32_t>(mem, byteswap, out); return;
+    case gloop::stream::U32: _read<uint32_t>(mem, byteswap, out); return;
+    case gloop::stream::F32: _read<   float>(mem, byteswap, out); return;
+    case gloop::stream::F64: _read<  double>(mem, byteswap, out); return;
+    }
+  }
+
+  template<typename U, typename T>
+  inline void _write(char *mem, bool byteswap, const T &in) {
+    U c = U(in);
+    _copy(mem, (const char *)&c, sizeof(U), byteswap);
+  }
+
+  template<typename T>
+  inline void _write(char *mem, bool byteswap, int type, const T &in) {
+    switch (type) {
+    case gloop::stream::I8:  _write<  int8_t>(mem, byteswap, in); return;
+    case gloop::stream::U8:  _write< uint8_t>(mem, byteswap, in); return;
+    case gloop::stream::I16: _write< int16_t>(mem, byteswap, in); return;
+    case gloop::stream::U16: _write<uint16_t>(mem, byteswap, in); return;
+    case gloop::stream::I32: _write< int32_t>(mem, byteswap, in); return;
+    case gloop::stream::U32: _write<uint32_t>(mem, byteswap, in); return;
+    case gloop::stream::F32: _write<   float>(mem, byteswap, in); return;
+    case gloop::stream::F64: _write<  double>(mem, byteswap, in); return;
     }
   }
 
   template<typename T>
-  inline void _write(char *mem, bool byteswap, int type, T &in) {
-    switch (type) {
-    case gloop::stream::I8:  { int8_t   c(in); _copy(mem, (const char *)&c, sizeof(c), byteswap); return; }
-    case gloop::stream::U8:  { uint8_t  c(in); _copy(mem, (const char *)&c, sizeof(c), byteswap); return; }
-    case gloop::stream::I16: { int16_t  c(in); _copy(mem, (const char *)&c, sizeof(c), byteswap); return; }
-    case gloop::stream::U16: { uint16_t c(in); _copy(mem, (const char *)&c, sizeof(c), byteswap); return; }
-    case gloop::stream::I32: { int32_t  c(in); _copy(mem, (const char *)&c, sizeof(c), byteswap); return; }
-    case gloop::stream::U32: { uint32_t c(in); _copy(mem, (const char *)&c, sizeof(c), byteswap); return; }
-    case gloop::stream::F32: { float    c(in); _copy(mem, (const char *)&c, sizeof(c), byteswap); return; }
-    case gloop::stream::F64: { double   c(in); _copy(mem, (const char *)&c, sizeof(c), byteswap); return; }
-    }
+  inline bool prop_read(const char *mem, bool byteswap, gloop::stream::reader_base *rd) {
+    T c;
+    _copy((char *)&c, mem, sizeof(T), byteswap);
+    rd->_val(c);
+    return true;
   }
 
   bool prop_read(const char *mem, int type, bool byteswap, gloop::stream::reader_base *rd) {
     switch (type) {
-    case gloop::stream::I8:  { int8_t   c; _copy((char *)&c, mem, sizeof(c), byteswap); rd->_val(c); return true; }
-    case gloop::stream::U8:  { uint8_t  c; _copy((char *)&c, mem, sizeof(c), byteswap); rd->_val(c); return true; }
-    case gloop::stream::I16: { int16_t  c; _copy((char *)&c, mem, sizeof(c), byteswap); rd->_val(c); return true; }
-    case gloop::stream::U16: { uint16_t c; _copy((char *)&c, mem, sizeof(c), byteswap); rd->_val(c); return true; }
-    case gloop::stream::I32: { int32_t  c; _copy((char *)&c, mem, sizeof(c), byteswap); rd->_val(c); return true; }
-    case gloop::stream::U32: { uint32_t c; _copy((char *)&c, mem, sizeof(c), byteswap); rd->_val(c); return true; }
-    case gloop::stream::F32: { float    c; _copy((char *)&c, mem, sizeof(c), byteswap); rd->_val(c); return true; }
-    case gloop::stream::F64: { double   c; _copy((char *)&c, mem, sizeof(c), byteswap); rd->_val(c); return true; }
-    default:         return false;
+    case gloop::stream::I8:  return prop_read<  int8_t>(mem, byteswap, rd);
+    case gloop::stream::U8:  return prop_read< uint8_t>(mem, byteswap, rd);
+    case gloop::stream::I16: return prop_read< int16_t>(mem, byteswap, rd);
+    case gloop::stream::U16: return prop_read<uint16_t>(mem, byteswap, rd);
+    case gloop::stream::I32: return prop_read< int32_t>(mem, byteswap, rd);
+    case gloop::stream::U32: return prop_read<uint32_t>(mem, byteswap, rd);
+    case gloop::stream::F32: return prop_read<   float>(mem, byteswap, rd);
+    case gloop::stream::F64: return prop_read<  double>(mem, byteswap, rd);
+    default:                 return false;
     }
+  }
+
+  template<typename T>
+  inline bool prop_read(std::istream &in, gloop::stream::reader_base *rd) {
+    T c;
+    if (!_parse(in, c)) return false;
+    rd->_val(c);
+    return true;
   }
 
   bool prop_read(std::istream &in, int type, gloop::stream::reader_base *rd) {
     switch (type) {
-    case gloop::stream::I8:  { int8_t   c; if (!_parse(in, c)) return false; rd->_val(c); return true; }
-    case gloop::stream::I16: { int16_t  c; if (!_parse(in, c)) return false; rd->_val(c); return true; }
-    case gloop::stream::I32: { int32_t  c; if (!_parse(in, c)) return false; rd->_val(c); return true; }
-    case gloop::stream::U8:  { uint8_t  c; if (!_parse(in, c)) return false; rd->_val(c); return true; }
-    case gloop::stream::U16: { uint16_t c; if (!_parse(in, c)) return false; rd->_val(c); return true; }
-    case gloop::stream::U32: { uint32_t c; if (!_parse(in, c)) return false; rd->_val(c); return true; }
-    case gloop::stream::F32: { float    c; if (!_parse(in, c)) return false; rd->_val(c); return true; }
-    case gloop::stream::F64: { double   c; if (!_parse(in, c)) return false; rd->_val(c); return true; }
-    default:         return false;
+    case gloop::stream::I8:  return prop_read<  int8_t>(in, rd);
+    case gloop::stream::U8:  return prop_read< uint8_t>(in, rd);
+    case gloop::stream::I16: return prop_read< int16_t>(in, rd);
+    case gloop::stream::U16: return prop_read<uint16_t>(in, rd);
+    case gloop::stream::I32: return prop_read< int32_t>(in, rd);
+    case gloop::stream::U32: return prop_read<uint32_t>(in, rd);
+    case gloop::stream::F32: return prop_read<   float>(in, rd);
+    case gloop::stream::F64: return prop_read<  double>(in, rd);
+    default:
+      return false;
     }
+  }
+
+  template<typename T>
+  inline bool prop_write(char *mem, bool byteswap, gloop::stream::writer_base *wt) {
+    T c;
+    wt->_val(c);
+    _copy(mem, (const char *)&c, sizeof(c), byteswap);
+    return true;
   }
 
   bool prop_write(char *mem, int type, bool byteswap, gloop::stream::writer_base *wt) {
     switch (type) {
-    case gloop::stream::I8:  { int8_t   c; wt->_val(c); _copy(mem, (char *)&c, sizeof(c), byteswap); return true; }
-    case gloop::stream::U8:  { uint8_t  c; wt->_val(c); _copy(mem, (char *)&c, sizeof(c), byteswap); return true; }
-    case gloop::stream::I16: { int16_t  c; wt->_val(c); _copy(mem, (char *)&c, sizeof(c), byteswap); return true; }
-    case gloop::stream::U16: { uint16_t c; wt->_val(c); _copy(mem, (char *)&c, sizeof(c), byteswap); return true; }
-    case gloop::stream::I32: { int32_t  c; wt->_val(c); _copy(mem, (char *)&c, sizeof(c), byteswap); return true; }
-    case gloop::stream::U32: { uint32_t c; wt->_val(c); _copy(mem, (char *)&c, sizeof(c), byteswap); return true; }
-    case gloop::stream::F32: { float    c; wt->_val(c); _copy(mem, (char *)&c, sizeof(c), byteswap); return true; }
-    case gloop::stream::F64: { double   c; wt->_val(c); _copy(mem, (char *)&c, sizeof(c), byteswap); return true; }
-    default:         return false;
+    case gloop::stream::I8:  return prop_write<  int8_t>(mem, byteswap, wt);
+    case gloop::stream::U8:  return prop_write< uint8_t>(mem, byteswap, wt);
+    case gloop::stream::I16: return prop_write< int16_t>(mem, byteswap, wt);
+    case gloop::stream::U16: return prop_write<uint16_t>(mem, byteswap, wt);
+    case gloop::stream::I32: return prop_write< int32_t>(mem, byteswap, wt);
+    case gloop::stream::U32: return prop_write<uint32_t>(mem, byteswap, wt);
+    case gloop::stream::F32: return prop_write<   float>(mem, byteswap, wt);
+    case gloop::stream::F64: return prop_write<  double>(mem, byteswap, wt);
+    default:
+      return false;
     }
   }
 
   bool prop_write(std::ostream &out, int type, gloop::stream::writer_base *wt) {
     switch (type) {
-    case gloop::stream::I8:  { int8_t   c; wt->_val(c); out << (int32_t)c;  return true; }
-    case gloop::stream::U8:  { uint8_t  c; wt->_val(c); out << (uint32_t)c; return true; }
-    case gloop::stream::I16: { int16_t  c; wt->_val(c); out << (int32_t)c;  return true; }
-    case gloop::stream::U16: { uint16_t c; wt->_val(c); out << (uint32_t)c; return true; }
-    case gloop::stream::I32: { int32_t  c; wt->_val(c); out << (int32_t)c;  return true; }
-    case gloop::stream::U32: { uint32_t c; wt->_val(c); out << (uint32_t)c; return true; }
-    case gloop::stream::F32: { float    c; wt->_val(c); out << (float)c;    return true; }
-    case gloop::stream::F64: { double   c; wt->_val(c); out << (double)c;   return true; }
-    default:         return false;
+    case gloop::stream::I8:  { int8_t   c; wt->_val(c); out << (int32_t)c;  return out.good(); }
+    case gloop::stream::U8:  { uint8_t  c; wt->_val(c); out << (uint32_t)c; return out.good(); }
+    case gloop::stream::I16: { int16_t  c; wt->_val(c); out << (int32_t)c;  return out.good(); }
+    case gloop::stream::U16: { uint16_t c; wt->_val(c); out << (uint32_t)c; return out.good(); }
+    case gloop::stream::I32: { int32_t  c; wt->_val(c); out << (int32_t)c;  return out.good(); }
+    case gloop::stream::U32: { uint32_t c; wt->_val(c); out << (uint32_t)c; return out.good(); }
+    case gloop::stream::F32: { float    c; wt->_val(c); out << (float)c;    return out.good(); }
+    case gloop::stream::F64: { double   c; wt->_val(c); out << (double)c;   return out.good(); }
+    default: return false;
     }
   }
 
   bool _skip(std::istream &in, int type) {
     switch (type) {
-    case gloop::stream::I8:  case gloop::stream::I16: case gloop::stream::I32: { int32_t  v; in >> v; return true; }
-    case gloop::stream::U8:  case gloop::stream::U16: case gloop::stream::U32: { uint32_t v; in >> v; return true; }
-    case gloop::stream::F32: case gloop::stream::F64:                          { double   v; in >> v; return true; }
+    case gloop::stream::I8:
+    case gloop::stream::I16:
+    case gloop::stream::I32: {
+      int32_t v;
+      in >> v;
+      return !in.fail();
+    }
+    case gloop::stream::U8:
+    case gloop::stream::U16:
+    case gloop::stream::U32: {
+      uint32_t v;
+      in >> v;
+      return !in.fail();
+    }
+    case gloop::stream::F32:
+    case gloop::stream::F64: {
+      double v;
+      in >> v;
+      return !in.fail();
+    }
     default:
       return false;
     }
@@ -252,23 +303,36 @@ namespace {
     gloop::stream::writer_base *wt;
 
     prop_info(const std::string &s) : name(), count_type(0), type(0), is_list(false), rd(NULL), wt(NULL) {
-      char s_count_type[32], s_type[32], s_name[128];
-      if (sscanf(s.c_str(), "property list %s %s %s", s_count_type, s_type, s_name) == 3) {
-        name = s_name;
-        count_type = strtype(s_count_type);
-        type = strtype(s_type);
-        is_list = true;
-      } else if (sscanf(s.c_str(), "property %s %s", s_type, s_name) == 2) {
-        name = s_name;
-        if (name == "vertex_index") name = "vertex_indices";
-        count_type = -1;
-        type = strtype(s_type);
-        is_list = false;
-      } else {
-        name = "";
-        count_type = -1;
-        type = -1;
-        is_list = false;
+      std::istringstream in(s);
+      std::string tok;
+
+      name = "";
+      count_type = -1;
+      type = -1;
+      is_list = false;
+
+      in >> tok;
+      if (tok == "property") {
+        in >> tok;
+        if (tok == "list") {
+          std::string s_count_type, s_type, s_name;
+          in >> s_count_type >> s_type >> s_name;
+          if (!in.fail()) {
+            name = s_name;
+            count_type = strtype(s_count_type);
+            type = strtype(s_type);
+            is_list = true;
+          }
+        } else {
+          std::string s_type, s_name;
+          s_type = tok;
+          in >> s_name;
+          if (!in.fail()) {
+            name = s_name;
+            if (name == "vertex_index") name = "vertex_indices";
+            type = strtype(s_type);
+          }
+        }
       }
     }
 
@@ -308,7 +372,6 @@ namespace {
       if (wt == NULL) {
         return false;
       }
-      size_t sz = gloop::stream::type_size(type);
       size_t len = 1;
       bool first = true;
 
@@ -357,7 +420,6 @@ namespace {
     
     bool readAscii(std::istream &in) const {
       size_t len = 1;
-      size_t sz = gloop::stream::type_size(type);
       
       if (is_list) {
         if (!_parse(in, count_type, len)) return false;
@@ -427,14 +489,22 @@ namespace {
     }
 
     elem_info(const std::string &s) : name(), count(0), props(), rd(NULL), wt(NULL) {
-      char s_elem_name[128];
-      unsigned long elem_count;
-      if (sscanf(s.c_str(), "element %s %lu", s_elem_name, &elem_count) == 2) {
-        name = s_elem_name;
-        count = elem_count;
-      } else {
-        name = "";
-        count = -1;
+      std::istringstream in(s);
+      std::string tok;
+
+      name = "";
+      count = -1;
+
+      in >> tok;
+      if (tok == "element") {
+        std::string s_name;
+        size_t s_count;
+        in >> s_name;
+        in >> s_count;
+        if (!in.fail()) {
+          name = s_name;
+          count = s_count;
+        }
       }
     }
 
@@ -493,7 +563,6 @@ namespace {
   bool readBlock(std::istream &in,
                  bool binary,
                  bool byteswap,
-                 gloop::ply::PlyReader &reader,
                  gloop::stream::block_t *base,
                  std::list<elem_info>::iterator b,
                  std::list<elem_info>::iterator e) {
@@ -560,7 +629,6 @@ namespace {
     return readBlock(in,
                      binary,
                      byteswap,
-                     reader,
                      reader.findBlock("polyhedron"),
                      b,
                      e);
@@ -577,7 +645,6 @@ namespace {
     return readBlock(in,
                      binary,
                      byteswap,
-                     reader,
                      reader.findBlock("polyline"),
                      b,
                      e);
@@ -594,7 +661,6 @@ namespace {
     return readBlock(in,
                      binary,
                      byteswap,
-                     reader,
                      reader.findBlock("pointset"),
                      b,
                      e);
@@ -615,14 +681,25 @@ namespace gloop {
         throw exception("bad PLY header");
       }
 
-      char fmt[128], ver[128];
       std::getline(in, s);
-      if (sscanf(s.c_str(), "format %s %s", fmt, ver) == 2) {
-        if (!std::strcmp(fmt, "ascii")) binary = false;
-        else if (!std::strcmp(fmt, "binary_big_endian")) { binary = true; byteswap = !is_big_endian(); }
-        else if (!std::strcmp(fmt, "binary_little_endian")) { binary = true; byteswap = is_big_endian(); }
-        else {
-          throw exception(str::format() << "bad PLY format [" <<  fmt << "]");
+      std::istringstream ins(s);
+      std::string tok;
+      ins >> tok;
+      if (tok == "format") {
+        std::string fmt, ver;
+        ins >> fmt >> ver;
+        if (!ins.fail()) {
+          if (fmt == "ascii") {
+            binary = false;
+          } else if (fmt == "binary_big_endian") {
+            binary = true;
+            byteswap = !is_big_endian();
+          } else if (fmt == "binary_little_endian") {
+            binary = true;
+            byteswap = is_big_endian();
+          } else {
+            throw exception(str::format() << "bad PLY format [" <<  fmt << "]");
+          }
         }
       } else {
         throw exception(str::format() << "bad PLY header [" << s << "]");
@@ -630,7 +707,7 @@ namespace gloop {
 
       std::list<elem_info> elements;
 
-      while (1) {
+      for (;;) {
         std::getline(in, s);
         if (str::startswith(s, "end_header")) break;
         else if (str::startswith(s, "comment")) continue;

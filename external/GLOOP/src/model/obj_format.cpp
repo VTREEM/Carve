@@ -28,14 +28,11 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <gloop/gloop.hpp>
-#include <gloop/model/stream.hpp>
-#include <gloop/model/obj_format.hpp>
-#include <gloop/stringfuncs.hpp>
-#include <gloop/exceptions.hpp>
+#include <gloop/gloop-model.hpp>
 
 #include <iostream>
 #include <iomanip>
-
+#include <iterator>
 
 
 namespace gloop {
