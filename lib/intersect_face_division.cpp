@@ -399,21 +399,30 @@ namespace {
                                  std::vector<std::vector<carve::mesh::MeshSet<3>::vertex_t *> > &hole_loops,
                                  std::vector<std::vector<int> > &containing_faces,
                                  std::map<int, std::map<int, std::pair<unsigned, unsigned> > > &hole_shared_vertices) {
+#if defined(CARVE_DEBUG)
+    std::cerr << "input: "
+              << face_loops.size() << "faces, "
+              << hole_loops.size() << "holes."
+              << std::endl;
+#endif
+
     std::vector<std::vector<carve::geom2d::P2> > face_loops_projected, hole_loops_projected;
+    std::vector<carve::geom::aabb<2> > face_loop_aabb, hole_loop_aabb;
     std::vector<std::vector<unsigned> > face_loops_sorted, hole_loops_sorted;
 
     std::vector<double> face_loop_areas, hole_loop_areas;
 
     face_loops_projected.resize(face_loops.size());
     face_loops_sorted.resize(face_loops.size());
+    face_loop_aabb.resize(face_loops.size());
     face_loop_areas.resize(face_loops.size());
 
-    hole_loops.resize(hole_loops.size());
     hole_loops_projected.resize(hole_loops.size());
     hole_loops_sorted.resize(hole_loops.size());
+    hole_loop_aabb.resize(hole_loops.size());
     hole_loop_areas.resize(hole_loops.size());
 
-    // produce a projection of each face loop onto a 2D plane, and a
+    // produce a projection of each face loop onto a 2D plane, and an
     // index vector which sorts vertices by address.
     for (size_t m = 0; m < face_loops.size(); ++m) {
       const std::vector<carve::mesh::MeshSet<3>::vertex_t *> &f_loop = (face_loops[m]);
@@ -426,9 +435,10 @@ namespace {
       face_loop_areas.push_back(carve::geom2d::signedArea(face_loops_projected[m]));
       std::sort(face_loops_sorted[m].begin(), face_loops_sorted[m].end(), 
                 carve::make_index_sort(face_loops[m].begin()));
+      face_loop_aabb[m].fit(face_loops_projected[m].begin(), face_loops_projected[m].end());
     }
 
-    // produce a projection of each hole loop onto a 2D plane, and a
+    // produce a projection of each hole loop onto a 2D plane, and an
     // index vector which sorts vertices by address.
     for (size_t m = 0; m < hole_loops.size(); ++m) {
       const std::vector<carve::mesh::MeshSet<3>::vertex_t *> &h_loop = (hole_loops[m]);
@@ -441,6 +451,7 @@ namespace {
       hole_loop_areas.push_back(carve::geom2d::signedArea(hole_loops_projected[m]));
       std::sort(hole_loops_sorted[m].begin(), hole_loops_sorted[m].end(), 
                 carve::make_index_sort(hole_loops[m].begin()));
+      hole_loop_aabb[m].fit(hole_loops_projected[m].begin(), hole_loops_projected[m].end());
     }
 
     containing_faces.resize(hole_loops.size());
@@ -448,6 +459,16 @@ namespace {
     for (unsigned i = 0; i < hole_loops.size(); ++i) {
 
       for (unsigned j = 0; j < face_loops.size(); ++j) {
+        if (!face_loop_aabb[j].completelyContains(hole_loop_aabb[i])) {
+#if defined(CARVE_DEBUG)
+          std::cerr << "face: " << j
+                    << " hole: " << i
+                    << " skipped test (aabb fail)"
+                    << std::endl;
+#endif
+          continue;
+        }
+
         unsigned f_idx, h_idx;
         int unmatched_h_idx;
         bool shares_vertex, shares_edge;
