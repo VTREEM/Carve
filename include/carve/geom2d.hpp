@@ -227,8 +227,15 @@ namespace carve {
       }
     };
 
-    LineIntersectionInfo lineSegmentIntersection(const P2 &l1v1, const P2 &l1v2, const P2 &l2v1, const P2 &l2v2);
-    LineIntersectionInfo lineSegmentIntersection(const LineSegment2 &l1, const LineSegment2 &l2);
+    bool lineSegmentIntersection_simple(const P2 &l1v1, const P2 &l1v2,
+                                        const P2 &l2v1, const P2 &l2v2);
+    bool lineSegmentIntersection_simple(const LineSegment2 &l1,
+                                        const LineSegment2 &l2);
+
+    LineIntersectionInfo lineSegmentIntersection(const P2 &l1v1, const P2 &l1v2,
+                                                 const P2 &l2v1, const P2 &l2v2);
+    LineIntersectionInfo lineSegmentIntersection(const LineSegment2 &l1,
+                                                 const LineSegment2 &l2);
 
     int lineSegmentPolyIntersections(const std::vector<P2> &points,
                                      LineSegment2 line,

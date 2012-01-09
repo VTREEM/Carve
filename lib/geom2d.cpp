@@ -21,6 +21,7 @@
 
 #include <carve/geom2d.hpp>
 #include <carve/math.hpp>
+#include <carve/aabb.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -28,20 +29,48 @@
 namespace carve {
   namespace geom2d {
 
-    namespace {
+    bool lineSegmentIntersection_simple(const P2 &l1v1, const P2 &l1v2,
+                                        const P2 &l2v1, const P2 &l2v2) {
+      geom::aabb<2> l1_aabb, l2_aabb;
+      l1_aabb.fit(l1v1, l1v2);
+      l2_aabb.fit(l2v1, l2v2);
+
+      if (l1_aabb.maxAxisSeparation(l2_aabb) > 0.0) {
+        return false;
+      }
+
+      double l1v1_side = orient2d(l2v1, l2v2, l1v1);
+      double l1v2_side = orient2d(l2v1, l2v2, l1v2);
+
+      double l2v1_side = orient2d(l1v1, l1v2, l2v1);
+      double l2v2_side = orient2d(l1v1, l1v2, l2v2);
+
+      if (l1v1_side * l1v2_side > 0.0 || l2v1_side * l2v2_side > 0.0) {
+        return false;
+      }
+
+      return true;
+    }
+
+    bool lineSegmentIntersection_simple(const LineSegment2 &l1,
+                                        const LineSegment2 &l2) {
+      return lineSegmentIntersection_simple(l1.v1, l1.v2, l2.v1, l2.v2);
     }
 
     LineIntersectionInfo lineSegmentIntersection(const P2 &l1v1, const P2 &l1v2,
                                                  const P2 &l2v1, const P2 &l2v2) {
-      if (carve::geom::equal(l1v1, l1v2) || carve::geom::equal(l2v1, l2v2)) {
-        throw carve::exception("bad args");
-      }
-  
-      if (std::max(l1v1.x, l1v2.x) < std::min(l2v1.x, l2v2.x) - EPSILON ||
-          std::max(l2v1.x, l2v2.x) < std::min(l1v1.x, l1v2.x) - EPSILON) {
+      geom::aabb<2> l1_aabb, l2_aabb;
+      l1_aabb.fit(l1v1, l1v2);
+      l2_aabb.fit(l2v1, l2v2);
+
+      if (l1_aabb.maxAxisSeparation(l2_aabb) > EPSILON) {
         return LineIntersectionInfo(NO_INTERSECTION);
       }
 
+      if (carve::geom::equal(l1v1, l1v2) || carve::geom::equal(l2v1, l2v2)) {
+        throw carve::exception("zero length line in intersection test");
+      }
+  
       double dx13 = l1v1.x - l2v1.x;
       double dy13 = l1v1.y - l2v1.y;
       double dx43 = l2v2.x - l2v1.x;
