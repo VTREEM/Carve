@@ -283,8 +283,8 @@ namespace carve {
           size_t v2i = vertexToIndex_fast(face.vertex((v+1)%N));
           std::vector<const edge_t *> found_edge;
 
-          CARVE_ASSERT(is_sorted(connectivity.vertex_to_edge[v1i].begin(), connectivity.vertex_to_edge[v1i].end()));
-          CARVE_ASSERT(is_sorted(connectivity.vertex_to_edge[v2i].begin(), connectivity.vertex_to_edge[v2i].end()));
+          CARVE_ASSERT(carve::is_sorted(connectivity.vertex_to_edge[v1i].begin(), connectivity.vertex_to_edge[v1i].end()));
+          CARVE_ASSERT(carve::is_sorted(connectivity.vertex_to_edge[v2i].begin(), connectivity.vertex_to_edge[v2i].end()));
 
           std::set_intersection(connectivity.vertex_to_edge[v1i].begin(), connectivity.vertex_to_edge[v1i].end(),
                                 connectivity.vertex_to_edge[v2i].begin(), connectivity.vertex_to_edge[v2i].end(),
