@@ -96,7 +96,7 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
       while (prior_i != edge_graph.end() && (*prior_i).second.size()) {
         carve::mesh::MeshSet<3>::vertex_t *next = *(*prior_i).second.begin();
         detail::VVSMap::iterator next_i = edge_graph.find(next);
-        assert(next_i != edge_graph.end());
+        CARVE_ASSERT(next_i != edge_graph.end());
         connected.push_back(vmap[next]);
         (*prior_i).second.erase(next);
         (*next_i).second.erase(prior);
