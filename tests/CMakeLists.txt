@@ -1,3 +1,5 @@
+PROJECT(carve_tests)
+
 include_directories("${carve_SOURCE_DIR}/include")
 include_directories("${carve_SOURCE_DIR}/external/GLOOP/include")
 include_directories("${carve_SOURCE_DIR}/external/GLEW/include")
@@ -56,61 +58,61 @@ if(CARVE_WITH_GUI)
   target_link_libraries(test_hole_incorporate  carve carve_ui carve_misc glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 endif(CARVE_WITH_GUI)
 
-PROJECT(carve_tests)
+if (CARVE_GTEST_TESTS)
+  SET(GTEST_DIR "${carve_SOURCE_DIR}/external/gtest-1.5.0")
 
-SET(GTEST_DIR "${carve_SOURCE_DIR}/external/gtest-1.5.0")
+  include_directories(${GTEST_DIR})
+  include_directories(${GTEST_DIR}/include)
 
-include_directories(${GTEST_DIR})
-include_directories(${GTEST_DIR}/include)
-
-function(cxx_test_with_flags name cxx_flags libs)
-  add_executable(${name} ${ARGN})
-  set_target_properties(${name}
-    PROPERTIES
-    COMPILE_FLAGS "${cxx_flags}")
-  # To support mixing linking in static and dynamic libraries, link each
-  # library in with an extra call to target_link_libraries.
-  foreach (lib "${libs}")
-    target_link_libraries(${name} ${lib})
-  endforeach()
-  add_test(${name} ${name})
-endfunction()
-
-# cxx_test(name libs srcs...)
-#
-# creates a named test target that depends on the given libs and is
-# built from the given source files.  Unlike cxx_test_with_flags,
-# test/name.cc is already implicitly included in the source file list.
-function(cxx_test name libs)
-  cxx_test_with_flags("${name}" "${CMAKE_CXX_FLAGS}" "${libs}" "${name}.cpp" ${ARGN})
-endfunction()
-
-cxx_test(hook_unittest gtest_main)
-target_link_libraries(hook_unittest carve)
-
-cxx_test(tri_point_distance_unittest gtest_main)
-target_link_libraries(tri_point_distance_unittest carve)
-
-cxx_test(triangle_intersection_unittest gtest_main)
-target_link_libraries(triangle_intersection_unittest carve)
-
-cxx_test(geom2d_unittest gtest_main)
-target_link_libraries(geom2d_unittest carve)
-
-cxx_test(geom3d_unittest gtest_main)
-target_link_libraries(geom3d_unittest carve)
-
-cxx_test(mesh_unittest gtest_main)
-target_link_libraries(mesh_unittest carve carve_fileformats gloop_model)
-
-cxx_test(mesh_triangulate_unittest gtest_main)
-target_link_libraries(mesh_triangulate_unittest carve carve_fileformats gloop_model)
-
-cxx_test(heap_unittest gtest_main)
-target_link_libraries(heap_unittest carve)
-
-cxx_test(exact_unittest gtest_main)
-target_link_libraries(exact_unittest carve)
-
-cxx_test(shewchuk_unittest gtest_main)
-target_link_libraries(shewchuk_unittest carve)
+  function(cxx_test_with_flags name cxx_flags libs)
+    add_executable(${name} ${ARGN})
+    set_target_properties(${name}
+      PROPERTIES
+      COMPILE_FLAGS "${cxx_flags}")
+    # To support mixing linking in static and dynamic libraries, link each
+    # library in with an extra call to target_link_libraries.
+    foreach (lib "${libs}")
+      target_link_libraries(${name} ${lib})
+    endforeach()
+    add_test(${name} ${name})
+  endfunction()
+  
+  # cxx_test(name libs srcs...)
+  #
+  # creates a named test target that depends on the given libs and is
+  # built from the given source files.  Unlike cxx_test_with_flags,
+  # test/name.cc is already implicitly included in the source file list.
+  function(cxx_test name libs)
+    cxx_test_with_flags("${name}" "${CMAKE_CXX_FLAGS}" "${libs}" "${name}.cpp" ${ARGN})
+  endfunction()
+  
+  cxx_test(hook_unittest gtest_main)
+  target_link_libraries(hook_unittest carve)
+  
+  cxx_test(tri_point_distance_unittest gtest_main)
+  target_link_libraries(tri_point_distance_unittest carve)
+  
+  cxx_test(triangle_intersection_unittest gtest_main)
+  target_link_libraries(triangle_intersection_unittest carve)
+  
+  cxx_test(geom2d_unittest gtest_main)
+  target_link_libraries(geom2d_unittest carve)
+  
+  cxx_test(geom3d_unittest gtest_main)
+  target_link_libraries(geom3d_unittest carve)
+  
+  cxx_test(mesh_unittest gtest_main)
+  target_link_libraries(mesh_unittest carve carve_fileformats gloop_model)
+  
+  cxx_test(mesh_triangulate_unittest gtest_main)
+  target_link_libraries(mesh_triangulate_unittest carve carve_fileformats gloop_model)
+  
+  cxx_test(heap_unittest gtest_main)
+  target_link_libraries(heap_unittest carve)
+  
+  cxx_test(exact_unittest gtest_main)
+  target_link_libraries(exact_unittest carve)
+  
+  cxx_test(shewchuk_unittest gtest_main)
+  target_link_libraries(shewchuk_unittest carve)
+endif(CARVE_GTEST_TESTS)

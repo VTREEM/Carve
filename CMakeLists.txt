@@ -20,6 +20,7 @@ option(CARVE_DEBUG                       "Compile in debug code"                
 option(CARVE_DEBUG_WRITE_PLY_DATA        "Write geometry output during debug"                OFF)
 option(CARVE_USE_EXACT_PREDICATES        "Use Shewchuk's exact predicates, where possible"   OFF)
 option(CARVE_INTERSECT_GLU_TRIANGULATOR  "Include support for GLU triangulator in intersect" OFF)
+option(CARVE_GTEST_TESTS                 "Complie gtest, and dependent tests"                ON)
 
 if (MSVC)
   # For MSVC, CMake sets certain flags to defaults we want to override.
@@ -130,7 +131,10 @@ if(CARVE_WITH_GUI)
 endif(CARVE_WITH_GUI)
 
 add_subdirectory(external/GLOOP) 
-add_subdirectory(external/gtest-1.5.0)
+
+if (CARVE_GTEST_TESTS)
+  add_subdirectory(external/gtest-1.5.0)
+endif(CARVE_GTEST_TESTS)
 
 configure_file (
   "${carve_SOURCE_DIR}/include/carve/cmake-config.h.in"
