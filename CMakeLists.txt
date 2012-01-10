@@ -140,6 +140,8 @@ configure_file (
   "${carve_SOURCE_DIR}/include/carve/cmake-config.h.in"
   "${carve_BINARY_DIR}/include/carve/config.h"
 )
+add_definitions(-DCMAKE_BUILD)
+
 include_directories(${carve_BINARY_DIR}/include)
 
 add_subdirectory(lib) 

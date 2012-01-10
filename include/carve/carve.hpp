@@ -16,7 +16,11 @@
 
 #pragma once
 
-#if defined(_MSC_VER)
+#if defined(CMAKE_BUILD)
+#  include <carve/config.h>
+#elif defined(XCODE_BUILD)
+#  include <carve/xcode_config.h>
+#elif defined(_MSC_VER)
 #  include <carve/vcpp_config.h>
 #else
 #  include <carve/config.h>
@@ -45,6 +49,7 @@
 #include <iomanip>
 
 #include <carve/collection.hpp>
+
 #include <carve/util.hpp>
 
 #include <stdarg.h>
