@@ -1118,11 +1118,11 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
   {
     V2Set edges;
-    for (FV2SMap::const_iterator i = data.face_split_edges.begin(); i != data.face_split_edges.end(); ++i) {
+    for (detail::FV2SMap::const_iterator i = data.face_split_edges.begin(); i != data.face_split_edges.end(); ++i) {
       edges.insert((*i).second.begin(), (*i).second.end());
     }
 
-    VSet vertices;
+    detail::VSet vertices;
     for (V2Set::const_iterator i = edges.begin(); i != edges.end(); ++i) {
       vertices.insert((*i).first);
       vertices.insert((*i).second);
@@ -1130,10 +1130,10 @@ void carve::csg::CSG::makeFaceEdges(carve::csg::EdgeClassification &eclass,
 
     carve::line::PolylineSet intersection_graph;
     intersection_graph.vertices.resize(vertices.size());
-    std::map<const vertex_t *, size_t> vmap;
+    std::map<const carve::mesh::MeshSet<3>::vertex_t *, size_t> vmap;
 
     size_t j = 0;
-    for (VSet::const_iterator i = vertices.begin(); i != vertices.end(); ++i) {
+    for (detail::VSet::const_iterator i = vertices.begin(); i != vertices.end(); ++i) {
       intersection_graph.vertices[j].v = (*i)->v;
       vmap[(*i)] = j++;
     }
