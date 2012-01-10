@@ -91,7 +91,9 @@ namespace {
   struct vertex_component : public gloop::stream::reader<double> {
     const curr_t *i;
     vertex_component(const curr_t *_i) : i(_i) { }
-    virtual void value(double val) { i->curr().v[idx] = val; }
+    virtual void value(double val) {
+      i->curr().v[idx] = val;
+    }
   };
   template<int idx, typename curr_t>
   vertex_component<idx, curr_t> *vertex_component_inserter(const curr_t *i) { return new vertex_component<idx, curr_t>(i); }
