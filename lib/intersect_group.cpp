@@ -128,11 +128,10 @@ void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
 static carve::mesh::MeshSet<3> *groupToPolyhedron(const carve::csg::FaceLoopGroup &grp) {
   const carve::csg::FaceLoopList &fl = grp.face_loops;
-  std::vector<carve::mesh::MeshSet<3>::face_t > faces;
+  std::vector<carve::mesh::MeshSet<3>::face_t *> faces;
   faces.reserve(fl.size());
   for (carve::csg::FaceLoop *f = fl.head; f; f = f->next) {
-    faces.push_back(carve::mesh::MeshSet<3>::face_t());
-    faces.back().init(f->orig_face, f->vertices, false);
+    faces.push_back(f->orig_face->create(f->vertices.begin(), f->vertices.end(), false));
   }
   carve::mesh::MeshSet<3> *poly = new carve::mesh::MeshSet<3>(faces);
 
