@@ -206,9 +206,9 @@ namespace carve {
      *         * +1, if a is ordered after b around, rotating about direction.
      */
     inline int compareAngles(const Vector &direction, const Vector &base, const Vector &a, const Vector &b) {
-      double d1 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, a, b);
-      double d2 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, a);
-      double d3 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, b);
+      const double d1 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, a, b);
+      const double d2 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, a);
+      const double d3 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, b);
 
       // CASE: a and b are coplanar wrt. direction.
       if (d1 == 0.0) {
@@ -219,7 +219,6 @@ namespace carve {
         }
 
         // a and b point in opposite directions.
-        double d2 = carve::geom3d::orient3d(carve::geom::VECTOR(0,0,0), direction, base, a);
         // * if d2 < 0.0, a is above plane(direction, base) and is less
         //   than b.
         // * if d2 == 0.0 a is coplanar with plane(direction, base) and is
