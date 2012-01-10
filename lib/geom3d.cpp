@@ -147,7 +147,7 @@ not_rev:
       // ---------
       // a/c - c/b
 
-      if (denom * double(1<<10) < numer) {
+      if (fabs(denom) * double(1<<10) <= fabs(numer)) {
         return RR_PARALLEL;
       }
 
