@@ -319,7 +319,6 @@ namespace carve {
     template<>
     inline bool aabb<3>::intersects(const ray<3> &ray) const {
       vector<3> t = pos - ray.v;
-      vector<3> v;
       double r;
 
       //l.cross(x-axis)?
@@ -341,7 +340,6 @@ namespace carve {
     inline bool aabb<3>::intersectsLineSegment(const vector<3> &v1, const vector<3> &v2) const {
       vector<3> half_length = 0.5 * (v2 - v1);
       vector<3> t = pos - half_length - v1;
-      vector<3> v;
       double r;
 
       //do any of the principal axes form a separating axis?
