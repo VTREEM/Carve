@@ -25,7 +25,7 @@
 
 namespace carve {
   namespace geom {
-    template<unsigned ndim> class vector;
+    template<unsigned ndim> struct vector;
   }
 }
 
