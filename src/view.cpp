@@ -351,7 +351,7 @@ struct TestScene : public Scene {
     GLfloat proj[16];
     glGetFloatv(GL_PROJECTION_MATRIX, proj);
     GLfloat p33 = proj[10];
-    proj[10] += 1e-5;
+    proj[10] += 1e-4;
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixf(proj);
 
