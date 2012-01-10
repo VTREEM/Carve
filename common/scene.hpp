@@ -21,9 +21,9 @@
 
 #include <carve/geom3d.hpp>
 
-#include <gloop/gloopgl.hpp>
-#include <gloop/gloopglu.hpp>
-#include <gloop/gloopglut.hpp>
+#include <gloop/gl.hpp>
+#include <gloop/glu.hpp>
+#include <gloop/glut.hpp>
 
 class Option {
 public:
