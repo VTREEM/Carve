@@ -28,6 +28,7 @@ namespace carve {
 
     template<>
     vector<2> closestPoint(const tri<2> &tri, const vector<2> &pt) {
+      return vector<2>::ZERO();
     }
 
 
