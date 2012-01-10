@@ -160,20 +160,14 @@ namespace carve {
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
             static int uc_count = 0;
 
-            std::vector<carve::mesh::MeshSet<3>::face_t> faces;
+            std::vector<carve::mesh::MeshSet<3>::face_t *> faces;
 
             for (FaceLoop *f = grp->face_loops.head; f; f = f->next) {
               carve::mesh::MeshSet<3>::face_t *temp = f->orig_face->create(f->vertices.begin(), f->vertices.end(), false);
-              faces.push_back(*temp);
-              delete temp;
+              faces.push_back(temp);
             }
 
-            std::vector<carve::mesh::MeshSet<3>::vertex_t> vertices;
-            carve::csg::VVMap vmap;
-
-            carve::mesh::MeshSet<3>::collectFaceVertices(faces, vertices, vmap);
-
-            carve::mesh::MeshSet<3> *p = new carve::mesh::MeshSet<3>(faces, vertices);
+            carve::mesh::MeshSet<3> *p = new carve::mesh::MeshSet<3>(faces);
 
             std::ostringstream filename;
             filename << "classifier_fail_" << ++uc_count << ".ply";
