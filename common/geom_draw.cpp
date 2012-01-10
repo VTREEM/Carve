@@ -662,7 +662,7 @@ void drawEdgeConn(const carve::mesh::Edge<3> *edge, float r, float g, float b, f
     glEnd();
 }
 
-void drawEdges(carve::mesh::Mesh<3> *mesh, double alpha) {
+void drawEdges(carve::mesh::Mesh<3> *mesh, double alpha, bool draw_edgeconn) {
   glColor4f(1.0, 0.0, 0.0, alpha);
   glBegin(GL_LINES);
   for (size_t i = 0, l = mesh->closed_edges.size(); i != l; ++i) {
@@ -674,10 +674,12 @@ void drawEdges(carve::mesh::Mesh<3> *mesh, double alpha) {
 
   std::unordered_map<std::pair<const carve::mesh::Vertex<3> *, const carve::mesh::Vertex<3> *>, int> colour;
 
-  for (size_t i = 0, l = mesh->closed_edges.size(); i != l; ++i) {
-    const carve::mesh::Edge<3> *edge = mesh->closed_edges[i];
-    int c = colour[std::make_pair(std::min(edge->v1(), edge->v2()), std::max(edge->v1(), edge->v2()))]++;
-    drawEdgeConn(edge, (c&1) ? 0.0 : 1.0, (c&2) ? 0.0 : 1.0, (c&4) ? 1.0 : 0.0, alpha);
+  if (draw_edgeconn) {
+    for (size_t i = 0, l = mesh->closed_edges.size(); i != l; ++i) {
+      const carve::mesh::Edge<3> *edge = mesh->closed_edges[i];
+      int c = colour[std::make_pair(std::min(edge->v1(), edge->v2()), std::max(edge->v1(), edge->v2()))]++;
+      drawEdgeConn(edge, (c&1) ? 0.0 : 1.0, (c&2) ? 0.0 : 1.0, (c&4) ? 1.0 : 0.0, alpha);
+    }
   }
 
   glColor4f(1.0, 1.0, 0.0, alpha);
@@ -690,8 +692,8 @@ void drawEdges(carve::mesh::Mesh<3> *mesh, double alpha) {
   glEnd();
 }
 
-void drawMeshWireframe(carve::mesh::Mesh<3> *mesh, bool normal) {
-  if (normal) {
+void drawMeshWireframe(carve::mesh::Mesh<3> *mesh, bool draw_normal, bool draw_edgeconn) {
+  if (draw_normal) {
     for (size_t i = 0, l = mesh->faces.size(); i != l; ++i) {
       carve::mesh::Face<3> *f = mesh->faces[i];
       drawFaceNormal(f);
@@ -702,24 +704,24 @@ void drawMeshWireframe(carve::mesh::Mesh<3> *mesh, bool normal) {
   glDepthMask(GL_FALSE);
   glDisable(GL_DEPTH_TEST);
 
-  drawEdges(mesh, 0.2);
+  drawEdges(mesh, 0.2, draw_edgeconn);
 
   glEnable(GL_DEPTH_TEST);
 
-  drawEdges(mesh, 0.8);
+  drawEdges(mesh, 0.8, draw_edgeconn);
 
   glDepthMask(GL_TRUE);
   glEnable(GL_LIGHTING);
 }
 
-void drawMeshSetWireframe(carve::mesh::MeshSet<3> *poly, bool normal, int group) {
+void drawMeshSetWireframe(carve::mesh::MeshSet<3> *poly, int group, bool draw_normal, bool draw_edgeconn) {
   if (group >= 0) {
     if ((size_t)group < poly->meshes.size()) {
-      drawMeshWireframe(poly->meshes[group], normal);
+      drawMeshWireframe(poly->meshes[group], draw_normal, draw_edgeconn);
     }
   } else {
     for (size_t i = 0; i < poly->meshes.size(); ++i) {
-      drawMeshWireframe(poly->meshes[i], normal);
+      drawMeshWireframe(poly->meshes[i], draw_normal, draw_edgeconn);
     }
   }
 }

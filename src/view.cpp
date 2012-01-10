@@ -45,6 +45,7 @@
 struct Options : public opt::Parser {
   bool wireframe;
   bool normal;
+  bool edgeconn;
   bool fit;
   bool obj;
   bool vtk;
@@ -56,6 +57,7 @@ struct Options : public opt::Parser {
     if (o == "--no-wireframe" || o == "-n") { wireframe = false; return; }
     if (o == "--no-fit"       || o == "-f") { fit = false; return; }
     if (o == "--no-normals"   || o == "-N") { normal = false; return; }
+    if (o == "--no-edgeconn"  || o == "-E") { edgeconn = false; return; }
     if (o == "--help"         || o == "-h") { help(std::cout); exit(0); }
   }
 
@@ -69,12 +71,14 @@ struct Options : public opt::Parser {
     fit = true;
     wireframe = true;
     normal = true;
+    edgeconn = true;
 
     option("obj",          'O', false, "Read input in .obj format.");
     option("vtk",          'V', false, "Read input in .vtk format.");
     option("no-wireframe", 'n', false, "Don't display wireframes.");
     option("no-fit",       'f', false, "Don't scale/translate for viewing.");
     option("no-normals",   'N', false, "Don't display normals.");
+    option("no-edgeconn",  'E', false, "Don't display edge connections.");
     option("help",         'h', false, "This help message.");
   }
 };
@@ -171,7 +175,10 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
     aabb = points[0]->aabb;
   }
   for (size_t p = 0; p < polys.size(); ++p) aabb.unionAABB(polys[p]->getAABB());
-  for (size_t p = 0; p < lines.size(); ++p) aabb.unionAABB(lines[p]->aabb);
+  for (size_t p = 0; p < lines.size(); ++p) {
+    std::cerr << lines[p]->aabb << std::endl;
+    aabb.unionAABB(lines[p]->aabb);
+  }
   for (size_t p = 0; p < points.size(); ++p) aabb.unionAABB(points[p]->aabb);
 
   GLuint dlist = glGenLists((GLsizei)(*listSize = n));
@@ -206,7 +213,7 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
         if (options.wireframe) {
           is_wireframe[list_num] = true;
           glNewList(dlist + list_num++, GL_COMPILE);
-          drawMeshSetWireframe(poly, options.normal, i);
+          drawMeshSetWireframe(poly, i, options.normal, options.edgeconn);
           glEndList();
         }
       }
@@ -226,7 +233,7 @@ GLuint genSceneDisplayList(std::vector<carve::mesh::MeshSet<3> *> &polys,
         if (options.wireframe) {
           is_wireframe[list_num] = true;
           glNewList(dlist + list_num++, GL_COMPILE);
-          drawMeshSetWireframe(poly, options.normal, i);
+          drawMeshSetWireframe(poly, i, options.normal, options.edgeconn);
           glEndList();
         }
       }
