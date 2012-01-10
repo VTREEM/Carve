@@ -77,14 +77,13 @@ void writePLY(const std::string &out_file, const carve::point::PointSet *points,
 void writePLY(const std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
 void writePLY(const std::string &out_file, const carve::mesh::MeshSet<3> *poly, bool ascii);
 
-static carve::poly::Polyhedron *faceLoopsToPolyhedron(const carve::csg::FaceLoopList &fl) {
-  std::vector<carve::poly::Polyhedron::face_t > faces;
+static carve::mesh::MeshSet<3> *faceLoopsToPolyhedron(const carve::csg::FaceLoopList &fl) {
+  std::vector<carve::mesh::MeshSet<3>::face_t *> faces;
   faces.reserve(fl.size());
   for (carve::csg::FaceLoop *f = fl.head; f; f = f->next) {
-    faces.push_back(carve::poly::Polyhedron::face_t());
-    faces.back().init(f->orig_face, f->vertices, false);
+    faces.push_back(f->orig_face->create(f->vertices.begin(), f->vertices.end(), false));
   }
-  carve::poly::Polyhedron *poly = new carve::poly::Polyhedron(faces);
+  carve::mesh::MeshSet<3> *poly = new carve::mesh::MeshSet<3>(faces);
 
   return poly;
 }
