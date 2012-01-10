@@ -51,7 +51,7 @@ namespace carve {
 
 
 
-    static inline int operator-(const polyline_vertex_iter&a, const polyline_vertex_iter &b) { return a.idx - b.idx; }
+    static inline ptrdiff_t operator-(const polyline_vertex_iter &a, const polyline_vertex_iter &b) { return a.idx - b.idx; }
                 
     static inline bool operator==(const polyline_vertex_iter&a, const polyline_vertex_iter &b) { return a.idx == b.idx; }
     static inline bool operator!=(const polyline_vertex_iter&a, const polyline_vertex_iter &b) { return a.idx != b.idx; }
@@ -87,7 +87,7 @@ namespace carve {
 
 
 
-    static inline int operator-(const polyline_vertex_const_iter&a, const polyline_vertex_const_iter &b) { return a.idx - b.idx; }
+    static inline ptrdiff_t operator-(const polyline_vertex_const_iter &a, const polyline_vertex_const_iter &b) { return a.idx - b.idx; }
                 
     static inline bool operator==(const polyline_vertex_const_iter&a, const polyline_vertex_const_iter &b) { return a.idx == b.idx; }
     static inline bool operator!=(const polyline_vertex_const_iter&a, const polyline_vertex_const_iter &b) { return a.idx != b.idx; }
