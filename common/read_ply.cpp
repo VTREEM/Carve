@@ -268,7 +268,7 @@ bool readFile(
     return false;
   }
 
-  std::cerr << "Loading " << in_file << "'" << std::endl;
+  std::cerr << "Loading '" << in_file << "'" << std::endl;
   return readFile<filetype_t>(in, inputs, transform);
 }
 
