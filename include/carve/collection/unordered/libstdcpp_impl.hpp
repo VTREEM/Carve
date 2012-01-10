@@ -47,7 +47,7 @@ namespace std {
   class unordered_map : public __gnu_cxx::hash_map<K, V, H> {
     typedef __gnu_cxx::hash_map<K, V, H> super;
   public:
-    typedef super::mapped_type data_type;
+    typedef typename super::mapped_type data_type;
   };
 
   template<typename K, typename H = __gnu_cxx::hash<K> >
