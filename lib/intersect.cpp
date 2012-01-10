@@ -700,12 +700,10 @@ void carve::csg::CSG::_generateEdgeEdgeIntersections(carve::mesh::MeshSet<3>::ed
   carve::mesh::MeshSet<3>::vertex_t *v1 = ea->v1(), *v2 = ea->v2();
   carve::mesh::MeshSet<3>::vertex_t *v3 = eb->v1(), *v4 = eb->v2();
 
-  if (std::max(v3->v.x, v4->v.x) + carve::EPSILON < std::min(v1->v.x, v2->v.x) - carve::EPSILON ||
-      std::max(v1->v.x, v2->v.x) + carve::EPSILON < std::min(v3->v.x, v4->v.x) - carve::EPSILON) return;
-  if (std::max(v3->v.y, v4->v.y) + carve::EPSILON < std::min(v1->v.y, v2->v.y) - carve::EPSILON ||
-      std::max(v1->v.y, v2->v.y) + carve::EPSILON < std::min(v3->v.y, v4->v.y) - carve::EPSILON) return;
-  if (std::max(v3->v.z, v4->v.z) + carve::EPSILON < std::min(v1->v.z, v2->v.z) - carve::EPSILON ||
-      std::max(v1->v.z, v2->v.z) + carve::EPSILON < std::min(v3->v.z, v4->v.z) - carve::EPSILON) return;
+  carve::geom::aabb<3> ea_aabb, eb_aabb;
+  ea_aabb.fit(v1->v, v2->v);
+  eb_aabb.fit(v3->v, v4->v);
+  if (ea_aabb.maxAxisSeparation(eb_aabb) > EPSILON) return;
 
   carve::mesh::MeshSet<3>::vertex_t::vector_t p1, p2;
   double mu1, mu2;
@@ -715,16 +713,6 @@ void carve::csg::CSG::_generateEdgeEdgeIntersections(carve::mesh::MeshSet<3>::ed
                                             p1, p2, mu1, mu2)) {
   case carve::RR_INTERSECTION: {
     // edges intersect
-    carve::mesh::MeshSet<3>::vertex_t::vector_t p1, p2;
-    double mu1, mu2;
-
-    if (!carve::geom3d::rayRayIntersection(carve::geom3d::Ray(v2->v - v1->v, v1->v),
-                                           carve::geom3d::Ray(v4->v - v3->v, v3->v),
-                                           p1, p2, mu1, mu2) ||
-        !carve::geom::equal(p1, p2)) {
-      return;
-    }
-
     if (mu1 >= 0.0 && mu1 <= 1.0 && mu2 >= 0.0 && mu2 <= 1.0) {
       carve::mesh::MeshSet<3>::vertex_t *p = vertex_pool.get((p1 + p2) / 2.0);
       intersections.record(ea, eb, p);
@@ -732,6 +720,7 @@ void carve::csg::CSG::_generateEdgeEdgeIntersections(carve::mesh::MeshSet<3>::ed
       if (eb->rev) intersections.record(ea, eb->rev, p);
       if (ea->rev && eb->rev) intersections.record(ea->rev, eb->rev, p);
     }
+    break;
   }
   case carve::RR_PARALLEL: {
     // edges parallel. any intersection of this type should have
