@@ -452,6 +452,7 @@ Scene::Scene(int argc, char **argv) {
   CAM_ELEVATION = 45.0;
   CAM_DIST = 70.0;
   CAM_DIST_REAL = 10000;
+  CAM_LOOK = CAM_LOOK_REAL = carve::geom::vector<3>::ZERO();
 
   WIDTH = 1024;
   HEIGHT = 768;
