@@ -24,7 +24,7 @@
 #include "intersect_debug.hpp"
 
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-void writePLY(std::string &out_file, const carve::mesh::MeshSet<3> *poly, bool ascii);
+void writePLY(const std::string &out_file, const carve::mesh::MeshSet<3> *poly, bool ascii);
 #endif
 
 

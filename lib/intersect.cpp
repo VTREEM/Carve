@@ -73,9 +73,9 @@ bool carve::csg::VertexPool::inPool(vertex_t *v) const {
 
 
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-void writePLY(std::string &out_file, const carve::point::PointSet *points, bool ascii);
-void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
-void writePLY(std::string &out_file, const carve::poly::Polyhedron *poly, bool ascii);
+void writePLY(const std::string &out_file, const carve::point::PointSet *points, bool ascii);
+void writePLY(const std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
+void writePLY(const std::string &out_file, const carve::mesh::MeshSet<3> *poly, bool ascii);
 
 static carve::poly::Polyhedron *faceLoopsToPolyhedron(const carve::csg::FaceLoopList &fl) {
   std::vector<carve::poly::Polyhedron::face_t > faces;

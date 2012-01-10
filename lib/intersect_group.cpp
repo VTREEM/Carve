@@ -41,8 +41,8 @@ void carve::csg::CSG::makeEdgeMap(const carve::csg::FaceLoopList &loops,
 #include <carve/polyline.hpp>
 
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-void writePLY(std::string &out_file, const carve::mesh::MeshSet<3> *poly, bool ascii);
-void writePLY(std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
+void writePLY(const std::string &out_file, const carve::mesh::MeshSet<3> *poly, bool ascii);
+void writePLY(const std::string &out_file, const carve::line::PolylineSet *lines, bool ascii);
 #endif
 
 void carve::csg::CSG::findSharedEdges(const detail::LoopEdges &edge_map_a,
