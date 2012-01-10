@@ -859,8 +859,10 @@ void carve::csg::CSG::generateIntersectionCandidates(carve::mesh::MeshSet<3> *a,
         std::pair<double, double> b_rb = fb->rangeInDirection(fb->plane.N, fb->edge->vert->v);
         if (carve::rangeSeparation(a_rb, b_rb) > carve::EPSILON) continue;
 
-        face_pairs[fa].push_back(fb); 
-        face_pairs[fb].push_back(fa);
+        if (!facesAreCoplanar(fa, fb)) {
+          face_pairs[fa].push_back(fb); 
+          face_pairs[fb].push_back(fa);
+        }
      }
     }
   }
