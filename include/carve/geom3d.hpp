@@ -50,19 +50,19 @@ namespace carve {
       iter_t i;
 
       Vector n = Vector::ZERO();
-      Vector v, z;
+      Vector v;
       Vector p1, p2, p3, c1, c2;
       if (begin == end) return false;
 
       i = begin;
-      p1 = c1 = adapt(*i++); if (i == end) return false;
-      p2 = c2 = adapt(*i++); if (i == end) return false;
+      p1 = c1 = adapt(*i); if (++i == end) return false;
+      p2 = c2 = adapt(*i); if (++i == end) return false;
 
 #if defined(CARVE_DEBUG)
       size_t N = 2;
 #endif
-      while (i != end) {
-        p3 = adapt(*i++);
+      do {
+        p3 = adapt(*i);
         v = cross(p3 - p2, p1 - p2);
         if (v.v[largestAxis(v)]) v.negate();
         n += v;
@@ -70,7 +70,7 @@ namespace carve {
 #if defined(CARVE_DEBUG)
         ++N;
 #endif
-      }
+      } while (++i != end);
 
       p1 = p2; p2 = p3; p3 = c1;
       v = cross(p3 - p2, p1 - p2);
