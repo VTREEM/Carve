@@ -662,9 +662,7 @@ void carve::csg::CSG::_generateVertexEdgeIntersections(carve::mesh::MeshSet<3>::
   if (a < b * carve::EPSILON2) {
     // vertex-edge intersection
     intersections.record(eb, va, va);
-    if (eb->rev) {
-      intersections.record(eb->rev, va, va);
-    }
+    if (eb->rev) intersections.record(eb->rev, va, va);
   }
 }
 
@@ -800,7 +798,7 @@ void carve::csg::CSG::_generateEdgeFaceIntersections(carve::mesh::MeshSet<3>::fa
   if (fa->simpleLineSegmentIntersection(carve::geom3d::LineSegment(eb->v1()->v, eb->v2()->v), _p)) {
     carve::mesh::MeshSet<3>::vertex_t *p = vertex_pool.get(_p);
     intersections.record(eb, fa, p);
-    intersections.record(eb->rev, fa, p);
+    if (eb->rev) intersections.record(eb->rev, fa, p);
   }
 }
 
