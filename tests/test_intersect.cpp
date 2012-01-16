@@ -663,7 +663,7 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
     scene->wireframe_flags.push_back(true);
     glNewList(currentList++, GL_COMPILE);
     if (g_result) {
-      drawMeshSetWireframe(g_result);
+      drawMeshSetWireframe(g_result, -1, true, true);
     }
     glEndList();
   }
@@ -684,7 +684,7 @@ void genSceneDisplayList(const std::list<Input> &inputs, TestScene *scene) {
       scene->draw_flags.push_back(group->createOption(buf, false));
       scene->wireframe_flags.push_back(true);
       glNewList(currentList++, GL_COMPILE);
-      drawMeshSetWireframe(it->poly);
+      drawMeshSetWireframe(it->poly, -1, true, true);
       glEndList();
 
       sprintf(buf, "Input %d solid", count);

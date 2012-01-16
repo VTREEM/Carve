@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
   {
     int n = 0;
     for (std::list<carve::mesh::MeshSet<3> *>::iterator i = a_sliced.begin(); i != a_sliced.end(); ++i) {
-      drawMeshSetWireframe(*i);
+      drawMeshSetWireframe(*i, -1, false, false);
       ++n;
     }
   }
@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
   {
     int n = 0;
     for (std::list<carve::mesh::MeshSet<3> *>::iterator i = b_sliced.begin(); i != b_sliced.end(); ++i) {
-      drawMeshSetWireframe(*i);
+      drawMeshSetWireframe(*i, -1, false, false);
       ++n;
     }
   }

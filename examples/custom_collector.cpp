@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 
   glNewList(scene->draw_list_base + 2, GL_COMPILE);
   drawMeshSet(c, .2, .2, .8, 1.0);
-  drawMeshSetWireframe(c);
+  drawMeshSetWireframe(c, -1, false, false);
   glEndList();
 
   scene->run();
