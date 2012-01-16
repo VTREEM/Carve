@@ -45,7 +45,7 @@ carve::mesh::MeshSet<3> *makeCube(
   return new carve::mesh::MeshSet<3>(data.points, data.getFaceCount(), data.faceIndices);
 }
 
-static bool _all(int x, int y, int z) {
+static bool _all(int /* x */, int /* y */, int /* z */) {
   return true;
 }
 
