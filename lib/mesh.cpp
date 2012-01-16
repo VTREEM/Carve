@@ -207,7 +207,7 @@ namespace carve {
 
 
     template<unsigned ndim>
-    Face<ndim> *Face<ndim>::closeLoop(Face<ndim>::edge_t *start) {
+    Face<ndim> *Face<ndim>::closeLoop(typename Face<ndim>::edge_t *start) {
       edge_t *e = start;
       std::vector<edge_t *> loop_edges;
       do {
