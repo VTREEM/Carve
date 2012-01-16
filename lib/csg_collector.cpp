@@ -119,20 +119,31 @@ namespace carve {
           }
           
           FaceClass fc = FACE_UNCLASSIFIED;
+
+          unsigned fc_closed_bits = 0;
+          unsigned fc_open_bits = 0;
           unsigned fc_bits = 0;
 
           for (std::list<ClassificationInfo>::const_iterator i = grp->classification.begin(), e = grp->classification.end(); i != e; ++i) {
 
             if ((*i).intersected_mesh == NULL) {
               // classifier only returns global info
-              fc_bits = class_to_class_bit((*i).classification);
+              fc_closed_bits = class_to_class_bit((*i).classification);
               break;
             }
 
+            if ((*i).classification == FACE_UNCLASSIFIED) continue;
             if ((*i).intersectedMeshIsClosed()) {
-              if ((*i).classification == FACE_UNCLASSIFIED) continue;
-              fc_bits |= class_to_class_bit((*i).classification);
+              fc_closed_bits |= class_to_class_bit((*i).classification);
+            } else {
+              fc_open_bits |= class_to_class_bit((*i).classification);
             }
+          }
+
+          if (fc_closed_bits) {
+            fc_bits = fc_closed_bits;
+          } else {
+            fc_bits = fc_open_bits;
           }
 
           fc = class_bit_to_class(fc_bits);
