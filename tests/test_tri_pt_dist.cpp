@@ -27,9 +27,9 @@
 #include "geometry.hpp"
 #include <carve/input.hpp>
 
-#include <gloop/gloopgl.hpp>
-#include <gloop/gloopglu.hpp>
-#include <gloop/gloopglut.hpp>
+#include <gloop/gl.hpp>
+#include <gloop/glu.hpp>
+#include <gloop/glut.hpp>
 
 #include <fstream>
 #include <string>
