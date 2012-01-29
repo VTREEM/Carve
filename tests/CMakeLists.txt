@@ -86,6 +86,9 @@ if (CARVE_GTEST_TESTS)
     cxx_test_with_flags("${name}" "${CMAKE_CXX_FLAGS}" "${libs}" "${name}.cpp" ${ARGN})
   endfunction()
   
+  cxx_test(triangulate_unittest gtest_main)
+  target_link_libraries(triangulate_unittest carve)
+  
   cxx_test(hook_unittest gtest_main)
   target_link_libraries(hook_unittest carve)
   
