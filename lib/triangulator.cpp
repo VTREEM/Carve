@@ -501,10 +501,21 @@ bool carve::triangulate::detail::vertex_info::isClipable() const {
 
 
 size_t carve::triangulate::detail::removeDegeneracies(vertex_info *&begin, std::vector<carve::triangulate::tri_idx> &result) {
-  vertex_info *v = begin;
+  vertex_info *v;
   vertex_info *n;
   size_t count = 0;
+  size_t remain = 0;
+
+  v = begin;
   do {
+    v = v->next;
+    ++remain;
+  } while (v != begin);
+
+  v = begin;
+  do {
+    if (remain < 4) break;
+
     bool remove = false;
     if (v->p == v->next->p) {
       remove = true;
@@ -533,11 +544,11 @@ size_t carve::triangulate::detail::removeDegeneracies(vertex_info *&begin, std::
       if (n == begin) begin = n->next;
       n->remove();
       count++;
+      remain--;
       delete n;
-      continue;
+    } else {
+      v = v->next;
     }
-
-    v = v->next;
   } while (v != begin);
   return count;
 }
