@@ -48,6 +48,63 @@ namespace {
 
 
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+  template<typename iter_t>
+  void dumpFacesAndHoles(iter_t f_begin, iter_t f_end,
+                         iter_t h_begin, iter_t h_end,
+                         const std::string &fname) {
+    std::cerr << "dumping " << std::distance(f_begin, f_end) << " faces, " << std::distance(h_begin, h_end) << " holes." << std::endl;
+    std::map<carve::mesh::MeshSet<3>::vertex_t *, size_t> v_included;
+
+    for (iter_t i = f_begin; i != f_end; ++i) {
+      for (size_t j = 0; j < (*i).size(); ++j) {
+        if (v_included.find((*i)[j]) == v_included.end()) {
+          size_t &p = v_included[(*i)[j]];
+          p = v_included.size() - 1;
+        }
+      }
+    }
+
+    for (iter_t i = h_begin; i != h_end; ++i) {
+      for (size_t j = 0; j < (*i).size(); ++j) {
+        if (v_included.find((*i)[j]) == v_included.end()) {
+          size_t &p = v_included[(*i)[j]];
+          p = v_included.size() - 1;
+        }
+      }
+    }
+
+    carve::line::PolylineSet fh;
+    fh.vertices.resize(v_included.size());
+    for (std::map<carve::mesh::MeshSet<3>::vertex_t *, size_t>::const_iterator
+           i = v_included.begin(); i != v_included.end(); ++i) {
+      fh.vertices[(*i).second].v = (*i).first->v;
+    }
+
+    {
+      std::vector<size_t> connected;
+      for (iter_t i = f_begin; i != f_end; ++i) {
+        connected.clear();
+        for (size_t j = 0; j < (*i).size(); ++j) {
+          connected.push_back(v_included[(*i)[j]]);
+        }
+        fh.addPolyline(true, connected.begin(), connected.end());
+      }
+      for (iter_t i = h_begin; i != h_end; ++i) {
+        connected.clear();
+        for (size_t j = 0; j < (*i).size(); ++j) {
+          connected.push_back(v_included[(*i)[j]]);
+        }
+        fh.addPolyline(true, connected.begin(), connected.end());
+      }
+    }
+
+    ::writePLY(fname, &fh, true);
+  }
+#endif
+
+
+
   template<typename T>
   void populateVectorFromList(std::list<T> &l, std::vector<T> &v) {
     v.clear();
@@ -572,6 +629,10 @@ namespace {
     std::vector<std::vector<int> > containing_faces;
     std::map<int, std::map<int, std::pair<unsigned, unsigned> > > hole_shared_vertices;
 
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+    dumpFacesAndHoles(f_loops.begin(), f_loops.end(), h_loops.begin(), h_loops.end(), "/tmp/pre_merge.ply");
+#endif
+
     {
       // move input face and hole loops to temp vectors.
       size_t m;
@@ -720,6 +781,10 @@ namespace {
       }
     }
 #endif
+#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
+    dumpFacesAndHoles(f_loops.begin(), f_loops.end(), h_loops.begin(), h_loops.end(), "/tmp/post_merge.ply");
+#endif
+
   }
 
 
@@ -1295,65 +1360,6 @@ namespace {
     }
     populateVectorFromList(temp, loops);
   }
-
-
-
-#if defined(CARVE_DEBUG_WRITE_PLY_DATA)
-  void dumpFacesAndHoles(const std::list<std::vector<carve::mesh::MeshSet<3>::vertex_t *> > &face_loops,
-                         const std::list<std::vector<carve::mesh::MeshSet<3>::vertex_t *> > &hole_loops) {
-    std::map<carve::mesh::MeshSet<3>::vertex_t *, size_t> v_included;
-
-    for (std::list<std::vector<carve::mesh::MeshSet<3>::vertex_t *> >::const_iterator
-           i = face_loops.begin(); i != face_loops.end(); ++i) {
-      for (size_t j = 0; j < (*i).size(); ++j) {
-        if (v_included.find((*i)[j]) == v_included.end()) {
-          size_t &p = v_included[(*i)[j]];
-          p = v_included.size() - 1;
-        }
-      }
-    }
-
-    for (std::list<std::vector<carve::mesh::MeshSet<3>::vertex_t *> >::const_iterator
-           i = hole_loops.begin(); i != hole_loops.end(); ++i) {
-      for (size_t j = 0; j < (*i).size(); ++j) {
-        if (v_included.find((*i)[j]) == v_included.end()) {
-          size_t &p = v_included[(*i)[j]];
-          p = v_included.size() - 1;
-        }
-      }
-    }
-
-    carve::line::PolylineSet fh;
-    fh.vertices.resize(v_included.size());
-    for (std::map<carve::mesh::MeshSet<3>::vertex_t *, size_t>::const_iterator
-           i = v_included.begin(); i != v_included.end(); ++i) {
-      fh.vertices[(*i).second].v = (*i).first->v;
-    }
-
-    {
-      std::vector<size_t> connected;
-      for (std::list<std::vector<carve::mesh::MeshSet<3>::vertex_t *> >::const_iterator
-             i = face_loops.begin(); i != face_loops.end(); ++i) {
-        connected.clear();
-        for (size_t j = 0; j < (*i).size(); ++j) {
-          connected.push_back(v_included[(*i)[j]]);
-        }
-        fh.addPolyline(true, connected.begin(), connected.end());
-      }
-      for (std::list<std::vector<carve::mesh::MeshSet<3>::vertex_t *> >::const_iterator
-             i = hole_loops.begin(); i != hole_loops.end(); ++i) {
-        connected.clear();
-        for (size_t j = 0; j < (*i).size(); ++j) {
-          connected.push_back(v_included[(*i)[j]]);
-        }
-        fh.addPolyline(true, connected.begin(), connected.end());
-      }
-    }
-
-    std::string out("/tmp/hole_merge.ply");
-    ::writePLY(out, &fh, true);
-  }
-#endif
 
 
 
