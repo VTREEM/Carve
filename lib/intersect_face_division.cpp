@@ -490,7 +490,7 @@ namespace {
         face_loops_sorted[m].push_back(n);
       }
       face_loop_areas.push_back(carve::geom2d::signedArea(face_loops_projected[m]));
-      std::cerr << "face loop " << m << " n(verts) = " << f_loop.size() << " area = " << face_loop_areas.back() << std::endl;
+
       std::sort(face_loops_sorted[m].begin(), face_loops_sorted[m].end(), 
                 carve::make_index_sort(face_loops[m].begin()));
       face_loop_aabb[m].fit(face_loops_projected[m].begin(), face_loops_projected[m].end());
@@ -507,7 +507,7 @@ namespace {
         hole_loops_sorted[m].push_back(n);
       }
       hole_loop_areas.push_back(carve::geom2d::signedArea(hole_loops_projected[m]));
-      std::cerr << "hole loop " << m << " n(verts) = " << h_loop.size() << " area = " << hole_loop_areas.back() << std::endl;
+
       std::sort(hole_loops_sorted[m].begin(), hole_loops_sorted[m].end(), 
                 carve::make_index_sort(hole_loops[m].begin()));
       hole_loop_aabb[m].fit(hole_loops_projected[m].begin(), hole_loops_projected[m].end());
@@ -1329,7 +1329,6 @@ namespace {
       bool is_cut =
         cut_endpoints.find(path.front()) != cut_endpoints.end() &&
         cut_endpoints.find(path.back()) != cut_endpoints.end();
-      std::cerr << "### is_cut: " << is_cut << std::endl;
 
       if (is_cut) {
         cut_list.push_back(vvec_t()); path.swap(cut_list.back());
