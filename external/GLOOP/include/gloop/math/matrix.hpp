@@ -62,7 +62,7 @@ namespace gloop {
     }
     static M3 mk(const float _m[3][3]) {
       M3 m;
-      memcpy(m.m, _m, sizeof(_m));
+      memcpy(m.m, _m, sizeof(float[3][3]));
       return m;
     }
     
@@ -125,7 +125,7 @@ namespace gloop {
     }
     static M4 mk(const float _m[4][4]) {
       M4 m;
-      memcpy(m.m, _m, sizeof(_m));
+      memcpy(m.m, _m, sizeof(float[4][4]));
       return m;
     }
 

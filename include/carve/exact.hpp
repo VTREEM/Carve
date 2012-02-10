@@ -379,7 +379,7 @@ namespace carve {
         prod_2_1(b, a, r);
       }
 
-      static inline double prod_4_1(const double *a, const double *b, double *r) {
+      static inline void prod_4_1(const double *a, const double *b, double *r) {
         double b_sp[2]; split(b[0], b_sp);
         double t1[2]; prod_1_1s(a+0, b, b_sp, t1);
         r[0] = t1[0];
@@ -640,6 +640,9 @@ namespace carve {
 
 
     exact_t operator+(const exact_t &a, const exact_t &b) {
+      exact_t r;
+      sum_zeroelim(a, b, r);
+      return r;
     }
 
 
