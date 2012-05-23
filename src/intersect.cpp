@@ -198,7 +198,7 @@ static bool endswith(const std::string &a, const std::string &b) {
 }
 
 bool charTok(char ch) {
-  return strchr("()|&^,-", ch) != NULL;
+  return strchr("()|&^,-:", ch) != NULL;
 }
 
 bool beginsNumber(char ch) {
@@ -393,15 +393,24 @@ carve::csg::CSG_TreeNode *parseTransform(TOK &tok) {
 
     result = new carve::csg::CSG_InvertNode(child);
   } else if (*tok == "SELECT") {
-    unsigned long id;
+    unsigned long id, id2;
     std::set<unsigned long> sel_ids;
 
     ++tok;
     if (*tok != "(") { return NULL; } ++tok;
     while (1) {
       if (!STRTOUL(*tok, id)) { break; } ++tok;
-      if (*tok != ",") { return NULL; } ++tok;
-      sel_ids.insert(id);
+      if (*tok == ":") {
+        ++tok;
+        if (!STRTOUL(*tok, id2)) { return NULL; } ++tok;
+        if (*tok != ",") { return NULL; } ++tok;
+        while (id <= id2) {
+          sel_ids.insert(id++);
+        }
+      } else {
+        if (*tok != ",") { return NULL; } ++tok;
+        sel_ids.insert(id);
+      }
     }
 
     carve::csg::CSG_TreeNode *child = parseTransform(tok);
