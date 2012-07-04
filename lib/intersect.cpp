@@ -41,6 +41,7 @@
 #include <carve/timing.hpp>
 #include <carve/colour.hpp>
 
+#include <memory>
 
 
 
@@ -1310,12 +1311,12 @@ void carve::csg::CSG::calc(meshset_t *a,
 
 #if defined(CARVE_DEBUG_WRITE_PLY_DATA)
   {
-    std::string out("/tmp/a_split.ply");
-    writePLY(out, faceLoopsToPolyhedron(a_face_loops), false);
+    std::auto_ptr<carve::mesh::MeshSet<3> > poly(faceLoopsToPolyhedron(a_face_loops));
+    writePLY("/tmp/a_split.ply", poly.get(), false);
   }
   {
-    std::string out("/tmp/b_split.ply");
-    writePLY(out, faceLoopsToPolyhedron(b_face_loops), false);
+    std::auto_ptr<carve::mesh::MeshSet<3> > poly(faceLoopsToPolyhedron(b_face_loops));
+    writePLY("/tmp/b_split.ply", poly.get(), false);
   }
 #endif
 
@@ -1421,13 +1422,13 @@ carve::mesh::MeshSet<3> *carve::csg::CSG::compute(meshset_t *a,
   size_t a_edge_count;
   size_t b_edge_count;
 
-  face_rtree_t *a_rtree = face_rtree_t::construct_STR(a->faceBegin(), a->faceEnd(), 4, 4);
-  face_rtree_t *b_rtree = face_rtree_t::construct_STR(b->faceBegin(), b->faceEnd(), 4, 4);
+  std::auto_ptr<face_rtree_t> a_rtree(face_rtree_t::construct_STR(a->faceBegin(), a->faceEnd(), 4, 4));
+  std::auto_ptr<face_rtree_t> b_rtree(face_rtree_t::construct_STR(b->faceBegin(), b->faceEnd(), 4, 4));
 
   {
     static carve::TimingName FUNC_NAME("CSG::compute - calc()");
     carve::TimingBlock block(FUNC_NAME);
-    calc(a, a_rtree, b, b_rtree, vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
+    calc(a, a_rtree.get(), b, b_rtree.get(), vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
   }
 
   detail::LoopEdges a_edge_map;
@@ -1495,11 +1496,11 @@ carve::mesh::MeshSet<3> *carve::csg::CSG::compute(meshset_t *a,
     classifyFaceGroupsEdge(shared_edges,
                            vclass,
                            a,
-                           a_rtree,
+                           a_rtree.get(),
                            a_loops_grouped,
                            a_edge_map,
                            b,
-                           b_rtree,
+                           b_rtree.get(),
                            b_loops_grouped,
                            b_edge_map,
                            collector);
@@ -1508,11 +1509,11 @@ carve::mesh::MeshSet<3> *carve::csg::CSG::compute(meshset_t *a,
     classifyFaceGroups(shared_edges,
                        vclass,
                        a,
-                       a_rtree,
+                       a_rtree.get(),
                        a_loops_grouped,
                        a_edge_map,
                        b,
-                       b_rtree,
+                       b_rtree.get(),
                        b_loops_grouped,
                        b_edge_map,
                        collector);
@@ -1588,10 +1589,10 @@ bool carve::csg::CSG::sliceAndClassify(meshset_t *closed,
   size_t a_edge_count;
   size_t b_edge_count;
 
-  face_rtree_t *closed_rtree = face_rtree_t::construct_STR(closed->faceBegin(), closed->faceEnd(), 4, 4);
-  face_rtree_t *open_rtree = face_rtree_t::construct_STR(open->faceBegin(), open->faceEnd(), 4, 4);
+  std::auto_ptr<face_rtree_t> closed_rtree(face_rtree_t::construct_STR(closed->faceBegin(), closed->faceEnd(), 4, 4));
+  std::auto_ptr<face_rtree_t> open_rtree(face_rtree_t::construct_STR(open->faceBegin(), open->faceEnd(), 4, 4));
 
-  calc(closed, closed_rtree, open, open_rtree, vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
+  calc(closed, closed_rtree.get(), open, open_rtree.get(), vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
 
   detail::LoopEdges a_edge_map;
   detail::LoopEdges b_edge_map;
@@ -1609,11 +1610,11 @@ bool carve::csg::CSG::sliceAndClassify(meshset_t *closed,
   halfClassifyFaceGroups(shared_edges,
                          vclass,
                          closed,
-                         closed_rtree,
+                         closed_rtree.get(),
                          a_loops_grouped,
                          a_edge_map,
                          open,
-                         open_rtree,
+                         open_rtree.get(),
                          b_loops_grouped,
                          b_edge_map,
                          result);
@@ -1657,10 +1658,10 @@ void carve::csg::CSG::slice(meshset_t *a,
   size_t a_edge_count;
   size_t b_edge_count;
 
-  face_rtree_t *a_rtree = face_rtree_t::construct_STR(a->faceBegin(), a->faceEnd(), 4, 4);
-  face_rtree_t *b_rtree = face_rtree_t::construct_STR(b->faceBegin(), b->faceEnd(), 4, 4);
+  std::auto_ptr<face_rtree_t> a_rtree(face_rtree_t::construct_STR(a->faceBegin(), a->faceEnd(), 4, 4));
+  std::auto_ptr<face_rtree_t> b_rtree(face_rtree_t::construct_STR(b->faceBegin(), b->faceEnd(), 4, 4));
 
-  calc(a, a_rtree, b, b_rtree, vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
+  calc(a, a_rtree.get(), b, b_rtree.get(), vclass, eclass,a_face_loops, b_face_loops, a_edge_count, b_edge_count);
 
   detail::LoopEdges a_edge_map;
   detail::LoopEdges b_edge_map;
