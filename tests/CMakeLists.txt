@@ -90,7 +90,7 @@ if (CARVE_GTEST_TESTS)
   target_link_libraries(triangulate_unittest carve)
   
   cxx_test(hook_unittest gtest_main)
-  target_link_libraries(hook_unittest carve)
+  target_link_libraries(hook_unittest carve carve_fileformats gloop_model)
   
   cxx_test(tri_point_distance_unittest gtest_main)
   target_link_libraries(tri_point_distance_unittest carve)
