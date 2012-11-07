@@ -534,7 +534,7 @@ int main(int argc, char **argv) {
 
   if (p != NULL) {
     carve::Timing::start(EVAL_BLOCK);
-    carve::mesh::MeshSet<3> *result;
+    carve::mesh::MeshSet<3> *result = NULL;
 
     try {
       carve::csg::CSG csg;
