@@ -237,7 +237,7 @@ TEST(MeshTest, ComplexMesh) {
   std::vector<carve::mesh::Face<3> *> faces;
   obj1(vertices, faces);
   std::vector<carve::mesh::Mesh<3> *> meshes;
-  carve::mesh::Mesh<3>::create(faces.begin(), faces.end(), meshes);
+  carve::mesh::Mesh<3>::create(faces.begin(), faces.end(), meshes, carve::mesh::MeshOptions());
   ASSERT_EQ(meshes.size(), 1U);
 
   carve::mesh::MeshSet<3> *mesh = new carve::mesh::MeshSet<3>(vertices, meshes);
@@ -256,7 +256,7 @@ TEST(MeshTest, ComplexMesh2) {
   std::vector<carve::mesh::Face<3> *> faces;
   obj2(vertices, faces);
   std::vector<carve::mesh::Mesh<3> *> meshes;
-  carve::mesh::Mesh<3>::create(faces.begin(), faces.end(), meshes);
+  carve::mesh::Mesh<3>::create(faces.begin(), faces.end(), meshes, carve::mesh::MeshOptions());
   ASSERT_EQ(meshes.size(), 5U);
 
   carve::mesh::MeshSet<3> *mesh = new carve::mesh::MeshSet<3>(vertices, meshes);
@@ -300,7 +300,7 @@ TEST(MeshTest, MeshConstruction2) {
   ASSERT_EQ(quadfaces[5]->plane.N, carve::geom::VECTOR( 0.0,  0.0, +1.0));
 
   std::vector<carve::mesh::Mesh<3> *> quadmeshes;
-  carve::mesh::Mesh<3>::create(quadfaces.begin(), quadfaces.end(), quadmeshes);
+  carve::mesh::Mesh<3>::create(quadfaces.begin(), quadfaces.end(), quadmeshes, carve::mesh::MeshOptions());
   ASSERT_EQ(quadmeshes.size(), 1U);
   carve::mesh::MeshSet<3> *mesh = new carve::mesh::MeshSet<3>(vertices, quadmeshes);
   dumpMeshes(mesh);
@@ -337,7 +337,7 @@ TEST(MeshTest, MeshConstruction1) {
   trifaces.push_back(new carve::mesh::Face<3>(&vertices[4], &vertices[7], &vertices[5]));
 
   std::vector<carve::mesh::Mesh<3> *> trimeshes;
-  carve::mesh::Mesh<3>::create(trifaces.begin(), trifaces.end(), trimeshes);
+  carve::mesh::Mesh<3>::create(trifaces.begin(), trifaces.end(), trimeshes, carve::mesh::MeshOptions());
   ASSERT_EQ(trimeshes.size(), 1U);
   carve::mesh::MeshSet<3> *mesh = new carve::mesh::MeshSet<3>(vertices, trimeshes);
   dumpMeshes(mesh);

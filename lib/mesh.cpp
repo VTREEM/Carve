@@ -327,9 +327,14 @@ namespace carve {
             CARVE_ASSERT(erev[0][i]->v2() == erev[j][i]->v2());
           }
 
-          std::sort(result[i].begin(),
-                    result[i].end(),
-                    EdgeOrderData::Cmp(base->v2()->v - base->v1()->v, result[i][0].face_dir));
+          geom::vector<3> sort_dir;
+          if (opts.opt_avoid_cavities) {
+            sort_dir = base->v1()->v - base->v2()->v;
+          } else {
+            sort_dir = base->v2()->v - base->v1()->v;
+          }
+
+          std::sort(result[i].begin(), result[i].end(), EdgeOrderData::Cmp(sort_dir, result[i][0].face_dir));
         }
       }
 
@@ -751,8 +756,12 @@ namespace carve {
           }
         }
       }
+
+      FaceStitcher::FaceStitcher(const MeshOptions &_opts) : opts(_opts) {
+      }
     }
   }
+
 
 
 
