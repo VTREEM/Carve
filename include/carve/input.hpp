@@ -182,7 +182,6 @@ namespace carve {
         carve::mesh::MeshOptions opts;
         i = options.find("avoid_cavities");
         if (i != options.end()) {
-          std::cerr << (*i).second << std::endl;
           opts.avoid_cavities(_bool((*i).second));
         }
         return new carve::mesh::MeshSet<3>(points, faceCount, faceIndices, opts);
