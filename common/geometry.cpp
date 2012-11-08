@@ -98,7 +98,7 @@ carve::mesh::MeshSet<3> *makeSubdividedCube(
     }
   }
 
-  return data.createMesh();
+  return data.createMesh(carve::input::opts());
 }
 
 carve::mesh::MeshSet<3> *makeDoubleCube(
@@ -140,7 +140,7 @@ carve::mesh::MeshSet<3> *makeDoubleCube(
   data.addFace(9, 13, 12, 8);
   data.addFace(7, 9, 8, 6);
 
-  return data.createMesh();
+  return data.createMesh(carve::input::opts());
 }
 
 carve::mesh::MeshSet<3> *makeTorus(
@@ -177,7 +177,7 @@ carve::mesh::MeshSet<3> *makeTorus(
   }
 #undef V
 
-  return data.createMesh();
+  return data.createMesh(carve::input::opts());
 }
 
 carve::mesh::MeshSet<3> *makeCylinder(
@@ -217,7 +217,7 @@ carve::mesh::MeshSet<3> *makeCylinder(
                  3 + ((i+1) % slices) * 2);
   }
 
-  return data.createMesh();
+  return data.createMesh(carve::input::opts());
 }
 
 carve::mesh::MeshSet<3> *makeCone(
@@ -249,5 +249,5 @@ carve::mesh::MeshSet<3> *makeCone(
                  2 + ((i+1) % slices));
   }
 
-  return data.createMesh();
+  return data.createMesh(carve::input::opts());
 }

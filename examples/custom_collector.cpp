@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  carve::mesh::MeshSet<3> *b = data.createMesh();
+  carve::mesh::MeshSet<3> *b = data.createMesh(carve::input::opts());
   CARVE_ASSERT(b->meshes.size() == 2);
 
   Between between_collector(a, b);
