@@ -418,7 +418,7 @@ int main(int argc, char **argv) {
     carve::point::PointSet *ps;
     carve::line::PolylineSet *l;
 
-    if ((p = carve::input::Input::create<carve::mesh::MeshSet<3> >(*i)) != NULL)  {
+    if ((p = carve::input::Input::create<carve::mesh::MeshSet<3> >(*i, carve::input::opts("avoid_cavities", "true"))) != NULL)  {
       polys.push_back(p);
       std::cerr << "loaded polyhedron "
                 << polys.back() << " has " << polys.back()->meshes.size()

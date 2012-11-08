@@ -177,8 +177,15 @@ namespace carve {
         return new carve::poly::Polyhedron(points, faceCount, faceIndices);
       }
 
-        return new carve::mesh::MeshSet<3>(points, faceCount, faceIndices);
       carve::mesh::MeshSet<3> *createMesh(const Options &options) const {
+        Options::const_iterator i;
+        carve::mesh::MeshOptions opts;
+        i = options.find("avoid_cavities");
+        if (i != options.end()) {
+          std::cerr << (*i).second << std::endl;
+          opts.avoid_cavities(_bool((*i).second));
+        }
+        return new carve::mesh::MeshSet<3>(points, faceCount, faceIndices, opts);
       }
     };
 
