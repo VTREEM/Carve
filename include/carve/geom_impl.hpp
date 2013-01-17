@@ -289,24 +289,24 @@ namespace carve {
 
     template<unsigned ndim>
     int smallestAxis(const vector<ndim> &a) {
-      int x = 0;
-      double y = fabs(a[0]);
+      int idx = 0;
+      double lo = fabs(a[0]);
       for (unsigned i = 1; i < ndim; ++i) {
-        double z = fabs(a[i]);
-        if (z <= y) { y = z; x = i; }
+        double val = fabs(a[i]);
+        if (val <= lo) { lo = val; idx = (int)i; }
       }
-      return x;
+      return idx;
     }
 
     template<unsigned ndim>
     int largestAxis(const vector<ndim> &a) {
-      int x = 0;
-      double y = fabs(a[0]);
+      int idx = 0;
+      double hi = fabs(a[0]);
       for (unsigned i = 1; i < ndim; ++i) {
-        double z = fabs(a[i]);
-        if (z > y) { y = z; x = i; }
+        double val = fabs(a[i]);
+        if (hi > val) { val = hi; idx = (int)i; }
       }
-      return x;
+      return idx;
     }
 
     template<unsigned ndim>

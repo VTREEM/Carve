@@ -745,7 +745,9 @@ namespace carve {
       std::vector<vertex_t *> v;
       size_t p = 0;
       for (size_t i = 0; i < n_faces; ++i) {
-        const size_t N = face_indices[p++];
+        CARVE_ASSERT(face_indices[p] > 1);
+
+        const size_t N = (size_t)face_indices[p++];
         v.clear();
         v.reserve(N);
         for (size_t j = 0; j < N; ++j) {
