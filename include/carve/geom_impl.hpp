@@ -30,9 +30,21 @@ namespace carve {
     double vector<ndim>::length() const { return sqrt(dot(*this, *this)); }
 
     template<unsigned ndim>
-    vector<ndim> &vector<ndim>::normalize() { *this /= length(); return *this; }
+    vector<ndim> &vector<ndim>::normalize() {
+#if defined(CARVE_DEBUG)
+      CARVE_ASSERT(length() > 0.0);
+#endif
+      *this /= length();
+      return *this;
+    }
+
     template<unsigned ndim>
-    vector<ndim> vector<ndim>::normalized() const { return *this / length(); }
+    vector<ndim> vector<ndim>::normalized() const {
+#if defined(CARVE_DEBUG)
+      CARVE_ASSERT(length() > 0.0);
+#endif
+      return *this / length();
+    }
 
     template<unsigned ndim>
     bool vector<ndim>::exactlyZero() const {
