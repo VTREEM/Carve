@@ -26,6 +26,7 @@ namespace carve {
 
     template<unsigned ndim>
     double vector<ndim>::length2() const { return dot(*this, *this); }
+
     template<unsigned ndim>
     double vector<ndim>::length() const { return sqrt(dot(*this, *this)); }
 
@@ -377,11 +378,19 @@ namespace carve {
       }
     }
 
+    template<unsigned ndim, typename iter_t>
+    void centroid(iter_t begin, iter_t end, vector<ndim> &c) {
+      c.setZero();
+      int n = 0;
+      for (; begin != end; ++begin, ++n) { c += *begin; }
+      c /= double(n);
+    }
+
     template<unsigned ndim, typename iter_t, typename adapt_t>
     void centroid(iter_t begin, iter_t end, adapt_t adapt, vector<ndim> &c) {
       c.setZero();
       int n = 0;
-      while (begin != end) { c += adapt(*begin++); ++n; }
+      for (; begin != end; ++begin, ++n) { c += adapt(*begin); }
       c /= double(n);
     }
 
