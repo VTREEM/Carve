@@ -303,6 +303,7 @@ namespace carve {
 
       aabb<ndim> getAABB() const;
 
+      tri() { }
       tri(vector_t _v[3]);
       tri(const vector_t &a, const vector_t &b, const vector_t &c);
 
