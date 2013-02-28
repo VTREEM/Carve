@@ -304,7 +304,7 @@ namespace carve {
       double hi = fabs(a[0]);
       for (unsigned i = 1; i < ndim; ++i) {
         double val = fabs(a[i]);
-        if (hi > val) { val = hi; idx = (int)i; }
+        if (val > hi) { hi = val; idx = (int)i; }
       }
       return idx;
     }
