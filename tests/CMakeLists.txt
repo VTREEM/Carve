@@ -42,6 +42,9 @@ if(CARVE_WITH_GUI)
   add_executable       (test_csg_interpolate   test_csg_interpolate.cpp)
   target_link_libraries(test_csg_interpolate   carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
+  add_executable       (test_csg_edge_interpolate   test_csg_edge_interpolate.cpp)
+  target_link_libraries(test_csg_edge_interpolate   carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
+
   add_executable       (test_slice             test_slice.cpp)
   target_link_libraries(test_slice             carve carve_ui carve_misc carve_fileformats gloop_model glui ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
 
