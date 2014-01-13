@@ -1,9 +1,16 @@
 include_directories("${carve_SOURCE_DIR}/include")
 include_directories("${carve_SOURCE_DIR}/external/GLOOP/include")
-include_directories("${carve_SOURCE_DIR}/external/GLEW/include")
 include_directories("${carve_SOURCE_DIR}/external/GLUI/include")
-include_directories("${carve_SOURCE_DIR}/common")
+
+if(GLEW_FOUND)
+  include_directories("${GLEW_INCLUDE_DIR}")
+else(GLEW_FOUND)
+  include_directories("${carve_SOURCE_DIR}/external/GLEW/include")
+endif(GLEW_FOUND)
+
 include_directories(${OPENGL_INCLUDE_DIR})
+
+include_directories("${carve_SOURCE_DIR}/common")
 
 link_directories("${gloop_BINARY_DIR}")
 link_directories("${carve_BINARY_DIR}/common")
