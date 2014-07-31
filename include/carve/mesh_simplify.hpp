@@ -891,8 +891,8 @@ namespace carve {
           edge_t *removed = edge->mergeFaces();
           if (removed == NULL) {
             coplanar_face_edges.erase(edge);
-            ++n_merge;
           } else {
+            ++n_merge;
             edge_t *e = removed;
             do {
               edge_t *n = e->next;
