@@ -1414,7 +1414,7 @@ namespace carve {
 
 
       size_t removeLowVolumeManifolds(meshset_t *meshset, double min_abs_volume) {
-        size_t n_removed;
+        size_t n_removed = 0;
         for (size_t i = 0; i < meshset->meshes.size(); ++i) {
           if (fabs(meshset->meshes[i]->volume()) < min_abs_volume) {
             delete meshset->meshes[i];
