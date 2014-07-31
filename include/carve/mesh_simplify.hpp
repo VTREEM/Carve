@@ -1060,6 +1060,7 @@ namespace carve {
       }
 
 
+    public:
 
       size_t cleanFaceEdges(mesh_t *mesh) {
         size_t n_removed = 0;
@@ -1163,7 +1164,6 @@ namespace carve {
 
 
 
-    public:
       // Merge adjacent coplanar faces (where coplanar is determined
       // by dot-product >= cos(min_normal_angle)).
       size_t mergeCoplanarFaces(meshset_t *meshset, double min_normal_angle) {
